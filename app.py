@@ -23,10 +23,44 @@ import ssl
 import time
 import re
 import json
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
+
+# =============================================================================
+# ARCHIVO DE PERSISTENCIA - Leads excluidos (se guardan entre sesiones)
+# =============================================================================
+EXCLUIDOS_FILE = "leads_excluidos.json"
+
+
+def cargar_excluidos() -> set:
+    """Carga la lista de correos excluidos del archivo JSON."""
+    if os.path.exists(EXCLUIDOS_FILE):
+        try:
+            with open(EXCLUIDOS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return set(data.get("excluidos", []))
+        except Exception:
+            return set()
+    return set()
+
+
+def guardar_excluidos(excluidos: set):
+    """Guarda la lista de correos excluidos en el archivo JSON."""
+    try:
+        with open(EXCLUIDOS_FILE, "w", encoding="utf-8") as f:
+            json.dump({"excluidos": list(excluidos), "actualizado": datetime.now().isoformat()}, f)
+    except Exception as e:
+        st.error(f"Error al guardar exclusiones: {str(e)}")
+
+
+def excluir_lead(email: str):
+    """Agrega un lead a la lista de excluidos."""
+    excluidos = cargar_excluidos()
+    excluidos.add(email)
+    guardar_excluidos(excluidos)
 
 # =============================================================================
 # CONFIGURACIÓN DE LA PÁGINA
@@ -506,6 +540,15 @@ def main():
             len(EMPRESAS_REALES["El Salvador"])
         ))
 
+        # Contador de leads excluidos
+        excluidos_count = len(cargar_excluidos())
+        if excluidos_count > 0:
+            st.metric("🚫 Leads excluidos", excluidos_count, help="Leads que ya contactaste y no volverán a aparecer")
+            if st.button("🔄 Ver leads excluidos"):
+                excluidos = cargar_excluidos()
+                for email in excluidos:
+                    st.text(f"• {email}")
+
     # -------------------------------------------------------------------------
     # ENCABEZADO
     # -------------------------------------------------------------------------
@@ -592,6 +635,11 @@ def main():
                 st.warning("No se encontraron empresas con los filtros seleccionados.")
                 st.stop()
 
+            # Cargar leads ya excluidos (vistos en días anteriores)
+            excluidos = cargar_excluidos()
+            if excluidos:
+                st.info(f"📋 exclusiones previas: **{len(excluidos)} leads** ya vistos serán omitidos automáticamente.")
+
             st.info(f"🔍 Buscando contactos en **{len(empresas_filtradas)} empresas** de **{paisSeleccionado}**...")
 
             # Barra de progreso
@@ -629,23 +677,30 @@ def main():
                             return conf + 10
                         return conf
 
-                    mejor = max(contactos, key=prioridad)
+                    # Filtrar contactos ya excluidos
+                    contactos_disponibles = [
+                        c for c in contactos
+                        if c.get("email", "") not in excluidos
+                    ]
 
-                    lead = {
-                        "País": paisSeleccionado,
-                        "Empresa": empresa["empresa"],
-                        "Dominio": dominio,
-                        "Sector": empresa.get("sector", ""),
-                        "Tipo": empresa.get("tipo", ""),
-                        "Contacto Clabe": f"{mejor.get('nombre', '')} {mejor.get('apellido', '')}".strip(),
-                        "Cargo": mejor.get("cargo", "No especificado"),
-                        "Correo": mejor.get("email", ""),
-                        "Confianza (%)": mejor.get("confianza", 0),
-                        "LinkedIn": mejor.get("linkedin", ""),
-                        "Fuente": "Hunter.io",
-                        "Estado del Lead": "Nuevo"
-                    }
-                    todos_los_leads.append(lead)
+                    if contactos_disponibles:
+                        mejor = max(contactos_disponibles, key=prioridad)
+
+                        lead = {
+                            "País": paisSeleccionado,
+                            "Empresa": empresa["empresa"],
+                            "Dominio": dominio,
+                            "Sector": empresa.get("sector", ""),
+                            "Tipo": empresa.get("tipo", ""),
+                            "Contacto Clabe": f"{mejor.get('nombre', '')} {mejor.get('apellido', '')}".strip(),
+                            "Cargo": mejor.get("cargo", "No especificado"),
+                            "Correo": mejor.get("email", ""),
+                            "Confianza (%)": mejor.get("confianza", 0),
+                            "LinkedIn": mejor.get("linkedin", ""),
+                            "Fuente": "Hunter.io",
+                            "Estado del Lead": "Nuevo"
+                        }
+                        todos_los_leads.append(lead)
 
             progress_bar.progress(1.0, text="✅ Búsqueda completada")
 
@@ -723,6 +778,37 @@ def main():
                     "Correo": st.column_config.TextColumn("Correo", width="large")
                 }
             )
+
+            # -------------------------------------------------------------------------
+            # SISTEMA DE EXCLUSIÓN - Marcar leads como vistos
+            # -------------------------------------------------------------------------
+            st.divider()
+            st.subheader("✅ Marcar Leads como Vistos")
+            st.markdown("Selecciona los leads que ya contactaste para que no aparezcan en futuras búsquedas.")
+
+            excluidos_actuales = cargar_excluidos()
+            leads_a_excluir = []
+
+            for idx, lead in df.iterrows():
+                email = lead.get("Correo", "")
+                nombre = lead.get("Contacto Clabe", "")
+                empresa = lead.get("Empresa", "")
+
+                if email in excluidos_actuales:
+                    st.success(f"✅ **{nombre}** ({empresa}) — Ya excluido")
+                else:
+                    if st.checkbox(
+                        f"Excluir: **{nombre}** de {empresa} ({email})",
+                        key=f"excluir_{idx}"
+                    ):
+                        leads_a_excluir.append(email)
+
+            if leads_a_excluir:
+                if st.button("🗑️ Excluir Seleccionados", type="primary"):
+                    for email in leads_a_excluir:
+                        excluir_lead(email)
+                    st.success(f"✅ {len(leads_a_excluir)} leads excluidos. No aparecerán en futuras búsquedas.")
+                    st.rerun()
 
         # -------------------------------------------------------------------------
         # IMPORTAR LEADS PROPIOS
