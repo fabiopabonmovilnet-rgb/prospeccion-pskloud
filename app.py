@@ -93,7 +93,7 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/automercado"},
         {"empresa": "Farmacia Fischel", "dominio": "fischel.com", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/farmacia-fischel"},
-        {"empresa": "La Grenia", "domain": "lagrenia.com", "sector": "Retail", "tipo": "Clientes Finales",
+        {"empresa": "La Grenia", "dominio": "lagrenia.com", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/la-grenia"},
         {"empresa": "Vindi", "dominio": "vindicr.com", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/vindicr"},
@@ -134,70 +134,60 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
     ],
     "El Salvador": [
         # === TECNOLOGÍA / SOFTWARE ===
-        {"empresa": "Synapsis", "dominio": "synapsis.net", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/synapsis-el-salvador"},
         {"empresa": "Softcorp International", "dominio": "softcorp.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
          "linkedin": "https://linkedin.com/company/softcorp-international"},
         {"empresa": "GInIEm", "dominio": "giniem.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
          "linkedin": "https://linkedin.com/company/giniem"},
-        {"empresa": "Logical Sistemas", "dominio": "logical.com.sv", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/logical-sistemas"},
-        {"empresa": "Computo Express", "dominio": "computoexpress.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/computo-express"},
-        {"empresa": "Inforum", "dominio": "inforum.com.sv", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/inforum-sv"},
-        {"empresa": "Grupo Magaña", "dominio": "grupomagana.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/grupo-magana"},
-        {"empresa": "Netcom", "dominio": "netcom.com.sv", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/netcom-sv"},
-        {"empresa": "EIT", "dominio": "eit.com.sv", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/eit-sv"},
-        {"empresa": "Inversiones Técnológicas", "dominio": "inversionestec.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/inversiones-tecnologicas"},
         {"empresa": "Intecno Solutions", "dominio": "intecnosolutions.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
          "linkedin": "https://linkedin.com/company/intecno-solutions"},
-        {"empresa": "Sistemas Técnicos", "dominio": "sistemas Tecnicos.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
-         "linkedin": "https://linkedin.com/company/sistemas-tecnicos"},
+        {"empresa": "Inversiones Técnicas", "dominio": "inversionestec.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/inversiones-tecnicas"},
 
         # === RETAIL / COMERCIO ===
-        {"empresa": "Super Selectos", "dominio": "superselectos.com", "sector": "Retail", "tipo": "Clientes Finales",
+        {"empresa": "Super Selectos", "dominio": "superselectos.com.sv", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/super-selectos"},
-        {"empresa": "Despensa Familiar", "dominio": "despensafamiliar.com", "sector": "Retail", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/despensa-familiar"},
-        {"empresa": "La Curacao", "dominio": "lacuracao.com.sv", "sector": "Retail", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/la-curacao"},
         {"empresa": "Siman", "dominio": "siman.com", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/siman"},
+        {"empresa": "La Curacao", "dominio": "lacuracao.com.sv", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/la-curacao"},
         {"empresa": "Farmacias Guadalupana", "dominio": "guadalupana.com", "sector": "Retail", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/farmacias-guadalupana"},
 
         # === BANCA / FINANZAS ===
         {"empresa": "Banco Cuscatlán", "dominio": "bancocuscatlan.com", "sector": "Finanzas", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/banco-cuscatlan"},
-        {"empresa": "Banco Agrícola", "dominio": "bancoagricola.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+        {"empresa": "Banco Agrícola", "dominio": "bancoagricola.com.sv", "sector": "Finanzas", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/banco-agricola"},
         {"empresa": "Davivienda", "dominio": "davivienda.com.sv", "sector": "Finanzas", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/davivienda-sv"},
         {"empresa": "BAC Credomatic El Salvador", "dominio": "baccredomatic.com", "sector": "Finanzas", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/bac-credomatic"},
 
+        # === TELECOMUNICACIONES ===
+        {"empresa": "Tigo El Salvador", "dominio": "tigo.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/tigo"},
+        {"empresa": "Claro El Salvador", "dominio": "claro.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/claro"},
+        {"empresa": "Telefónica El Salvador", "dominio": "telefonica.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/telefonica"},
+
+        # === BEBIDAS / MANUFACTURA ===
+        {"empresa": "Heineken El Salvador", "dominio": "heineken.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/heineken"},
+        {"empresa": "Pilsener El Salvador", "dominio": "pilsener.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/pilsener"},
+        {"empresa": "Cementos de El Salvador", "dominio": "cementos.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cementos"},
+
         # === SALUD ===
-        {"empresa": "Hospital Diagnóstico", "dominio": "hdd.com.sv", "sector": "Salud", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/hospital-diagnostico"},
-        {"empresa": "Hospital Nacional San Juan de Dios", "dominio": "hnsjd.gob.sv", "sector": "Salud", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/hospital-san-juan-de-dios"},
+        {"empresa": "Salud El Salvador", "dominio": "salud.com.sv", "sector": "Salud", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/salud-sv"},
 
         # === TURISMO ===
         {"empresa": "Hotel Barceló San Salvador", "dominio": "barcelo.com", "sector": "Turismo", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/barcelo"},
         {"empresa": "Marriott San Salvador", "dominio": "marriott.com", "sector": "Turismo", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/marriott"},
-
-        # === MANUFACTURA ===
-        {"empresa": "Aeroman", "dominio": "aeroman.com", "sector": "Manufactura", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/aeroman"},
-        {"empresa": "Pollo Campero", "dominio": "pfrinternational.com", "sector": "Manufactura", "tipo": "Clientes Finales",
-         "linkedin": "https://linkedin.com/company/pollo-campero"},
     ]
 }
 
