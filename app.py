@@ -550,16 +550,23 @@ def main():
             )
 
         with col2:
-            sector_filtro = st.text_input(
+            # Obtener sectores disponibles del país seleccionado
+            sectores_disponibles = sorted(set(
+                emp.get("sector", "Otro")
+                for emp in EMPRESAS_REALES.get(paisSeleccionado, [])
+            ))
+
+            sector_filtro = st.selectbox(
                 "🏢 Sector",
-                placeholder="Ej: Tecnología, Retail, Finanzas, Salud...",
+                options=["Todos"] + sectores_disponibles,
                 key="sector_busqueda"
             )
 
             cargo_filtro = st.text_input(
-                "👤 Cargo a buscar",
+                "👤 Cargo a buscar (opcional)",
                 placeholder="Ej: CEO, Gerente, Director, CTO...",
-                key="cargo_busqueda"
+                key="cargo_busqueda",
+                help="Deja vacío para buscar todos los cargos. Puedes escribir varios separados por coma."
             )
 
         # Limitar resultados por búsqueda (para ahorrar créditos)
@@ -583,8 +590,8 @@ def main():
                 # Filtro por tipo
                 if tipo_target != "Todos" and empresa.get("tipo") != tipo_target:
                     continue
-                # Filtro por sector
-                if sector_filtro and sector_filtro.lower() not in empresa.get("sector", "").lower():
+                # Filtro por sector (selectbox exacto)
+                if sector_filtro != "Todos" and empresa.get("sector") != sector_filtro:
                     continue
                 empresas_filtradas.append(empresa)
 
@@ -619,9 +626,13 @@ def main():
 
                 # Procesar contactos encontrados
                 for contacto in contactos:
-                    # Aplicar filtro de cargo si se especifica
-                    if cargo_filtro and cargo_filtro.lower() not in (contacto.get("cargo", "") or "").lower():
-                        continue
+                    # Aplicar filtro de cargo si se especifica (soporta varios separados por coma)
+                    if cargo_filtro.strip():
+                        cargo_contacto = (contacto.get("cargo", "") or "").lower()
+                        cargos_busqueda = [c.strip().lower() for c in cargo_filtro.split(",")]
+                        # Si ningún término del filtro coincide con el cargo, saltar
+                        if not any(cargo in cargo_contacto for cargo in cargos_busqueda if cargo):
+                            continue
 
                     lead = {
                         "País": paisSeleccionado,
