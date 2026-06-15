@@ -533,7 +533,7 @@ def main():
             st.warning("⚠️ Ingresa tu API key de Hunter.io en la barra lateral para comenzar.")
             st.info("💡 **¿No tienes API key?** Regístrate gratis en [hunter.io](https://hunter.io/users/sign_up) — Plan gratuito: 25 búsquedas/mes")
 
-        # Filtros de búsqueda
+        # Filtros preconfigurados para PSKloud
         col1, col2 = st.columns(2)
 
         with col1:
@@ -543,39 +543,32 @@ def main():
                 key="pais_busqueda"
             )
 
+        with col2:
             tipo_target = st.selectbox(
                 "🎯 Tipo de Target",
-                options=["Todos", "Canales/Distribuidores", "Clientes Finales"],
-                key="tipo_busqueda"
+                options=["Canales/Distribuidores", "Clientes Finales"],
+                key="tipo_busqueda",
+                help="Canales: aliados comerciales para distribuir PSKloud. Clientes Finales: empresas que usan el software."
             )
 
-        with col2:
-            # Obtener sectores disponibles del país seleccionado
-            sectores_disponibles = sorted(set(
-                emp.get("sector", "Otro")
-                for emp in EMPRESAS_REALES.get(paisSeleccionado, [])
-            ))
+        # Sectores predefinidos según el target de PSKloud
+        sectores_pscloud = {
+            "Canales/Distribuidores": ["Todos", "Tecnología"],
+            "Clientes Finales": ["Todos", "Retail", "Finanzas", "Salud", "Turismo", "Manufactura", "Telecomunicaciones"]
+        }
 
-            sector_filtro = st.selectbox(
-                "🏢 Sector",
-                options=["Todos"] + sectores_disponibles,
-                key="sector_busqueda"
-            )
+        sector_filtro = st.selectbox(
+            "🏢 Sector",
+            options=sectores_pscloud.get(tipo_target, ["Todos"]),
+            key="sector_busqueda"
+        )
 
-            cargo_filtro = st.text_input(
-                "👤 Cargo a buscar (opcional)",
-                placeholder="Ej: CEO, Gerente, Director, CTO...",
-                key="cargo_busqueda",
-                help="Deja vacío para buscar todos los cargos. Puedes escribir varios separados por coma."
-            )
-
-        # Limitar resultados por búsqueda (para ahorrar créditos)
+        # Contactos por empresa
         limite_resultados = st.slider(
             "📊 Contactos por empresa",
             min_value=3,
             max_value=10,
-            value=5,
-            help="Más contactos = más créditos utilizados"
+            value=5
         )
 
         # Botón de búsqueda
@@ -626,13 +619,6 @@ def main():
 
                 # Procesar contactos encontrados
                 for contacto in contactos:
-                    # Aplicar filtro de cargo si se especifica (soporta varios separados por coma)
-                    if cargo_filtro.strip():
-                        cargo_contacto = (contacto.get("cargo", "") or "").lower()
-                        cargos_busqueda = [c.strip().lower() for c in cargo_filtro.split(",")]
-                        # Si ningún término del filtro coincide con el cargo, saltar
-                        if not any(cargo in cargo_contacto for cargo in cargos_busqueda if cargo):
-                            continue
 
                     lead = {
                         "País": paisSeleccionado,
