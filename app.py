@@ -237,17 +237,20 @@ def buscar_contactos_hunter(
         response.raise_for_status()
         data = response.json()
 
+        # La API de Hunter.io envuelve los datos en un nivel "data"
+        datos_empresa = data.get("data", {})
+
         # Información de la empresa
         empresa_info = {
-            "organisation": data.get("organisation", dominio),
-            "domain": data.get("domain", dominio),
-            "pattern": data.get("pattern", ""),
-            "emails_encontrados": len(data.get("emails", []))
+            "organisation": datos_empresa.get("organisation", dominio),
+            "domain": datos_empresa.get("domain", dominio),
+            "pattern": datos_empresa.get("pattern", ""),
+            "emails_encontrados": len(datos_empresa.get("emails", []))
         }
 
         # Procesar contactos encontrados
         contactos = []
-        for email_data in data.get("emails", []):
+        for email_data in datos_empresa.get("emails", []):
             # Solo incluir emails con confianza media o alta
             confianza = email_data.get("confidence", 0)
 
@@ -309,16 +312,17 @@ def verificar_email_hunter(
         response = requests.get(url, params=params, timeout=10)
         response.raise_for_status()
         data = response.json()
+        datos = data.get("data", data)
 
         return {
             "email": email,
-            "resultado": data.get("result", "unknown"),
-            "confianza": data.get("score", 0),
-            "status": data.get("status", "unknown"),
-            "disposable": data.get("disposable", False),
-            "webmail": data.get("webmail", False),
-            "mx_found": data.get("mx_found", False),
-            "smtp_check": data.get("smtp_check", False)
+            "resultado": datos.get("result", "unknown"),
+            "confianza": datos.get("score", 0),
+            "status": datos.get("status", "unknown"),
+            "disposable": datos.get("disposable", False),
+            "webmail": datos.get("webmail", False),
+            "mx_found": datos.get("mx_found", False),
+            "smtp_check": datos.get("smtp_check", False)
         }
     except Exception as e:
         return {
