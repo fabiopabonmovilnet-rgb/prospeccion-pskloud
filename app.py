@@ -671,7 +671,7 @@ def main():
 
             st.divider()
             st.subheader(f"📋 Leads Encontrados: {len(df)}")
-            st.info("ℹ️ **Nota:** Hunter.io provee correos electrónicos verificados. Los números de teléfono no están disponibles en esta API. Para obtener teléfonos, verifica los perfiles de LinkedIn de cada contacto.")
+            st.info("ℹ️ **Hunter.io provee:** Correos verificados + LinkedIn personal del contacto. **No provee teléfonos.** Para obtener teléfonos, visita el LinkedIn del contacto o busca la empresa en Páginas Amarillas.")
 
             # Opciones de exportación
             col1, col2, col3 = st.columns(3)
@@ -716,7 +716,10 @@ def main():
                         max_value=100,
                         format="%d%%"
                     ),
-                    "LinkedIn": st.column_config.LinkColumn("LinkedIn"),
+                    "LinkedIn": st.column_config.LinkColumn(
+                        "LinkedIn Contacto",
+                        help="Perfil personal del contacto en LinkedIn"
+                    ),
                     "Correo": st.column_config.TextColumn("Correo", width="large")
                 }
             )
