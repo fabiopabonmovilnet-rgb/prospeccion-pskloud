@@ -617,8 +617,19 @@ def main():
                     errores.append(f"{empresa['empresa']}: {info['error']}")
                     continue
 
-                # Procesar contactos encontrados
-                for contacto in contactos:
+                # Procesar - SOLO EL MEJOR CONTACTO POR EMPRESA
+                if contactos:
+                    # Ordenar: mayor confianza + cargo más alto primero
+                    def prioridad(c):
+                        conf = c.get("confianza", 0)
+                        cargo = (c.get("cargo", "") or "").lower()
+                        if "chief" in cargo or "ceo" in cargo or "founder" in cargo or "director" in cargo:
+                            return conf + 20
+                        elif "gerente" in cargo or "manager" in cargo:
+                            return conf + 10
+                        return conf
+
+                    mejor = max(contactos, key=prioridad)
 
                     lead = {
                         "País": paisSeleccionado,
@@ -626,12 +637,11 @@ def main():
                         "Dominio": dominio,
                         "Sector": empresa.get("sector", ""),
                         "Tipo": empresa.get("tipo", ""),
-                        "Contacto Clabe": f"{contacto.get('nombre', '')} {contacto.get('apellido', '')}".strip(),
-                        "Cargo": contacto.get("cargo", "No especificado"),
-                        "Correo": contacto.get("email", ""),
-                        "Confianza (%)": contacto.get("confianza", 0),
-                        "Teléfono": contacto.get("telefono", ""),
-                        "LinkedIn": contacto.get("linkedin", ""),
+                        "Contacto Clabe": f"{mejor.get('nombre', '')} {mejor.get('apellido', '')}".strip(),
+                        "Cargo": mejor.get("cargo", "No especificado"),
+                        "Correo": mejor.get("email", ""),
+                        "Confianza (%)": mejor.get("confianza", 0),
+                        "LinkedIn": mejor.get("linkedin", ""),
                         "Fuente": "Hunter.io",
                         "Estado del Lead": "Nuevo"
                     }
@@ -661,6 +671,7 @@ def main():
 
             st.divider()
             st.subheader(f"📋 Leads Encontrados: {len(df)}")
+            st.info("ℹ️ **Nota:** Hunter.io provee correos electrónicos verificados. Los números de teléfono no están disponibles en esta API. Para obtener teléfonos, verifica los perfiles de LinkedIn de cada contacto.")
 
             # Opciones de exportación
             col1, col2, col3 = st.columns(3)
