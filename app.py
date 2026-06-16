@@ -11,7 +11,15 @@ EJECUCIÓN:
     streamlit run app.py
 
 DEPLOY STREAMLIT CLOUD:
-    Subir a GitHub → share.streamlit.io → Deploy
+    1. Subir a GitHub (git push)
+    2. Ir a https://share.streamlit.io
+    3. Conectar repositorio: fabiopabonmovilnet-rgb/prospeccion-pskloud
+    4. Settings → Secrets → agregar: HUNTER_API_KEY, SMTP_SERVER, SMTP_PORT, SMTP_EMAIL, SMTP_PASSWORD
+    5. Deploy!
+
+EJECUTABLES:
+    - Doble clic en "PSKloud Prospector.bat" en el escritorio
+    - O: streamlit run app.py
 =============================================================================
 """
 
@@ -508,10 +516,12 @@ def main():
         st.markdown("### 🔑 Configuración Hunter.io")
         st.markdown("[Obtener API key gratis →](https://hunter.io/users/sign_up)")
 
+        # Cargar API key desde secrets (Streamlit Cloud) o dejar vacía
+        api_key_predeterminada = st.secrets.get("HUNTER_API_KEY", "") if hasattr(st, "secrets") else ""
         api_key = st.text_input(
             "API Key de Hunter.io",
             type="password",
-            value=st.session_state.get("hunter_api_key", ""),
+            value=st.session_state.get("hunter_api_key", api_key_predeterminada),
             help="Regístrate gratis en hunter.io para obtener tu API key"
         )
 
@@ -956,13 +966,13 @@ def main():
         with col1:
             smtp_server = st.text_input(
                 "🖥️ Servidor SMTP",
-                value="smtp.gmail.com",
+                value=st.secrets.get("SMTP_SERVER", "smtp.gmail.com") if hasattr(st, "secrets") else "smtp.gmail.com",
                 help="Gmail: smtp.gmail.com | Outlook: smtp.office365.com | Yahoo: smtp.mail.yahoo.com"
             )
 
             smtp_port = st.number_input(
                 "🔌 Puerto",
-                value=587,
+                value=int(st.secrets.get("SMTP_PORT", 587)) if hasattr(st, "secrets") else 587,
                 min_value=1,
                 max_value=65535
             )
@@ -970,12 +980,14 @@ def main():
         with col2:
             smtp_email = st.text_input(
                 "📧 Correo Emisor",
+                value=st.secrets.get("SMTP_EMAIL", "") if hasattr(st, "secrets") else "",
                 placeholder="tu_empresa@gmail.com"
             )
 
             smtp_password = st.text_input(
                 "🔑 Contraseña / Token de Aplicación",
                 type="password",
+                value=st.secrets.get("SMTP_PASSWORD", "") if hasattr(st, "secrets") else "",
                 help="Para Gmail: usa una 'Contraseña de aplicación' de Google"
             )
 

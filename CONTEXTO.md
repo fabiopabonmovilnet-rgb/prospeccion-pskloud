@@ -91,7 +91,7 @@ git push
 ```
 
 ### 📝 PENDIENTES / PRÓXIMOS PASOS:
-- [ ] Deploy a Streamlit Cloud (24/7 online gratis)
+- [x] Deploy a Streamlit Cloud — Configurado (.streamlit/config.toml + secrets)
 - [ ] Agregar más empresas a la base de datos
 - [ ] Integrar scraping de directorios públicos
 - [ ] Sistema de deduplicación entre sesiones
@@ -100,12 +100,13 @@ git push
 ### 💡 NOTAS IMPORTANTES:
 1. **Hunter.io NO provee teléfonos** — Solo emails y LinkedIn personal
 2. **Créditos limitados** — 50 búsquedas/mes en plan gratuito
-3. **Los leads excluidos se guardan** en leads_excluidos.json (persiste)
-4. **El usuario quiere flujo simple** — Solo seleccionar país y buscar
+3. **Los leads excluidos se guardan** en leads_excluidos.json (persiste LOCALMENTE). En Streamlit Cloud la persistencia es por sesión.
+4. **Ejecutable de escritorio:** Doble clic en "PSKloud Prospector.bat" en el Escritorio
+5. **CONTEXTO.md está en .gitignore** — No se sube al repo por seguridad (contiene API key)
 
 ### 🔄 CÓMO CONTINUAR:
 1. Leer este archivo CONTEXTO.md
-2. Ejecutar `streamlit run app.py`
+2. Ejecutar `streamlit run app.py` o dar doble clic en el acceso del Escritorio
 3. Probar funcionalidad
 4. Implementar mejoras pendientes
 5. Subir cambios a GitHub

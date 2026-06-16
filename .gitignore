@@ -11,6 +11,9 @@ venv/
 # Streamlit
 .streamlit/secrets.toml
 
+# Context file (contains API keys)
+CONTEXTO.md
+
 # Temp files
 temp_export.xlsx
 *.xlsx
