@@ -41,6 +41,7 @@ from typing import List, Dict, Optional, Tuple
 # ARCHIVO DE PERSISTENCIA - Leads excluidos (se guardan entre sesiones)
 # =============================================================================
 EXCLUIDOS_FILE = "leads_excluidos.json"
+PLANTILLA_FILE = "plantilla_personalizada.json"
 
 
 def cargar_excluidos() -> set:
@@ -70,6 +71,35 @@ def excluir_lead(email: str):
     excluidos.add(email)
     guardar_excluidos(excluidos)
 
+
+# =============================================================================
+# PERSISTENCIA DE PLANTILLA PERSONALIZADA
+# =============================================================================
+
+def cargar_plantilla() -> Dict:
+    """Carga la plantilla guardada del archivo JSON."""
+    if os.path.exists(PLANTILLA_FILE):
+        try:
+            with open(PLANTILLA_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def guardar_plantilla(asunto: str, cuerpo: str):
+    """Guarda la plantilla personalizada en el archivo JSON."""
+    try:
+        with open(PLANTILLA_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "asunto": asunto,
+                "cuerpo": cuerpo,
+                "actualizado": datetime.now().isoformat()
+            }, f, ensure_ascii=False)
+    except Exception as e:
+        st.error(f"Error al guardar plantilla: {str(e)}")
+
+
 # =============================================================================
 # CONFIGURACIÓN DE LA PÁGINA
 # =============================================================================
@@ -79,6 +109,12 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Cargar plantilla guardada al iniciar (persiste entre sesiones)
+plantilla_guardada = cargar_plantilla()
+if plantilla_guardada:
+    st.session_state["asunto_campana"] = plantilla_guardada.get("asunto", PLANTILLA_DEFAULT["asunto"])
+    st.session_state["cuerpo_campana"] = plantilla_guardada.get("cuerpo", PLANTILLA_DEFAULT["cuerpo"])
 
 # =============================================================================
 # BASE DE DATOS REAL DE EMPRESAS - Dominios verificados
@@ -952,7 +988,8 @@ def main():
         if st.button("💾 Guardar Plantilla", type="secondary"):
             st.session_state["asunto_campana"] = asunto
             st.session_state["cuerpo_campana"] = cuerpo
-            st.success("✅ Plantilla guardada")
+            guardar_plantilla(asunto, cuerpo)
+            st.success("✅ Plantilla guardada permanentemente")
 
     # =========================================================================
     # COMPONENTE 3: ENVÍO MASIVO SMTP REAL

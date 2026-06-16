@@ -18,6 +18,9 @@ CONTEXTO.md
 temp_export.xlsx
 *.xlsx
 
+# Plantilla personalizada (contiene datos del usuario)
+plantilla_personalizada.json
+
 # IDE
 .vscode/
 .idea/
