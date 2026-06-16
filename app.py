@@ -517,7 +517,10 @@ def main():
         st.markdown("[Obtener API key gratis →](https://hunter.io/users/sign_up)")
 
         # Cargar API key desde secrets (Streamlit Cloud) o dejar vacía
-        api_key_predeterminada = st.secrets.get("HUNTER_API_KEY", "") if hasattr(st, "secrets") else ""
+        try:
+            api_key_predeterminada = st.secrets.get("HUNTER_API_KEY", "")
+        except Exception:
+            api_key_predeterminada = ""
         api_key = st.text_input(
             "API Key de Hunter.io",
             type="password",
@@ -964,30 +967,46 @@ def main():
         col1, col2 = st.columns(2)
 
         with col1:
+            try:
+                smtp_server_default = st.secrets.get("SMTP_SERVER", "smtp.gmail.com")
+            except Exception:
+                smtp_server_default = "smtp.gmail.com"
             smtp_server = st.text_input(
                 "🖥️ Servidor SMTP",
-                value=st.secrets.get("SMTP_SERVER", "smtp.gmail.com") if hasattr(st, "secrets") else "smtp.gmail.com",
+                value=smtp_server_default,
                 help="Gmail: smtp.gmail.com | Outlook: smtp.office365.com | Yahoo: smtp.mail.yahoo.com"
             )
 
+            try:
+                smtp_port_default = int(st.secrets.get("SMTP_PORT", 587))
+            except Exception:
+                smtp_port_default = 587
             smtp_port = st.number_input(
                 "🔌 Puerto",
-                value=int(st.secrets.get("SMTP_PORT", 587)) if hasattr(st, "secrets") else 587,
+                value=smtp_port_default,
                 min_value=1,
                 max_value=65535
             )
 
         with col2:
+            try:
+                smtp_email_default = st.secrets.get("SMTP_EMAIL", "")
+            except Exception:
+                smtp_email_default = ""
             smtp_email = st.text_input(
                 "📧 Correo Emisor",
-                value=st.secrets.get("SMTP_EMAIL", "") if hasattr(st, "secrets") else "",
+                value=smtp_email_default,
                 placeholder="tu_empresa@gmail.com"
             )
 
+            try:
+                smtp_password_default = st.secrets.get("SMTP_PASSWORD", "")
+            except Exception:
+                smtp_password_default = ""
             smtp_password = st.text_input(
                 "🔑 Contraseña / Token de Aplicación",
                 type="password",
-                value=st.secrets.get("SMTP_PASSWORD", "") if hasattr(st, "secrets") else "",
+                value=smtp_password_default,
                 help="Para Gmail: usa una 'Contraseña de aplicación' de Google"
             )
 
