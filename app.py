@@ -45,6 +45,19 @@ EXCLUIDOS_FILE = "leads_excluidos.json"
 PLANTILLA_FILE = "plantilla_personalizada.json"
 SECRETS_FILE = ".streamlit/secrets.toml"
 PIPELINE_FILE = "pipeline_estado.json"
+LUSHA_API_FILE = ".streamlit/lusha_key.txt"
+
+# Motivos de exclusión predefinidos
+MOTIVOS_EXCLUSION = [
+    "No interesado",
+    "Correo rebotó (bounced)",
+    "Bloqueó / Spam",
+    "Contacto erróneo",
+    "Ya es cliente",
+    "Fuera de mercado",
+    "Información incorrecta",
+    "Otro"
+]
 
 # =============================================================================
 # ETAPAS DEL PIPELINE DE VENTAS
@@ -87,32 +100,45 @@ SMTP_PORT = 587
         return False
 
 
-def cargar_excluidos() -> set:
-    """Carga la lista de correos excluidos del archivo JSON."""
+def cargar_excluidos() -> dict:
+    """Carga el diccionario de leads excluidos con sus motivos."""
     if os.path.exists(EXCLUIDOS_FILE):
         try:
             with open(EXCLUIDOS_FILE, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                return set(data.get("excluidos", []))
+                excluidos = data.get("excluidos", {})
+                if isinstance(excluidos, list):
+                    return {e: {"motivo": "No especificado", "fecha": ""} for e in excluidos}
+                return excluidos
         except Exception:
-            return set()
-    return set()
+            return {}
+    return {}
 
 
-def guardar_excluidos(excluidos: set):
-    """Guarda la lista de correos excluidos en el archivo JSON."""
+def guardar_excluidos(excluidos: dict):
+    """Guarda el diccionario de leads excluidos."""
     try:
         with open(EXCLUIDOS_FILE, "w", encoding="utf-8") as f:
-            json.dump({"excluidos": list(excluidos), "actualizado": datetime.now().isoformat()}, f)
+            json.dump({"excluidos": excluidos, "actualizado": datetime.now().isoformat()}, f, ensure_ascii=False, indent=2)
     except Exception as e:
         st.error(f"Error al guardar exclusiones: {str(e)}")
 
 
-def excluir_lead(email: str):
-    """Agrega un lead a la lista de excluidos."""
+def excluir_lead(email: str, motivo: str = "No especificado"):
+    """Agrega un lead a la lista de excluidos con su motivo."""
     excluidos = cargar_excluidos()
-    excluidos.add(email)
+    excluidos[email] = {
+        "motivo": motivo,
+        "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "actualizado": datetime.now().isoformat()
+    }
     guardar_excluidos(excluidos)
+
+
+def email_excluido(email: str) -> bool:
+    """Verifica si un email está en la lista de excluidos."""
+    excluidos = cargar_excluidos()
+    return email in excluidos
 
 
 # =============================================================================
@@ -905,16 +931,29 @@ def main():
 
         if api_key:
             st.session_state["hunter_api_key"] = api_key
-            # Verificar créditos
             info_cuenta = obtener_info_cuenta_hunter(api_key)
             if "error" not in info_cuenta:
                 st.success(f"✅ Conectado: {info_cuenta.get('email', '')}")
-                st.metric("Búsquedas disponibles",
-                          info_cuenta["busquedas"]["disponibles"])
-                st.metric("Verificaciones disponibles",
-                          info_cuenta["verificaciones"]["disponibles"])
+                st.metric("Búsquedas disponibles", info_cuenta["busquedas"]["disponibles"])
+                st.metric("Verificaciones disponibles", info_cuenta["verificaciones"]["disponibles"])
             else:
                 st.error(f"❌ {info_cuenta['error']}")
+
+        # =====================================================================
+        # LUSHA API (teléfonos directos)
+        # =====================================================================
+        st.divider()
+        st.markdown("### 📞 Configuración Lusha")
+        st.markdown("[Obtener API key gratis →](https://www.lusha.com/)")
+        lusha_key = st.text_input(
+            "API Key de Lusha",
+            type="password",
+            value=st.session_state.get("lusha_api_key", ""),
+            help="Lusha provee teléfonos DIRECTOS del contacto (no solo de la empresa)"
+        )
+        if lusha_key:
+            st.session_state["lusha_api_key"] = lusha_key
+            st.success("✅ Lusha conectado (70 créditos/mes en plan free)")
 
         st.divider()
         st.markdown("""
@@ -935,13 +974,16 @@ def main():
         ))
 
         # Contador de leads excluidos
-        excluidos_count = len(cargar_excluidos())
+        excluidos_data = cargar_excluidos()
+        excluidos_count = len(excluidos_data)
         if excluidos_count > 0:
             st.metric("🚫 Leads excluidos", excluidos_count, help="Leads que ya contactaste y no volverán a aparecer")
             if st.button("🔄 Ver leads excluidos"):
-                excluidos = cargar_excluidos()
-                for email in excluidos:
-                    st.text(f"• {email}")
+                with st.expander("📋 Historial de exclusiones", expanded=True):
+                    for email, info in excluidos_data.items():
+                        motivo = info.get("motivo", "No especificado") if isinstance(info, dict) else "No especificado"
+                        fecha = info.get("fecha", "")[:10] if isinstance(info, dict) else ""
+                        st.text(f"• {email} — {motivo} {f'({fecha})' if fecha else ''}")
 
     # -------------------------------------------------------------------------
     # ENCABEZADO
@@ -1221,7 +1263,16 @@ def main():
                             st.caption(f"🔍 {empresa}...")
 
                         sitio_web = f"https://{dominio}" if dominio and dominio != "N/A" else None
-                        datos = enrich_company(empresa, pais, website=sitio_web)
+                        contacto_nombre = lead.get("Contacto Clabe", "").strip()
+                        nombres = contacto_nombre.split(" ", 1) if contacto_nombre else ["", ""]
+                        lusha_key = st.session_state.get("lusha_api_key", "")
+                        datos = enrich_company(
+                            empresa, pais,
+                            website=sitio_web,
+                            lusha_api_key=lusha_key,
+                            contact_first_name=nombres[0] if nombres else "",
+                            contact_last_name=nombres[1] if len(nombres) > 1 else ""
+                        )
 
                         if datos.get("telefonos"):
                             telefonos = "; ".join(datos["telefonos"][:3])
@@ -1324,19 +1375,31 @@ def main():
                 empresa = lead.get("Empresa", "")
 
                 if email in excluidos_actuales:
-                    st.success(f"✅ **{nombre}** ({empresa}) — Ya excluido")
+                    info = excluidos_actuales[email]
+                    motivo = info.get("motivo", "No especificado") if isinstance(info, dict) else "No especificado"
+                    st.success(f"✅ **{nombre}** ({empresa}) — Excluido: {motivo}")
                 else:
-                    if st.checkbox(
-                        f"Excluir: **{nombre}** de {empresa} ({email})",
-                        key=f"excluir_{idx}"
-                    ):
-                        leads_a_excluir.append(email)
+                    col_chk, col_mot = st.columns([3, 2])
+                    with col_chk:
+                        excluir = st.checkbox(
+                            f"**{nombre}** de {empresa} ({email})",
+                            key=f"excluir_{idx}"
+                        )
+                    with col_mot:
+                        motivo_sel = st.selectbox(
+                            "Motivo",
+                            options=MOTIVOS_EXCLUSION,
+                            key=f"motivo_{idx}",
+                            label_visibility="collapsed"
+                        ) if excluir else None
+                    if excluir and motivo_sel:
+                        leads_a_excluir.append((email, motivo_sel))
 
             if leads_a_excluir:
                 if st.button("🗑️ Excluir Seleccionados", type="primary"):
-                    for email in leads_a_excluir:
-                        excluir_lead(email)
-                    st.success(f"✅ {len(leads_a_excluir)} leads excluidos. No aparecerán en futuras búsquedas.")
+                    for email, motivo in leads_a_excluir:
+                        excluir_lead(email, motivo)
+                    st.success(f"✅ {len(leads_a_excluir)} leads excluidos con motivo. No aparecerán en futuras búsquedas.")
                     st.rerun()
 
         # -------------------------------------------------------------------------

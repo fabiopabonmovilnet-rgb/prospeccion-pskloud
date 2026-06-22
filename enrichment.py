@@ -313,6 +313,58 @@ def scrape_website(website_url: str) -> Dict:
 
 
 # =============================================================================
+# SCRAPER: Lusha API (teléfonos directos + emails)
+# =============================================================================
+
+LUSHA_API_URL = "https://api.lusha.com/people"
+
+def search_lusha(api_key: str, first_name: str, last_name: str, company: str) -> Dict:
+    """
+    Busca un contacto en Lusha usando nombre + empresa.
+    Lusha provee teléfonos directos (no solo de la empresa).
+    Plan free: 70 créditos/mes.
+    """
+    if not api_key or not first_name:
+        return {"telefonos": [], "emails": [], "fuente": ""}
+
+    cache_key = f"lusha::{company.lower().strip()}/{first_name.lower()}/{last_name.lower()}"
+    if cache_key in _cache:
+        return _cache[cache_key]
+
+    result = {"telefonos": [], "emails": [], "fuente": ""}
+    try:
+        payload = {
+            "firstName": first_name,
+            "lastName": last_name or "",
+            "company": company
+        }
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        resp = requests.post(LUSHA_API_URL, json=payload, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json().get("data", {})
+            phones = data.get("phones", [])
+            emails = data.get("emails", [])
+            if phones:
+                result["telefonos"] = [p.get("phoneNumber", p) if isinstance(p, dict) else p for p in phones[:3]]
+            if emails:
+                result["emails"] = [e.get("email", e) if isinstance(e, dict) else e for e in emails[:3]]
+            result["fuente"] = "Lusha" if (result["telefonos"] or result["emails"]) else ""
+        elif resp.status_code == 402:
+            result["fuente"] = "Lusha: créditos agotados"
+        else:
+            result["fuente"] = ""
+    except Exception:
+        result["fuente"] = ""
+
+    _cache[cache_key] = result
+    return result
+
+
+# =============================================================================
 # ORQUESTADOR: Enriquecimiento multi-fuente
 # =============================================================================
 
@@ -320,6 +372,9 @@ def enrich_company(
     company_name: str,
     country: str,
     website: Optional[str] = None,
+    lusha_api_key: Optional[str] = None,
+    contact_first_name: Optional[str] = None,
+    contact_last_name: Optional[str] = None,
     timeout: int = 30,
 ) -> Dict:
     """
@@ -327,6 +382,7 @@ def enrich_company(
     y fusiona los resultados.
 
     Países soportados: Costa Rica, El Salvador, Panamá, Honduras, Colombia
+    Opcional: Lusha API para teléfonos directos del contacto.
     """
     results = {
         "telefonos": [],
@@ -349,16 +405,17 @@ def enrich_company(
         tasks.append(("Yelu.cr", lambda: search_yelu_cr(company_name)))
         tasks.append(("Infoguía CR", lambda: search_infoguia_cr(company_name)))
 
-    # Honduras no tiene Páginas Amarillas, solo web scraping
-    # (el sitio web se agrega abajo si está disponible)
-
     if website:
         tasks.append(("Sitio web", lambda: scrape_website(website)))
+
+    # Lusha (si hay API key + nombre)
+    if lusha_api_key and contact_first_name:
+        tasks.append(("Lusha", lambda: search_lusha(lusha_api_key, contact_first_name, contact_last_name or "", company_name)))
 
     if not tasks:
         return results
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         future_map = {
             executor.submit(task_fn): task_name
             for task_name, task_fn in tasks

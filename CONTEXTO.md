@@ -14,6 +14,9 @@
 5. **Exportación CSV/Excel** — Descargar base de datos
 6. **Plantilla de correo PSKloud** — Con variables dinámicas
 7. **Envío SMTP real** — Configurable (Gmail, Outlook, etc.)
+8. **API Key persistente** — Se guarda en `.streamlit/secrets.toml`, no hay que pegarla cada vez
+9. **Enriquecimiento con teléfonos** — Busca en Páginas Amarillas SV, Yelu.cr, Infoguía CR y sitios web
+10. **UI mejorada** — Branding PSKloud, tarjetas, métricas visuales
 
 ### 📋 DATOS DE CONFIGURACIÓN:
 - **API Key Hunter.io:** `f41f5e017f72032cdb59f1f1591dbb24e0600c9a`
@@ -25,12 +28,18 @@
 ### 🏗️ ARCHIVOS DEL PROYECTO:
 ```
 C:\Users\fabio\prospeccion-pskloud\
-├── app.py                    # Código principal (Streamlit)
-├── requirements.txt          # Dependencias: streamlit, pandas, openpyxl, requests
-├── leads_excluidos.json      # Persistencia de leads excluidos
-├── CONTEXTO.md               # ESTE ARCHIVO
-├── README.md                 # Documentación
-└── .gitignore                # Archivos ignorados
+├── .streamlit/
+│   ├── config.toml             # Tema PSKloud (rojo #CC0000)
+│   └── secrets.toml            # API Key Hunter + SMTP (en .gitignore)
+├── app.py                      # Código principal (Streamlit) ~1650 líneas
+├── enrichment.py               # Motor de enriquecimiento (scrapers multi-fuente)
+├── requirements.txt            # Dependencias
+├── leads_excluidos.json        # Persistencia de leads excluidos
+├── pipeline_estado.json        # Persistencia del pipeline de ventas
+├── lanzador.cs                 # Código fuente del .exe (C#)
+├── CONTEXTO.md                 # ESTE ARCHIVO
+├── README.md                   # Documentación
+└── .gitignore                  # Archivos ignorados
 ```
 
 ### 🎯 FUNCIONALIDADES POR COMPONENTE:
@@ -59,7 +68,7 @@ C:\Users\fabio\prospeccion-pskloud\
 3. Filtros ahora son dropdowns preconfigurados para PSKloud
 4. Solo 1 contacto por empresa (evitar repetición)
 
-### 📊 EMPREAS EN LA BASE DE DATOS:
+### 📊 EMPRESAS EN LA BASE DE DATOS:
 **Costa Rica (~35 empresas):**
 - Tecnología: Kambda, Siftia, Gorilla Logic, FusionHit, Infosgroup, etc.
 - Retail: Grupo Palí, AutoMercado, Farmacia Fischel, Vindi
@@ -75,12 +84,48 @@ C:\Users\fabio\prospeccion-pskloud\
 - Telecomunicaciones: Tigo, Claro, Telefónica
 - Manufactura: Heineken, Pilsener, Cementos
 
+**Panamá (~15 empresas):**
+- Tecnología: DXC Technology, Yuxi Global, Waked Technology
+- Finanzas: Banco General, BAC Panama, Towerbank, Scotiabank
+- Retail: Súper 99, Rey, El Machetazo
+- Telecomunicaciones: Claro, Digicel
+- Turismo/Logística: Copa Airlines, Panama Ports
+- Manufactura: Cervecería Nacional
+
+**Honduras (~12 empresas):**
+- Tecnología: Grupo Intellect, Datasys HN
+- Finanzas: Banco Atlántida, Ficohsa, BAC, Lafise
+- Retail: La Colonia, Despensa Familiar
+- Telecomunicaciones: Tigo, Claro
+- Manufactura: Kimberly Clark, Cementos Argos
+
+**Colombia (~22 empresas):**
+- Tecnología: Sofka, Globant, Periferia IT, Mismo, Intergrupo
+- Finanzas: Bancolombia, Davivienda, Grupo Sura, BBVA
+- Retail: Éxito, Falabella, Homecenter, Alkosto
+- Telecomunicaciones: Tigo, Movistar, Claro
+- Energía: Ecopetrol, EPM, ISA
+- Manufactura: Grupo Nutresa, Postobón, Cementos Argos
+
 ### 🔧 PARA EJECUTAR:
 ```powershell
 cd C:\Users\fabio\prospeccion-pskloud
 streamlit run app.py
 ```
 Abrir: http://localhost:8501
+
+**Doble clic (recomendado):**
+- `C:\Users\fabio\Desktop\PSKloud Prospector.exe` — Ejecutable real (Windows)
+- `C:\Users\fabio\Desktop\PSKloud Prospector.bat` — Alternativa (script batch)
+
+Ambos abren automáticamente el navegador en http://localhost:8501
+
+### 📦 INSTALACIÓN DESDE CERO (si cambias de PC):
+```powershell
+cd C:\Users\fabio\prospeccion-pskloud
+pip install -r requirements.txt
+# Crear secrets.toml con la API key (ver NOTAS IMPORTANTES)
+```
 
 ### 🚀 PARA SUBIR CAMBIOS A GITHUB:
 ```powershell
@@ -92,21 +137,41 @@ git push
 
 ### 📝 PENDIENTES / PRÓXIMOS PASOS:
 - [x] Deploy a Streamlit Cloud — Configurado (.streamlit/config.toml + secrets)
+- [x] API Key persistente en secrets.toml
+- [x] Módulo de enriquecimiento con teléfonos (Páginas Amarillas, Yelu, Infoguía, webs)
+- [x] UI mejorada con branding PSKloud
+- [x] Pipeline de ventas (etapas: Nuevo → Email → LinkedIn → Llamada → Cliente/Perdido)
+- [x] Pipeline persistente en pipeline_estado.json
+- [x] Componente 4: Vista de pipeline + notas + filtros
 - [ ] Agregar más empresas a la base de datos
-- [ ] Integrar scraping de directorios públicos
+- [ ] Integrar scraping de directorios públicos adicionales
 - [ ] Sistema de deduplicación entre sesiones
 - [ ] Dashboard de métricas de campaña
+- [ ] Scraping de LinkedIn (bajo investigación — TOS restrictivo)
+- [ ] Deploy multi-usuario (Streamlit Cloud compartido)
+- [ ] Expandir a más países (Guatemala, Panamá, etc.)
 
 ### 💡 NOTAS IMPORTANTES:
 1. **Hunter.io NO provee teléfonos** — Solo emails y LinkedIn personal
 2. **Créditos limitados** — 50 búsquedas/mes en plan gratuito
 3. **Los leads excluidos se guardan** en leads_excluidos.json (persiste LOCALMENTE). En Streamlit Cloud la persistencia es por sesión.
-4. **Ejecutable de escritorio:** Doble clic en "PSKloud Prospector.bat" en el Escritorio
-5. **CONTEXTO.md está en .gitignore** — No se sube al repo por seguridad (contiene API key)
+4. **API Key Hunter** se guarda en `.streamlit/secrets.toml` — ya no hay que pegarla cada vez. Si cambias de PC, crea ese archivo.
+5. **Enriquecimiento de teléfonos** — Botón "Buscar Teléfonos" después de obtener leads. Scrapea:
+   - Páginas Amarillas (SV, CO, PA)
+   - Yelu.cr (Costa Rica)
+   - Infoguía Costa Rica
+   - Sitio web corporativo (scraping directo)
+   - ⚠️ Los teléfonos son de la EMPRESA (recepcionista), no directos del gerente
+   - Honduras solo usa scraping web (no tiene Páginas Amarillas)
+6. **Pipeline de Ventas** — Componente 4, persistente en pipeline_estado.json
+7. **5 países soportados:** Costa Rica, El Salvador, Panamá, Honduras, Colombia
+8. **Ejecutable de escritorio (.exe):** `C:\Users\fabio\Desktop\PSKloud Prospector.exe`
+9. **Ejecutable de escritorio (.bat):** `C:\Users\fabio\Desktop\PSKloud Prospector.bat`
+10. **CONTEXTO.md está en .gitignore** — No se sube al repo
 
 ### 🔄 CÓMO CONTINUAR:
 1. Leer este archivo CONTEXTO.md
-2. Ejecutar `streamlit run app.py` o dar doble clic en el acceso del Escritorio
+2. Ejecutar — doble clic en `PSKloud Prospector.exe` (Escritorio) o `streamlit run app.py`
 3. Probar funcionalidad
 4. Implementar mejoras pendientes
 5. Subir cambios a GitHub
