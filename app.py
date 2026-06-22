@@ -36,12 +36,55 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
+from enrichment import enrich_company, clear_cache as limpiar_cache_enriquecimiento, get_cache_stats
 
 # =============================================================================
 # ARCHIVO DE PERSISTENCIA - Leads excluidos (se guardan entre sesiones)
 # =============================================================================
 EXCLUIDOS_FILE = "leads_excluidos.json"
 PLANTILLA_FILE = "plantilla_personalizada.json"
+SECRETS_FILE = ".streamlit/secrets.toml"
+PIPELINE_FILE = "pipeline_estado.json"
+
+# =============================================================================
+# ETAPAS DEL PIPELINE DE VENTAS
+# =============================================================================
+ETAPAS = [
+    "Nuevo",
+    "📧 Email enviado",
+    "🔗 LinkedIn contactado",
+    "📞 Llamada realizada",
+    "✅ Cliente",
+    "❌ Perdido"
+]
+
+ETAPAS_ICONOS = {
+    "Nuevo": "🆕",
+    "📧 Email enviado": "📧",
+    "🔗 LinkedIn contactado": "🔗",
+    "📞 Llamada realizada": "📞",
+    "✅ Cliente": "✅",
+    "❌ Perdido": "❌"
+}
+
+
+def guardar_api_key_en_secrets(api_key: str):
+    """Guarda la API key de Hunter en secrets.toml para que persista."""
+    try:
+        os.makedirs(".streamlit", exist_ok=True)
+        contenido = f"""# PSKloud Prospector - Secrets
+# ⚠️ Este archivo está en .gitignore
+
+HUNTER_API_KEY = "{api_key}"
+SMTP_SERVER = "smtp.gmail.com"
+SMTP_PORT = 587
+"""
+        with open(SECRETS_FILE, "w", encoding="utf-8") as f:
+            f.write(contenido)
+        return True
+    except Exception as e:
+        print(f"Error al guardar API key: {e}")
+        return False
 
 
 def cargar_excluidos() -> set:
@@ -70,6 +113,73 @@ def excluir_lead(email: str):
     excluidos = cargar_excluidos()
     excluidos.add(email)
     guardar_excluidos(excluidos)
+
+
+# =============================================================================
+# PERSISTENCIA DEL PIPELINE DE VENTAS
+# =============================================================================
+
+def cargar_pipeline() -> dict:
+    """Carga el estado del pipeline desde el archivo JSON."""
+    if os.path.exists(PIPELINE_FILE):
+        try:
+            with open(PIPELINE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
+def guardar_pipeline(pipeline: dict):
+    """Guarda el estado del pipeline en el archivo JSON."""
+    try:
+        with open(PIPELINE_FILE, "w", encoding="utf-8") as f:
+            json.dump(pipeline, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        st.error(f"Error al guardar pipeline: {e}")
+
+
+def actualizar_etapa_lead(email: str, etapa: str, notas: str = ""):
+    """Actualiza la etapa de un lead en el pipeline."""
+    pipeline = cargar_pipeline()
+    if email not in pipeline:
+        pipeline[email] = {
+            "etapa": "Nuevo",
+            "fecha_creacion": datetime.now().isoformat(),
+            "fecha_email": "",
+            "fecha_linkedin": "",
+            "fecha_llamada": "",
+            "notas": ""
+        }
+    pipeline[email]["etapa"] = etapa
+    if notas:
+        pipeline[email]["notas"] = notas
+    ahora = datetime.now().isoformat()
+    if "📧" in etapa:
+        pipeline[email]["fecha_email"] = ahora
+    if "🔗" in etapa:
+        pipeline[email]["fecha_linkedin"] = ahora
+    if "📞" in etapa:
+        pipeline[email]["fecha_llamada"] = ahora
+    guardar_pipeline(pipeline)
+
+
+def obtener_etapa_lead(email: str) -> str:
+    """Obtiene la etapa actual de un lead."""
+    pipeline = cargar_pipeline()
+    return pipeline.get(email, {}).get("etapa", "Nuevo")
+
+
+def pipeline_stats() -> dict:
+    """Estadísticas del pipeline."""
+    pipeline = cargar_pipeline()
+    stats = {e: 0 for e in ETAPAS}
+    for data in pipeline.values():
+        etapa = data.get("etapa", "Nuevo")
+        if etapa in stats:
+            stats[etapa] += 1
+    stats["Total"] = sum(stats.values())
+    return stats
 
 
 # =============================================================================
@@ -266,7 +376,127 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/barcelo"},
         {"empresa": "Marriott San Salvador", "dominio": "marriott.com", "sector": "Turismo", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/marriott"},
-    ]
+    ],
+    "Panamá": [
+        # === TECNOLOGÍA ===
+        {"empresa": "DXC Technology Panama", "dominio": "dxc.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/dxc-technology"},
+        {"empresa": "Yuxi Global", "dominio": "yuxiglobal.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/yuxi-global"},
+        {"empresa": "Waked Technology", "dominio": "waked.com.pa", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/waked-logistics"},
+        # === FINANZAS ===
+        {"empresa": "Banco General", "dominio": "banco-general.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/banco-general"},
+        {"empresa": "BAC Panama", "dominio": "baccredomatic.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/bac-credomatic"},
+        {"empresa": "Towerbank", "dominio": "towerbank.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/towerbank"},
+        {"empresa": "Scotiabank Panama", "dominio": "scotiabank.com.pa", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/scotiabank"},
+        # === RETAIL ===
+        {"empresa": "Súper 99", "dominio": "super99.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/super99"},
+        {"empresa": "Rey Panama", "dominio": "supermercadosrey.com.pa", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/supermercados-rey"},
+        {"empresa": "El Machetazo", "dominio": "elmachetazo.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/el-machetazo"},
+        # === TELECOMUNICACIONES ===
+        {"empresa": "Claro Panama", "dominio": "claro.com.pa", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/claro"},
+        {"empresa": "Digicel Panama", "dominio": "digicelpanama.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/digicel"},
+        # === MANUFACTURA / LOGÍSTICA ===
+        {"empresa": "Cervecería Nacional Panama", "dominio": "cervecerianacional.com.pa", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cerveceria-nacional"},
+        {"empresa": "Copa Airlines", "dominio": "copa.com", "sector": "Turismo", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/copa-airlines"},
+        {"empresa": "Panama Ports", "dominio": "panamaports.com", "sector": "Logística", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/panama-ports"},
+    ],
+    "Honduras": [
+        # === TECNOLOGÍA ===
+        {"empresa": "Grupo Intellect", "dominio": "grupointellect.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/grupo-intellect"},
+        {"empresa": "Datasys HN", "dominio": "datasys.hn", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/datasys"},
+        # === FINANZAS ===
+        {"empresa": "Banco Atlántida", "dominio": "bancatlan.hn", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/banco-atlantida"},
+        {"empresa": "Banco Ficohsa", "dominio": "ficohsa.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/ficohsa"},
+        {"empresa": "BAC Honduras", "dominio": "baccredomatic.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/bac-credomatic"},
+        {"empresa": "Banco Lafise", "dominio": "lafise.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/lafise"},
+        # === RETAIL ===
+        {"empresa": "La Colonia", "dominio": "lacolonia.hn", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/supermercados-la-colonia"},
+        {"empresa": "Despensa Familiar", "dominio": "walmart.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/walmart"},
+        # === TELECOMUNICACIONES ===
+        {"empresa": "Tigo Honduras", "dominio": "tigo.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/tigo"},
+        {"empresa": "Claro Honduras", "dominio": "claro.com.hn", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/claro"},
+        # === MANUFACTURA ===
+        {"empresa": "Kimberly Clark Honduras", "dominio": "kimberly-clark.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/kimberly-clark"},
+        {"empresa": "Cementos Argos Honduras", "dominio": "argos.co", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cementos-argos"},
+    ],
+    "Colombia": [
+        # === TECNOLOGÍA ===
+        {"empresa": "Sofka Technologies", "dominio": "sofka.com.co", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/sofka-technologies"},
+        {"empresa": "Globant Colombia", "dominio": "globant.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/globant"},
+        {"empresa": "Periferia IT", "dominio": "periferiait.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/periferia-it"},
+        {"empresa": "Mismo", "dominio": "mismo.com.co", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/mismo"},
+        {"empresa": "Intergrupo", "dominio": "intergrupo.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/intergrupo"},
+        # === FINANZAS ===
+        {"empresa": "Bancolombia", "dominio": "bancolombia.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/bancolombia"},
+        {"empresa": "Davivienda", "dominio": "davivienda.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/davivienda"},
+        {"empresa": "Grupo Sura", "dominio": "gruposura.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-sura"},
+        {"empresa": "BBVA Colombia", "dominio": "bbva.com.co", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/bbva"},
+        # === RETAIL ===
+        {"empresa": "Éxito", "dominio": "exito.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-exito"},
+        {"empresa": "Falabella Colombia", "dominio": "falabella.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/falabella"},
+        {"empresa": "Homecenter", "dominio": "homecenter.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/homecenter"},
+        {"empresa": "Alkosto", "dominio": "alkosto.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/alkosto"},
+        # === ENERGÍA ===
+        {"empresa": "Ecopetrol", "dominio": "ecopetrol.com.co", "sector": "Energía", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/ecopetrol"},
+        {"empresa": "EPM", "dominio": "epm.com.co", "sector": "Energía", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/epm"},
+        {"empresa": "ISA", "dominio": "isa.co", "sector": "Energía", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/isa-interconexion-electrica"},
+        # === TELECOMUNICACIONES ===
+        {"empresa": "Tigo Colombia", "dominio": "tigo.com.co", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/tigo"},
+        {"empresa": "Movistar Colombia", "dominio": "movistar.com.co", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/movistar"},
+        {"empresa": "Claro Colombia", "dominio": "claro.com.co", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/claro"},
+        # === MANUFACTURA / ALIMENTOS ===
+        {"empresa": "Grupo Nutresa", "dominio": "gruponutresa.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-nutresa"},
+        {"empresa": "Postobón", "dominio": "postobon.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/postobon"},
+        {"empresa": "Cementos Argos", "dominio": "argos.co", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cementos-argos"},
+    ],
 }
 
 
@@ -539,6 +769,97 @@ Ventas Internacionales"""
 def main():
     """Función principal de la aplicación."""
 
+    # =========================================================================
+    # CSS PERSONALIZADO - PSKloud Branding
+    # =========================================================================
+    st.markdown("""
+    <style>
+        .stApp {
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .main-header {
+            background: linear-gradient(135deg, #CC0000 0%, #8B0000 100%);
+            padding: 1.5rem 2rem;
+            border-radius: 12px;
+            color: white !important;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 12px rgba(204,0,0,0.2);
+        }
+        .main-header h1 {
+            color: white !important;
+            margin: 0;
+            font-size: 1.8rem;
+        }
+        .main-header p {
+            color: rgba(255,255,255,0.9) !important;
+            margin: 0.3rem 0 0 0;
+        }
+        .lead-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: box-shadow 0.2s;
+        }
+        .lead-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.15rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .badge-phone {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .badge-nophone {
+            background: #fbe9e7;
+            color: #c62828;
+        }
+        .stButton > button[data-testid="baseButton-secondary"] {
+            background: linear-gradient(135deg, #CC0000 0%, #8B0000 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+        .stButton > button[data-testid="baseButton-secondary"]:hover {
+            background: linear-gradient(135deg, #DD2222 0%, #AA0000 100%);
+        }
+        div[data-testid="stMetricValue"] {
+            font-size: 1.8rem !important;
+            font-weight: 700 !important;
+        }
+        .stats-container {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 1rem;
+        }
+        .phone-result {
+            font-family: monospace;
+            font-size: 1.1rem;
+            color: #CC0000;
+            font-weight: bold;
+        }
+        .fuente-tag {
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 0.1rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.7rem;
+        }
+        @media (max-width: 768px) {
+            .main-header h1 { font-size: 1.3rem; }
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
     # -------------------------------------------------------------------------
     # BARRA LATERAL
     # -------------------------------------------------------------------------
@@ -552,17 +873,35 @@ def main():
         st.markdown("### 🔑 Configuración Hunter.io")
         st.markdown("[Obtener API key gratis →](https://hunter.io/users/sign_up)")
 
-        # Cargar API key desde secrets (Streamlit Cloud) o dejar vacía
+        # Cargar API key desde secrets (archivo local o Streamlit Cloud)
         try:
             api_key_predeterminada = st.secrets.get("HUNTER_API_KEY", "")
         except Exception:
             api_key_predeterminada = ""
+
+        # Si hay key en secrets.toml local, precargarla en session_state
+        if api_key_predeterminada and "hunter_api_key" not in st.session_state:
+            st.session_state["hunter_api_key"] = api_key_predeterminada
+
         api_key = st.text_input(
             "API Key de Hunter.io",
             type="password",
-            value=st.session_state.get("hunter_api_key", api_key_predeterminada),
-            help="Regístrate gratis en hunter.io para obtener tu API key"
+            value=st.session_state.get("hunter_api_key", ""),
+            help="Tu API key se guarda automáticamente al hacer clic en 'Guardar'"
         )
+
+        # Botón para persistir la API key
+        col_key1, col_key2 = st.columns([3, 1])
+        with col_key1:
+            if api_key and api_key != st.session_state.get("hunter_api_key_saved", ""):
+                if guardar_api_key_en_secrets(api_key):
+                    st.session_state["hunter_api_key_saved"] = api_key
+                    st.success("✅ API key guardada", icon="🔒")
+        with col_key2:
+            if st.button("🔑💾", help="Guardar API key permanentemente"):
+                if api_key and guardar_api_key_en_secrets(api_key):
+                    st.session_state["hunter_api_key_saved"] = api_key
+                    st.success("✅ Guardada!")
 
         if api_key:
             st.session_state["hunter_api_key"] = api_key
@@ -582,11 +921,17 @@ def main():
         **Mercado Objetivo:**
         - 🇨🇷 Costa Rica: {} empresas
         - 🇸🇻 El Salvador: {} empresas
+        - 🇵🇦 Panamá: {} empresas
+        - 🇭🇳 Honduras: {} empresas
+        - 🇨🇴 Colombia: {} empresas
 
         **Fuente:** Datos reales de Hunter.io API
         """.format(
             len(EMPRESAS_REALES["Costa Rica"]),
-            len(EMPRESAS_REALES["El Salvador"])
+            len(EMPRESAS_REALES["El Salvador"]),
+            len(EMPRESAS_REALES["Panamá"]),
+            len(EMPRESAS_REALES["Honduras"]),
+            len(EMPRESAS_REALES["Colombia"])
         ))
 
         # Contador de leads excluidos
@@ -601,17 +946,21 @@ def main():
     # -------------------------------------------------------------------------
     # ENCABEZADO
     # -------------------------------------------------------------------------
-    st.title("📧 PSKloud Prospector - Sistema REAL de Prospección B2B")
-    st.markdown("**Leads reales vía Hunter.io API + Envío SMTP real**")
-    st.divider()
+    st.markdown("""
+    <div class="main-header">
+        <h1>📧 PSKloud Prospector</h1>
+        <p>Leads reales vía Hunter.io + Enriquecimiento con directorios públicos + Envío SMTP real</p>
+    </div>
+    """, unsafe_allow_html=True)
 
     # -------------------------------------------------------------------------
     # PESTAÑAS
     # -------------------------------------------------------------------------
-    tab1, tab2, tab3 = st.tabs([
+    tab1, tab2, tab3, tab4 = st.tabs([
         "🔍 Componente 1: Búsqueda de Leads Reales",
         "📝 Componente 2: Configurador de Campañas",
-        "🚀 Componente 3: Envío Masivo SMTP Real"
+        "🚀 Componente 3: Envío Masivo SMTP Real",
+        "📊 Componente 4: Pipeline de Ventas"
     ])
 
     # =========================================================================
@@ -631,7 +980,7 @@ def main():
         with col1:
             paisSeleccionado = st.selectbox(
                 "🌍 País",
-                options=["Costa Rica", "El Salvador"],
+                options=["Costa Rica", "El Salvador", "Panamá", "Honduras", "Colombia"],
                 key="pais_busqueda"
             )
 
@@ -646,7 +995,7 @@ def main():
         # Sectores predefinidos según el target de PSKloud
         sectores_pscloud = {
             "Canales/Distribuidores": ["Todos", "Tecnología"],
-            "Clientes Finales": ["Todos", "Retail", "Finanzas", "Salud", "Turismo", "Manufactura", "Telecomunicaciones"]
+            "Clientes Finales": ["Todos", "Retail", "Finanzas", "Salud", "Turismo", "Manufactura", "Telecomunicaciones", "Energía", "Logística"]
         }
 
         sector_filtro = st.selectbox(
@@ -736,19 +1085,20 @@ def main():
                         mejor = max(contactos_disponibles, key=prioridad)
 
                         lead = {
-                            "País": paisSeleccionado,
-                            "Empresa": empresa["empresa"],
-                            "Dominio": dominio,
-                            "Sector": empresa.get("sector", ""),
-                            "Tipo": empresa.get("tipo", ""),
-                            "Contacto Clabe": f"{mejor.get('nombre', '')} {mejor.get('apellido', '')}".strip(),
-                            "Cargo": mejor.get("cargo", "No especificado"),
-                            "Correo": mejor.get("email", ""),
-                            "Confianza (%)": mejor.get("confianza", 0),
-                            "LinkedIn": mejor.get("linkedin", ""),
-                            "Fuente": "Hunter.io",
-                            "Estado del Lead": "Nuevo"
-                        }
+                                "País": paisSeleccionado,
+                                "Empresa": empresa["empresa"],
+                                "Dominio": dominio,
+                                "Sector": empresa.get("sector", ""),
+                                "Tipo": empresa.get("tipo", ""),
+                                "Contacto Clabe": f"{mejor.get('nombre', '')} {mejor.get('apellido', '')}".strip(),
+                                "Cargo": mejor.get("cargo", "No especificado"),
+                                "Correo": mejor.get("email", ""),
+                                "Confianza (%)": mejor.get("confianza", 0),
+                                "LinkedIn": mejor.get("linkedin", ""),
+                                "Fuente": "Hunter.io",
+                                "Estado del Lead": "Nuevo",
+                                "Etapa": "Nuevo"
+                            }
                         todos_los_leads.append(lead)
 
             progress_bar.progress(1.0, text="✅ Búsqueda completada")
@@ -773,14 +1123,24 @@ def main():
         if "df_leads" in st.session_state and not st.session_state["df_leads"].empty:
             df = st.session_state["df_leads"]
 
-            st.divider()
-            st.subheader(f"📋 Leads Encontrados: {len(df)}")
-            st.info("ℹ️ **Hunter.io provee:** Correos verificados + LinkedIn personal del contacto. **No provee teléfonos.** Para obtener teléfonos, visita el LinkedIn del contacto o busca la empresa en Páginas Amarillas.")
+            # Métricas rápidas
+            col_m1, col_m2, col_m3, col_m4 = st.columns(4)
+            with col_m1:
+                st.metric("📋 Total Leads", len(df))
+            with col_m2:
+                st.metric("🏢 Empresas", df["Empresa"].nunique())
+            with col_m3:
+                if "Teléfono" in df.columns:
+                    con_tel = df["Teléfono"].astype(bool).sum()
+                    st.metric("📞 Con teléfono", f"{con_tel}")
+                else:
+                    st.metric("📞 Con teléfono", "0")
+            with col_m4:
+                st.metric("📧 Con email", len(df))
 
             # Opciones de exportación
-            col1, col2, col3 = st.columns(3)
-
-            with col1:
+            col_e1, col_e2 = st.columns(2)
+            with col_e1:
                 csv_data = df.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "📥 Descargar CSV",
@@ -789,9 +1149,7 @@ def main():
                     mime="text/csv",
                     use_container_width=True
                 )
-
-            with col2:
-                # Exportar a Excel
+            with col_e2:
                 excel_filename = f"leads_reales_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
                 with pd.ExcelWriter(excel_filename, engine="openpyxl") as writer:
                     df.to_excel(writer, index=False, sheet_name="Leads Reales")
@@ -805,28 +1163,150 @@ def main():
                     use_container_width=True
                 )
 
-            with col3:
-                st.metric("📊 Total Leads", len(df))
+            # Tabla principal con columnas dinámicas
+            column_config = {
+                "Confianza (%)": st.column_config.ProgressColumn(
+                    "Confianza", min_value=0, max_value=100, format="%d%%"
+                ),
+                "LinkedIn": st.column_config.LinkColumn("LinkedIn", width="small"),
+                "Correo": st.column_config.TextColumn("Email", width="medium"),
+            }
+            if "Teléfono" in df.columns:
+                column_config["Teléfono"] = st.column_config.TextColumn("📞 Teléfono", width="medium")
+            if "Fuente Teléfono" in df.columns:
+                column_config["Fuente Teléfono"] = st.column_config.TextColumn("Origen", width="small")
 
-            # Tabla interactiva
-            st.dataframe(
-                df,
-                use_container_width=True,
-                height=400,
-                column_config={
-                    "Confianza (%)": st.column_config.ProgressColumn(
-                        "Confianza",
-                        min_value=0,
-                        max_value=100,
-                        format="%d%%"
-                    ),
-                    "LinkedIn": st.column_config.LinkColumn(
-                        "LinkedIn Contacto",
-                        help="Perfil personal del contacto en LinkedIn"
-                    ),
-                    "Correo": st.column_config.TextColumn("Correo", width="large")
-                }
-            )
+            st.dataframe(df, use_container_width=True, height=400, column_config=column_config)
+
+            # -------------------------------------------------------------------------
+            # ENRIQUECIMIENTO - Buscar teléfonos en directorios públicos
+            # -------------------------------------------------------------------------
+            st.divider()
+            st.subheader("📞 Buscar Teléfonos en Directorios")
+            col_enr1, col_enr2 = st.columns([3, 1])
+            with col_enr1:
+                st.markdown("Busca en **Páginas Amarillas SV**, **Yelu.cr**, **Infoguía CR** y **sitios web corporativos**.")
+            with col_enr2:
+                stats = get_cache_stats()
+                st.caption(f"🧠 Caché: {stats['entradas']} consultas")
+
+            col_btn1, col_btn2, col_btn3 = st.columns([2, 1, 1])
+            with col_btn1:
+                if st.button("📞 Buscar Teléfonos para Todos los Leads",
+                             type="secondary", use_container_width=True):
+                    df = st.session_state["df_leads"]
+                    progreso_enrich = st.progress(0, text="Iniciando enriquecimiento...")
+                    log_enrich = st.container()
+
+                    telefonos_encontrados = 0
+                    total_leads = len(df)
+
+                    if "Teléfono" not in df.columns:
+                        df["Teléfono"] = ""
+                    if "Dirección" not in df.columns:
+                        df["Dirección"] = ""
+                    if "Fuente Teléfono" not in df.columns:
+                        df["Fuente Teléfono"] = ""
+
+                    for idx, lead in df.iterrows():
+                        empresa = lead.get("Empresa", "")
+                        pais = lead.get("País", "Costa Rica")
+                        dominio = lead.get("Dominio", "")
+
+                        progreso_enrich.progress(
+                            (idx + 1) / total_leads,
+                            text=f"Buscando teléfono: {empresa}..."
+                        )
+                        with log_enrich:
+                            st.caption(f"🔍 {empresa}...")
+
+                        sitio_web = f"https://{dominio}" if dominio and dominio != "N/A" else None
+                        datos = enrich_company(empresa, pais, website=sitio_web)
+
+                        if datos.get("telefonos"):
+                            telefonos = "; ".join(datos["telefonos"][:3])
+                            df.at[idx, "Teléfono"] = telefonos
+                            df.at[idx, "Dirección"] = datos.get("direccion", "")
+                            df.at[idx, "Fuente Teléfono"] = ", ".join(datos.get("fuentes_usadas", []))
+                            telefonos_encontrados += 1
+                            with log_enrich:
+                                st.success(f"✅ {empresa}: {telefonos}")
+                        else:
+                            with log_enrich:
+                                st.info(f"⏭️ {empresa}: sin teléfono")
+
+                        time.sleep(0.3)
+
+                    progreso_enrich.progress(1.0, text="✅ Enriquecimiento completado")
+                    st.session_state["df_leads"] = df
+                    st.success(f"✅ {telefonos_encontrados}/{total_leads} leads con teléfono")
+                    st.rerun()
+
+            with col_btn2:
+                if st.button("🗑️ Limpiar Caché", use_container_width=True):
+                    limpiar_cache_enriquecimiento()
+                    st.success("Caché limpiado")
+            with col_btn3:
+                st.caption(f"⏱️ ~15-30 seg por lead")
+
+            # -------------------------------------------------------------------------
+            # PIPELINE - Avance de etapas por lead
+            # -------------------------------------------------------------------------
+            st.divider()
+            st.subheader("🔄 Pipeline de Ventas — Avanzar Etapa")
+            st.markdown("Selecciona el lead y la siguiente etapa en tu flujo:")
+
+            col_pipe1, col_pipe2, col_pipe3 = st.columns([2, 2, 1])
+            lead_emails = df["Correo"].tolist()
+            lead_options = {f"{row['Contacto Clabe']} - {row['Empresa']} ({row['Correo']})": row["Correo"]
+                           for _, row in df.iterrows()}
+
+            with col_pipe1:
+                selected_display = st.selectbox(
+                    "Seleccionar lead",
+                    options=list(lead_options.keys()),
+                    key="pipeline_select"
+                )
+                selected_email = lead_options.get(selected_display, "")
+
+            with col_pipe2:
+                etapa_actual = obtener_etapa_lead(selected_email)
+                idx_actual = ETAPAS.index(etapa_actual) if etapa_actual in ETAPAS else 0
+                nuevas_etapas = [e for e in ETAPAS if ETAPAS.index(e) > idx_actual]
+                if not nuevas_etapas:
+                    nuevas_etapas = [ETAPAS[-1]]
+                siguiente_etapa = st.selectbox(
+                    "Avanzar a",
+                    options=nuevas_etapas,
+                    key="pipeline_etapa"
+                )
+
+            with col_pipe3:
+                if st.button("✅ Avanzar", type="primary", use_container_width=True):
+                    actualizar_etapa_lead(selected_email, siguiente_etapa)
+                    st.success(f"Lead avanzado a: {siguiente_etapa}")
+                    st.rerun()
+
+            # Mostrar etapa actual del lead seleccionado
+            if selected_email:
+                datos_pipe = cargar_pipeline().get(selected_email, {})
+                st.info(
+                    f"📊 **{selected_display}** — "
+                    f"Etapa actual: **{etapa_actual}**  |  "
+                    f"📧 {datos_pipe.get('fecha_email','—')[:10] or '—'}  |  "
+                    f"🔗 {datos_pipe.get('fecha_linkedin','—')[:10] or '—'}  |  "
+                    f"📞 {datos_pipe.get('fecha_llamada','—')[:10] or '—'}"
+                )
+
+            # Estadísticas rápidas del pipeline
+            st.divider()
+            stats_pipe = pipeline_stats()
+            cols_pipe = st.columns(len(ETAPAS) + 1)
+            for i, etapa in enumerate(ETAPAS):
+                with cols_pipe[i]:
+                    st.metric(ETAPAS_ICONOS.get(etapa, "•"), stats_pipe.get(etapa, 0))
+            with cols_pipe[-1]:
+                st.metric("📊 Total", stats_pipe.get("Total", 0))
 
             # -------------------------------------------------------------------------
             # SISTEMA DE EXCLUSIÓN - Marcar leads como vistos
@@ -901,6 +1381,7 @@ def main():
 
                     df_importado = df_importado.rename(columns=rename_map)
                     df_importado["Estado del Lead"] = "Nuevo"
+                    df_importado["Etapa"] = "Nuevo"
                     df_importado["Fuente"] = "Importado"
 
                     st.session_state["df_leads"] = df_importado
@@ -1191,6 +1672,93 @@ def main():
                 st.success(
                     f"🎉 **Campaña finalizada.** "
                     f"{exitosos} correos enviados exitosamente."
+                )
+
+    # =========================================================================
+    # COMPONENTE 4: PIPELINE DE VENTAS
+    # =========================================================================
+    with tab4:
+        st.header("📊 Pipeline de Ventas")
+        st.markdown("Visualiza y gestiona el avance de tus leads por las etapas del proceso comercial.")
+
+        pipeline = cargar_pipeline()
+        if not pipeline:
+            st.info("💡 Aún no hay leads en el pipeline. Busca leads en el Componente 1 y asígnales una etapa.")
+        else:
+            # Resumen visual tipo kanban
+            stats = pipeline_stats()
+            total = stats.pop("Total", 0)
+
+            # Métricas generales
+            cols = st.columns(5)
+            with cols[0]:
+                st.metric("🆕 Nuevos", stats.get("Nuevo", 0))
+            with cols[1]:
+                st.metric("📧 Email enviado", stats.get("📧 Email enviado", 0))
+            with cols[2]:
+                st.metric("🔗 LinkedIn", stats.get("🔗 LinkedIn contactado", 0))
+            with cols[3]:
+                st.metric("📞 Llamada", stats.get("📞 Llamada realizada", 0))
+            with cols[4]:
+                st.metric("✅ Cerrados", stats.get("✅ Cliente", 0) + stats.get("❌ Perdido", 0))
+
+            # Tabla del pipeline con todas las etapas
+            st.subheader("📋 Detalle del Pipeline")
+            df_pipeline = pd.DataFrame([
+                {
+                    "Email": email,
+                    "Etapa": data.get("etapa", "Nuevo"),
+                    "📧 Email": (data.get("fecha_email", "") or "")[:10],
+                    "🔗 LinkedIn": (data.get("fecha_linkedin", "") or "")[:10],
+                    "📞 Llamada": (data.get("fecha_llamada", "") or "")[:10],
+                    "Notas": data.get("notas", ""),
+                }
+                for email, data in pipeline.items()
+            ])
+
+            if not df_pipeline.empty:
+                # Filtro por etapa
+                etapas_disponibles = ["Todas"] + ETAPAS
+                filtro_etapa = st.selectbox("Filtrar por etapa", options=etapas_disponibles, key="filtro_pipeline")
+                if filtro_etapa != "Todas":
+                    df_pipeline = df_pipeline[df_pipeline["Etapa"] == filtro_etapa]
+
+                st.dataframe(
+                    df_pipeline,
+                    use_container_width=True,
+                    height=400,
+                    column_config={
+                        "Email": st.column_config.TextColumn("Email", width="medium"),
+                        "Etapa": st.column_config.TextColumn("🚩 Etapa", width="medium"),
+                    }
+                )
+
+                # Permitir editar notas
+                st.subheader("📝 Editar Notas del Lead")
+                pipe_emails = df_pipeline["Email"].tolist()
+                email_seleccionado = st.selectbox(
+                    "Seleccionar lead para agregar nota",
+                    options=pipe_emails,
+                    key="pipe_nota_email"
+                )
+                nota_actual = pipeline.get(email_seleccionado, {}).get("notas", "")
+                nueva_nota = st.text_area("Notas", value=nota_actual, key="pipe_nota_texto")
+                if st.button("💾 Guardar Nota", type="secondary"):
+                    actualizar_etapa_lead(email_seleccionado,
+                                          pipeline[email_seleccionado]["etapa"],
+                                          notas=nueva_nota)
+                    st.success("Nota guardada")
+                    st.rerun()
+
+            # Exportar pipeline
+            st.divider()
+            if st.button("📥 Exportar Pipeline a CSV", use_container_width=True):
+                csv_pipe = df_pipeline.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Descargar CSV",
+                    data=csv_pipe,
+                    file_name=f"pipeline_ventas_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv"
                 )
 
 
