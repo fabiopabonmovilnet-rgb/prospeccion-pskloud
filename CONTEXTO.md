@@ -66,8 +66,9 @@ C:\Users\fabio\prospeccion-pskloud\
 - **Doble clic:** `PSKloud Prospector.exe` en el Escritorio
 - **Alternativa:** `streamlit run app.py` desde `C:\Users\fabio\prospeccion-pskloud`
 
-### 🐛 ÚLTIMO BUG CORREGIDO:
-- `from_addr` en envío SendGrid usaba `"apikey"` en vez de `"pskloud.fpabon@gmail.com"` por error en `st.secrets.get()` — corregido con valor directo
+### 🐛 ÚLTIMOS BUGS CORREGIDOS:
+- `from_addr` en envío SendGrid usaba `"apikey"` en vez de `"pskloud.fpabon@gmail.com"` — corregido con `st.secrets.get("SMTP_FROM")`
+- Vista previa de plantilla fallaba por campos NaN (float) de pandas — corregido con `str()` + manejo de `nan`
 
 ### 📝 PENDIENTES:
 - [ ] Deploy a Streamlit Cloud con persistencia de datos

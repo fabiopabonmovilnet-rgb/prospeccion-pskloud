@@ -877,23 +877,22 @@ def enviar_correo_real(
 
 def renderizar_plantilla(
     plantilla: str,
-    nombre: str,
-    empresa: str,
-    pais: str,
-    cargo: str,
-    email: str
+    nombre: str = "",
+    empresa: str = "",
+    pais: str = "",
+    cargo: str = "",
+    email: str = ""
 ) -> str:
     """
     Reemplaza variables dinámicas en la plantilla.
-
     Variables: {{nombre}}, {{empresa}}, {{pais}}, {{cargo}}, {{email}}
     """
     resultado = plantilla
-    resultado = resultado.replace("{{nombre}}", nombre.split()[0] if nombre else "")
-    resultado = resultado.replace("{{empresa}}", empresa)
-    resultado = resultado.replace("{{pais}}", pais)
-    resultado = resultado.replace("{{cargo}}", cargo)
-    resultado = resultado.replace("{{email}}", email)
+    resultado = resultado.replace("{{nombre}}", str(nombre).split()[0] if nombre and str(nombre) != "nan" else "")
+    resultado = resultado.replace("{{empresa}}", str(empresa) if str(empresa) != "nan" else "")
+    resultado = resultado.replace("{{pais}}", str(pais) if str(pais) != "nan" else "")
+    resultado = resultado.replace("{{cargo}}", str(cargo) if str(cargo) != "nan" else "")
+    resultado = resultado.replace("{{email}}", str(email) if str(email) != "nan" else "")
     return resultado
 
 
