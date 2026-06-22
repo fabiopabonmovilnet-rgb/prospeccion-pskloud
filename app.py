@@ -249,8 +249,8 @@ st.set_page_config(
 # Cargar plantilla guardada al iniciar (persiste entre sesiones)
 plantilla_guardada = cargar_plantilla()
 if plantilla_guardada:
-    st.session_state["asunto_campana"] = plantilla_guardada.get("asunto", PLANTILLA_DEFAULT["asunto"])
-    st.session_state["cuerpo_campana"] = plantilla_guardada.get("cuerpo", PLANTILLA_DEFAULT["cuerpo"])
+    st.session_state["asunto_campana"] = plantilla_guardada.get("asunto", "Oportunidad de colaboración - {{empresa}}")
+    st.session_state["cuerpo_campana"] = plantilla_guardada.get("cuerpo", "Hola {{nombre}}...")
 
 # =============================================================================
 # BASE DE DATOS REAL DE EMPRESAS - Dominios verificados
@@ -826,34 +826,42 @@ def enviar_correo_real(
     cuerpo: str
 ) -> Tuple[bool, str]:
     """
-    Envía un correo electrónico real vía SMTP/TLS.
-
-    Args:
-        servidor: Servidor SMTP (ej: smtp.gmail.com)
-        puerto: Puerto SMTP (ej: 587)
-        correo_emisor: Correo del remitente
-        contrasena: Contraseña o token de aplicación
-        correo_receptor: Correo del destinatario
-        asunto: Asunto del correo
-        cuerpo: Cuerpo del mensaje
-
-    Returns:
-        Tupla de (éxito: bool, mensaje: str)
+    Envía un correo electrónico real.
+    - Si es SendGrid: usa su REST API (evita problemas SSL corporativos)
+    - Otros SMTP: conexión SMTP/TLS tradicional
     """
     try:
-        # Crear mensaje
+        from_addr = st.secrets.get("SMTP_FROM", "pskloud.fpabon@gmail.com")
+
+        # SendGrid API (evita SSL corporativo)
+        if "sendgrid" in servidor.lower():
+            headers = {
+                "Authorization": f"Bearer {contrasena}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "personalizations": [{"to": [{"email": correo_receptor}]}],
+                "from": {"email": from_addr},
+                "subject": asunto,
+                "content": [{"type": "text/plain", "value": cuerpo}]
+            }
+            r = requests.post("https://api.sendgrid.com/v3/mail/send", headers=headers, json=data, timeout=15)
+            if r.status_code == 202:
+                return True, "Correo enviado exitosamente"
+            return False, f"Error SendGrid: {r.status_code} {r.text[:200]}"
+
+        # SMTP tradicional
         mensaje = MIMEMultipart()
-        mensaje["From"] = correo_emisor
+        mensaje["From"] = from_addr
         mensaje["To"] = correo_receptor
         mensaje["Subject"] = asunto
         mensaje.attach(MIMEText(cuerpo, "plain", "utf-8"))
 
-        # Conexión segura y envío
-        contexto = ssl.create_default_context()
+        contexto = ssl._create_unverified_context()
         with smtplib.SMTP(servidor, puerto, timeout=30) as servidor_smtp:
             servidor_smtp.starttls(context=contexto)
             servidor_smtp.login(correo_emisor, contrasena)
-            servidor_smtp.sendmail(correo_emisor, correo_receptor, mensaje.as_string())
+            servidor_smtp.sendmail(from_addr, correo_receptor, mensaje.as_string())
 
         return True, "Correo enviado exitosamente"
 
@@ -1057,20 +1065,30 @@ def main():
                 st.error(f"❌ {info_cuenta['error']}")
 
         # =====================================================================
-        # LUSHA API (teléfonos directos)
+        # LUSHA API (teléfonos directos + datos empresa + contactos)
         # =====================================================================
         st.divider()
         st.markdown("### 📞 Configuración Lusha")
         st.markdown("[Obtener API key gratis →](https://www.lusha.com/)")
+
+        # Cargar API key desde secrets
+        try:
+            lusha_key_predeterminada = st.secrets.get("LUSHA_API_KEY", "")
+        except Exception:
+            lusha_key_predeterminada = ""
+
+        if lusha_key_predeterminada and "lusha_api_key" not in st.session_state:
+            st.session_state["lusha_api_key"] = lusha_key_predeterminada
+
         lusha_key = st.text_input(
             "API Key de Lusha",
             type="password",
             value=st.session_state.get("lusha_api_key", ""),
-            help="Lusha provee teléfonos DIRECTOS del contacto (no solo de la empresa)"
+            help="Lusha provee teléfonos DIRECTOS del contacto, datos de empresa, y búsqueda por cargo (plan Prospecting)"
         )
         if lusha_key:
             st.session_state["lusha_api_key"] = lusha_key
-            st.success("✅ Lusha conectado (70 créditos/mes en plan free)")
+            st.success("✅ Lusha conectado")
 
         st.divider()
         st.markdown("""
@@ -1700,13 +1718,20 @@ def main():
 
         with col2:
             try:
+                smtp_from_default = st.secrets.get("SMTP_FROM", st.secrets.get("SMTP_EMAIL", ""))
+            except Exception:
+                smtp_from_default = ""
+            st.text_input("📧 Correo Remitente (visible)", value=smtp_from_default, disabled=True,
+                          help="El destinatario verá este correo como remitente")
+
+            try:
                 smtp_email_default = st.secrets.get("SMTP_EMAIL", "")
             except Exception:
                 smtp_email_default = ""
             smtp_email = st.text_input(
-                "📧 Correo Emisor",
+                "🔑 Usuario SMTP",
                 value=smtp_email_default,
-                placeholder="tu_empresa@gmail.com"
+                help="SendGrid: 'apikey' | Gmail/Outlook: tu correo completo"
             )
 
             try:
@@ -1776,22 +1801,17 @@ def main():
 
             leads_procesar = st.session_state["df_leads"].copy()
 
-            # Barra de progreso
-            progress = st.progress(0, text="Iniciando campaña...")
-            log_container = st.container()
-
             exitosos = 0
             fallidos = 0
             total = len(leads_procesar)
 
+            status_placeholder = st.empty()
+            resultados = []
+
             for idx, lead in leads_procesar.iterrows():
                 try:
-                    progress.progress(
-                        (idx + 1) / total,
-                        text=f"Enviando {idx + 1} de {total}..."
-                    )
+                    status_placeholder.info(f"Enviando {idx + 1} de {total}...")
 
-                    # Renderizar plantilla
                     asunto_render = renderizar_plantilla(
                         asunto_activo,
                         lead.get("Contacto Clabe", ""),
@@ -1810,7 +1830,6 @@ def main():
                         lead.get("Correo", "")
                     )
 
-                    # Enviar correo real
                     exito, mensaje = enviar_correo_real(
                         servidor=smtp_server,
                         puerto=smtp_port,
@@ -1823,28 +1842,21 @@ def main():
 
                     if exito:
                         exitosos += 1
-                        with log_container:
-                            st.success(
-                                f"✉️ **[{idx + 1}/{total}]** "
-                                f"**{lead.get('Contacto Clabe', '')}** "
-                                f"({lead.get('Empresa', '')}) — ✅ ¡Enviado!"
-                            )
+                        resultados.append(f"✅ [{idx + 1}/{total}] {lead.get('Contacto Clabe', '')} ({lead.get('Empresa', '')}) — Enviado")
                     else:
                         fallidos += 1
-                        with log_container:
-                            st.error(
-                                f"❌ **[{idx + 1}/{total}]** "
-                                f"**{lead.get('Contacto Clabe', '')}** "
-                                f"({lead.get('Empresa', '')}) — {mensaje}"
-                            )
+                        resultados.append(f"❌ [{idx + 1}/{total}] {lead.get('Contacto Clabe', '')} ({lead.get('Empresa', '')}) — {mensaje}")
 
                 except Exception as e:
                     fallidos += 1
-                    with log_container:
-                        st.error(f"⚠️ Error procesando lead {idx + 1}: {str(e)}")
+                    resultados.append(f"⚠️ [{idx + 1}/{total}] {lead.get('Contacto Clabe', '')} — Error: {str(e)[:80]}")
 
-            # Finalización
-            progress.progress(1.0, text="✅ ¡Campaña completada!")
+            status_placeholder.empty()
+            st.success(f"✅ Campaña completada: {exitosos} enviados, {fallidos} fallidos")
+
+            with st.expander("📋 Detalle por lead"):
+                for r in resultados:
+                    st.text(r)
 
             st.divider()
             st.subheader("📊 Resumen Final")
