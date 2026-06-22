@@ -14,6 +14,9 @@ venv/
 # Pipeline data
 pipeline_estado.json
 
+# Envios log (contiene emails de contactos)
+envios_realizados.json
+
 # Temp files
 temp_export.xlsx
 *.xlsx

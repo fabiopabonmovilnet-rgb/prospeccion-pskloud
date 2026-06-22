@@ -46,6 +46,7 @@ PLANTILLA_FILE = "plantilla_personalizada.json"
 SECRETS_FILE = ".streamlit/secrets.toml"
 PIPELINE_FILE = "pipeline_estado.json"
 LUSHA_API_FILE = ".streamlit/lusha_key.txt"
+ENVIOS_LOG_FILE = "envios_realizados.json"
 
 # Motivos de exclusión predefinidos
 MOTIVOS_EXCLUSION = [
@@ -139,6 +140,40 @@ def email_excluido(email: str) -> bool:
     """Verifica si un email está en la lista de excluidos."""
     excluidos = cargar_excluidos()
     return email in excluidos
+
+
+# =============================================================================
+# REGISTRO DE ENVÍOS REALIZADOS
+# =============================================================================
+
+def cargar_envios() -> list:
+    """Carga el historial de correos enviados."""
+    if os.path.exists(ENVIOS_LOG_FILE):
+        try:
+            with open(ENVIOS_LOG_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return []
+    return []
+
+
+def registrar_envio(email: str, nombre: str, empresa: str, asunto: str, cuerpo: str, status: str):
+    """Guarda un registro de correo enviado."""
+    envios = cargar_envios()
+    envios.append({
+        "email": email,
+        "nombre": nombre,
+        "empresa": empresa,
+        "asunto": asunto,
+        "cuerpo_preview": cuerpo[:200] if cuerpo else "",
+        "status": status,
+        "fecha": datetime.now().isoformat()
+    })
+    try:
+        with open(ENVIOS_LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump(envios[-1000:], f, ensure_ascii=False, indent=2)  # últimos 1000
+    except Exception:
+        pass
 
 
 # =============================================================================
@@ -885,11 +920,14 @@ def renderizar_plantilla(
 ) -> str:
     """
     Reemplaza variables dinámicas en la plantilla.
-    Variables: {{nombre}}, {{empresa}}, {{pais}}, {{cargo}}, {{email}}
+    Variables: {{nombre}}, {{empresa}} (o {{company_name}}), {{pais}}, {{cargo}}, {{email}}
     """
     resultado = plantilla
-    resultado = resultado.replace("{{nombre}}", str(nombre).split()[0] if nombre and str(nombre) != "nan" else "")
-    resultado = resultado.replace("{{empresa}}", str(empresa) if str(empresa) != "nan" else "")
+    empresa_str = str(empresa) if str(empresa) != "nan" else ""
+    nombre_str = str(nombre) if str(nombre) != "nan" else ""
+    resultado = resultado.replace("{{nombre}}", nombre_str.split()[0] if nombre_str else "")
+    resultado = resultado.replace("{{empresa}}", empresa_str)
+    resultado = resultado.replace("{{company_name}}", empresa_str)
     resultado = resultado.replace("{{pais}}", str(pais) if str(pais) != "nan" else "")
     resultado = resultado.replace("{{cargo}}", str(cargo) if str(cargo) != "nan" else "")
     resultado = resultado.replace("{{email}}", str(email) if str(email) != "nan" else "")
@@ -1781,9 +1819,32 @@ def main():
                 st.error("❌ SMTP incompleto")
 
         # -------------------------------------------------------------------------
-        # Botón de envío
+        # Botón de envío con preview
         # -------------------------------------------------------------------------
         st.divider()
+
+        if st.checkbox("👁️ Vista previa del primer lead antes de enviar", key="preview_check"):
+            if "df_leads" in st.session_state and not st.session_state["df_leads"].empty:
+                preview_lead = st.session_state["df_leads"].iloc[0]
+                asunto_prev = st.session_state.get("asunto_campana", PLANTILLA_DEFAULT["asunto"])
+                cuerpo_prev = st.session_state.get("cuerpo_campana", PLANTILLA_DEFAULT["cuerpo"])
+                st.info("**Asunto:** " + renderizar_plantilla(
+                    asunto_prev,
+                    preview_lead.get("Contacto Clabe", ""),
+                    preview_lead.get("Empresa", ""),
+                    preview_lead.get("País", ""),
+                    preview_lead.get("Cargo", ""),
+                    preview_lead.get("Correo", "")
+                ))
+                with st.expander("📝 Ver cuerpo completo del correo"):
+                    st.markdown(renderizar_plantilla(
+                        cuerpo_prev,
+                        preview_lead.get("Contacto Clabe", ""),
+                        preview_lead.get("Empresa", ""),
+                        preview_lead.get("País", ""),
+                        preview_lead.get("Cargo", ""),
+                        preview_lead.get("Correo", "")
+                    ))
 
         if st.button("🚀 Iniciar Campaña de Prospección Masiva", type="primary", use_container_width=True):
             if not leads_ok:
@@ -1794,7 +1855,9 @@ def main():
                 st.error("❌ Configura credenciales SMTP válidas.")
                 st.stop()
 
-            # Obtener plantilla activa
+            total_leads = len(st.session_state["df_leads"])
+            st.warning(f"⚠️ Enviando **{total_leads} correos**... Revisa el detalle abajo")
+
             asunto_activo = st.session_state.get("asunto_campana", PLANTILLA_DEFAULT["asunto"])
             cuerpo_activo = st.session_state.get("cuerpo_campana", PLANTILLA_DEFAULT["cuerpo"])
 
@@ -1841,6 +1904,14 @@ def main():
 
                     if exito:
                         exitosos += 1
+                        registrar_envio(
+                            lead.get("Correo", ""),
+                            lead.get("Contacto Clabe", ""),
+                            lead.get("Empresa", ""),
+                            asunto_render,
+                            cuerpo_render,
+                            "delivered"
+                        )
                         resultados.append(f"✅ [{idx + 1}/{total}] {lead.get('Contacto Clabe', '')} ({lead.get('Empresa', '')}) — Enviado")
                     else:
                         fallidos += 1
@@ -1876,6 +1947,27 @@ def main():
                     f"🎉 **Campaña finalizada.** "
                     f"{exitosos} correos enviados exitosamente."
                 )
+
+        # -------------------------------------------------------------------------
+        # HISTORIAL DE ENVÍOS
+        # -------------------------------------------------------------------------
+        with st.expander("📜 Historial de correos enviados"):
+            envios = cargar_envios()
+            if not envios:
+                st.info("No hay correos enviados aún.")
+            else:
+                st.caption(f"Últimos {len(envios)} envíos")
+                for e in reversed(envios[-50:]):
+                    fecha = e.get("fecha", "")[:19].replace("T", " ")
+                    st.text(f"[{fecha}] {e['email']} — {e.get('asunto', '')[:60]}")
+                if st.button("🗑️ Limpiar historial"):
+                    try:
+                        with open(ENVIOS_LOG_FILE, "w") as f:
+                            json.dump([], f)
+                        st.success("Historial limpiado")
+                        st.rerun()
+                    except Exception:
+                        st.error("Error al limpiar")
 
     # =========================================================================
     # COMPONENTE 4: PIPELINE DE VENTAS
