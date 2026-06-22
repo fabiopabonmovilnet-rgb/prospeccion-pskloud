@@ -12,7 +12,14 @@
 3. **1 contacto por empresa** (el más senior)
 4. **Exclusión con motivos** — Leads excluidos nunca reaparecen, guarda motivo + fecha
 5. **Exportación CSV/Excel** de resultados
-6. **Envío masivo SMTP vía SendGrid API** — 100 correos/día free
+6. **Envío masivo vía SendGrid API** — 100 correos/día free, evita SSL corporativo
+7. **Lusha API** — Teléfonos directos + datos de empresa + enriquecimiento por email
+8. **Scrapers multi-fuente** en paralelo (Páginas Amarillas, Yelu, Infoguía, Lusha, web)
+9. **Pipeline de Ventas** — 6 etapas persistente en JSON
+10. **UI con branding PSKloud** (rojo #CC0000)
+11. **Historial de envíos** (`envios_realizados.json`) — cada correo exitoso se registra con email, empresa, asunto y fecha
+12. **Vista previa de plantilla** — checkbox que muestra asunto y cuerpo exactos antes de enviar
+13. **`{{company_name}}` soportado** — funciona como alias de `{{empresa}}`
 7. **Lusha API** — Teléfonos directos + datos de empresa + enriquecimiento por email
 8. **Scrapers multi-fuente** en paralelo:
    - Páginas Amarillas (SV, CO, PA)
@@ -67,8 +74,11 @@ C:\Users\fabio\prospeccion-pskloud\
 - **Alternativa:** `streamlit run app.py` desde `C:\Users\fabio\prospeccion-pskloud`
 
 ### 🐛 ÚLTIMOS BUGS CORREGIDOS:
-- `from_addr` en envío SendGrid usaba `"apikey"` en vez de `"pskloud.fpabon@gmail.com"` — corregido con `st.secrets.get("SMTP_FROM")`
-- Vista previa de plantilla fallaba por campos NaN (float) de pandas — corregido con `str()` + manejo de `nan`
+- `from_addr` en envío SendGrid usaba `"apikey"` en vez de `"pskloud.fpabon@gmail.com"` — corregido
+- Vista previa de plantilla fallaba por campos NaN (float) de pandas — corregido
+- `{{company_name}}` no era reemplazado por el nombre de empresa — ahora funciona como alias de `{{empresa}}`
+- UI crasheaba durante envío masivo (removeChild DOM) — simplificado con placeholder estático
+- Se agregó confirmación de envío y preview obligatorio para evitar errores de plantilla
 
 ### 📝 PENDIENTES:
 - [ ] Deploy a Streamlit Cloud con persistencia de datos
