@@ -11,9 +11,6 @@ venv/
 # Streamlit
 .streamlit/secrets.toml
 
-# Context file (contains API keys)
-CONTEXTO.md
-
 # Pipeline data
 pipeline_estado.json
 
