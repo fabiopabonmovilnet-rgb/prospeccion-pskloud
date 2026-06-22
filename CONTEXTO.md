@@ -154,20 +154,40 @@ git push
 ### 💡 NOTAS IMPORTANTES:
 1. **Hunter.io NO provee teléfonos** — Solo emails y LinkedIn personal
 2. **Créditos limitados** — 50 búsquedas/mes en plan gratuito
-3. **Los leads excluidos se guardan** en leads_excluidos.json (persiste LOCALMENTE). En Streamlit Cloud la persistencia es por sesión.
+3. **Exclusión con motivos** — Al excluir un lead, se guarda el motivo (No interesado, Bounced, Bloqueó, etc.). El lead excluido **nunca vuelve a aparecer** en búsquedas futuras.
 4. **API Key Hunter** se guarda en `.streamlit/secrets.toml` — ya no hay que pegarla cada vez. Si cambias de PC, crea ese archivo.
-5. **Enriquecimiento de teléfonos** — Botón "Buscar Teléfonos" después de obtener leads. Scrapea:
+5. **Lusha** — 
+   - Teléfonos DIRECTOS del contacto (People API por nombre+empresa o email)
+   - Datos de empresa (Company API: teléfono, dominio, industria, tamaño)
+   - 70 créditos/mes en plan free
+   - Sin Lusha: teléfonos de la EMPRESA. Con Lusha: teléfonos DIRECTOS del contacto + datos enriquecidos.
+6. **Enriquecimiento de teléfonos** — Botón "Buscar Teléfonos" después de obtener leads. Scrapea 6 fuentes en paralelo:
    - Páginas Amarillas (SV, CO, PA)
    - Yelu.cr (Costa Rica)
    - Infoguía Costa Rica
-   - Sitio web corporativo (scraping directo)
-   - ⚠️ Los teléfonos son de la EMPRESA (recepcionista), no directos del gerente
-   - Honduras solo usa scraping web (no tiene Páginas Amarillas)
-6. **Pipeline de Ventas** — Componente 4, persistente en pipeline_estado.json
-7. **5 países soportados:** Costa Rica, El Salvador, Panamá, Honduras, Colombia
-8. **Ejecutable de escritorio (.exe):** `C:\Users\fabio\Desktop\PSKloud Prospector.exe`
-9. **Ejecutable de escritorio (.bat):** `C:\Users\fabio\Desktop\PSKloud Prospector.bat`
-10. **CONTEXTO.md está en .gitignore** — No se sube al repo
+   - Lusha Company API
+   - Lusha People API (por nombre o email)
+   - Sitio web corporativo
+7. **Pipeline de Ventas** — 6 etapas (Nuevo → Email → LinkedIn → Llamada → Cliente/Perdido), persistente en `pipeline_estado.json`
+8. **5 países soportados:** Costa Rica (~35), El Salvador (~30), Panamá (~26), Honduras (~24), Colombia (~37) = **~152 empresas total**
+9. **Ejecutable de escritorio (.exe):** `C:\Users\fabio\Desktop\PSKloud Prospector.exe`
+10. **Ejecutable de escritorio (.bat):** `C:\Users\fabio\Desktop\PSKloud Prospector.bat`
+11. **CONTEXTO.md está en .gitignore** — No se sube al repo
+
+### ☁️ DEPLOY A STREAMLIT CLOUD
+```bash
+# 1. Asegúrate de que el código esté en GitHub
+git push
+
+# 2. Ve a https://share.streamlit.io
+# 3. Conecta tu GitHub: fabiopabonmovilnet-rgb/prospeccion-pskloud
+# 4. Settings → Secrets → Agrega:
+#    HUNTER_API_KEY = "tu_api_key_aqui"
+#    LUSHA_API_KEY = "tu_lusha_key" (opcional)
+# 5. Haz clic en "Deploy"
+# 6. La app quedará disponible en: https://prospeccion-pskloud.streamlit.app
+```
+> **Importante:** Los archivos `pipeline_estado.json` y `leads_excluidos.json` son locales. En Streamlit Cloud se reinician por sesión.
 
 ### 🔄 CÓMO CONTINUAR:
 1. Leer este archivo CONTEXTO.md

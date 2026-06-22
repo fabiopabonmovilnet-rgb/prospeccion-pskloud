@@ -313,15 +313,108 @@ def scrape_website(website_url: str) -> Dict:
 
 
 # =============================================================================
-# SCRAPER: Lusha API (teléfonos directos + emails)
+# LUSHA API (teléfonos directos + datos de empresa + contacto por email)
 # =============================================================================
 
 LUSHA_API_URL = "https://api.lusha.com/people"
+LUSHA_COMPANY_API_URL = "https://api.lusha.com/companies"
+
+def search_lusha_company(api_key: str, company_name: str) -> Dict:
+    """
+    Enriquecimiento de empresa vía Lusha Company API.
+    Devuelve teléfono, dominio, industria, tamaño, ubicación.
+    """
+    if not api_key:
+        return {"telefonos": [], "fuente": ""}
+
+    cache_key = f"lusha_company::{company_name.lower().strip()}"
+    if cache_key in _cache:
+        return _cache[cache_key]
+
+    result = {"telefonos": [], "sitio_web": "", "direccion": "", "industria": "", "empleados": 0, "fuente": ""}
+    try:
+        payload = {"companyName": company_name}
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        resp = requests.post(LUSHA_COMPANY_API_URL, json=payload, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json().get("data", {})
+            phones = data.get("phones", [])
+            if phones:
+                result["telefonos"] = [p.get("phoneNumber", p) if isinstance(p, dict) else p for p in phones[:2]]
+            domain = data.get("domain", "") or data.get("website", "")
+            if domain:
+                result["sitio_web"] = domain if domain.startswith("http") else f"https://{domain}"
+            loc = data.get("location", {}) or {}
+            ciudad = loc.get("city", "") or data.get("city", "")
+            pais = loc.get("country", "") or data.get("country", "")
+            if ciudad or pais:
+                result["direccion"] = f"{ciudad}, {pais}".strip(", ")
+            result["industria"] = data.get("industry", "") or data.get("sector", "")
+            result["empleados"] = data.get("employeeCount", 0) or data.get("employees", 0)
+            result["fuente"] = "Lusha Company" if (result["telefonos"] or result["sitio_web"]) else ""
+        elif resp.status_code == 402:
+            result["fuente"] = "Lusha: créditos agotados"
+        else:
+            result["fuente"] = ""
+    except Exception:
+        result["fuente"] = ""
+    _cache[cache_key] = result
+    time.sleep(random.uniform(0.3, 0.8))
+    return result
+
+
+def search_lusha_by_email(api_key: str, email: str, company_name: str = "") -> Dict:
+    """
+    Enriquecimiento de contacto vía Lusha People API usando email.
+    Devuelve nombre, teléfono directo, cargo.
+    """
+    if not api_key or not email:
+        return {"telefonos": [], "emails": [], "nombre": "", "cargo": "", "fuente": ""}
+
+    cache_key = f"lusha_email::{email.lower().strip()}"
+    if cache_key in _cache:
+        return _cache[cache_key]
+
+    result = {"telefonos": [], "emails": [], "nombre": "", "cargo": "", "fuente": ""}
+    try:
+        payload = {"email": email}
+        if company_name:
+            payload["company"] = company_name
+        headers = {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}"
+        }
+        resp = requests.post(LUSHA_API_URL, json=payload, headers=headers, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json().get("data", {})
+            phones = data.get("phones", [])
+            emails = data.get("emails", [])
+            if phones:
+                result["telefonos"] = [p.get("phoneNumber", p) if isinstance(p, dict) else p for p in phones[:3]]
+            if emails:
+                result["emails"] = [e.get("email", e) if isinstance(e, dict) else e for e in emails[:3]]
+            result["nombre"] = data.get("firstName", "") + " " + data.get("lastName", "")
+            result["cargo"] = data.get("jobTitle", "") or data.get("title", "") or data.get("position", "")
+            result["fuente"] = "Lusha" if (result["telefonos"] or result["emails"] or result["nombre"]) else ""
+        elif resp.status_code == 402:
+            result["fuente"] = "Lusha: créditos agotados"
+        else:
+            result["fuente"] = ""
+    except Exception:
+        result["fuente"] = ""
+    _cache[cache_key] = result
+    return result
+
 
 def search_lusha(api_key: str, first_name: str, last_name: str, company: str) -> Dict:
     """
     Busca un contacto en Lusha usando nombre + empresa.
-    Lusha provee teléfonos directos (no solo de la empresa).
+    Lusha provee teléfonos directos (no solo de la empresa) y emails.
     Plan free: 70 créditos/mes.
     """
     if not api_key or not first_name:
@@ -359,7 +452,6 @@ def search_lusha(api_key: str, first_name: str, last_name: str, company: str) ->
             result["fuente"] = ""
     except Exception:
         result["fuente"] = ""
-
     _cache[cache_key] = result
     return result
 
@@ -375,6 +467,7 @@ def enrich_company(
     lusha_api_key: Optional[str] = None,
     contact_first_name: Optional[str] = None,
     contact_last_name: Optional[str] = None,
+    contact_email: Optional[str] = None,
     timeout: int = 30,
 ) -> Dict:
     """
@@ -382,13 +475,17 @@ def enrich_company(
     y fusiona los resultados.
 
     Países soportados: Costa Rica, El Salvador, Panamá, Honduras, Colombia
-    Opcional: Lusha API para teléfonos directos del contacto.
+    Opcional: Lusha API para teléfonos directos del contacto y datos de empresa.
     """
     results = {
         "telefonos": [],
         "emails": [],
         "direccion": "",
         "sitio_web": website or "",
+        "industria": "",
+        "empleados": 0,
+        "contacto_nombre": "",
+        "contacto_cargo": "",
         "fuentes_usadas": [],
     }
 
@@ -405,10 +502,19 @@ def enrich_company(
         tasks.append(("Yelu.cr", lambda: search_yelu_cr(company_name)))
         tasks.append(("Infoguía CR", lambda: search_infoguia_cr(company_name)))
 
+    # Sitio web corporativo
     if website:
         tasks.append(("Sitio web", lambda: scrape_website(website)))
 
-    # Lusha (si hay API key + nombre)
+    # Lusha: enriquecimiento de empresa (teléfono, dominio, industria)
+    if lusha_api_key:
+        tasks.append(("Lusha Company", lambda: search_lusha_company(lusha_api_key, company_name)))
+
+    # Lusha: enriquecimiento de contacto por email (si hay email)
+    if lusha_api_key and contact_email:
+        tasks.append(("Lusha Email", lambda: search_lusha_by_email(lusha_api_key, contact_email, company_name)))
+
+    # Lusha: enriquecimiento de contacto por nombre+empresa
     if lusha_api_key and contact_first_name:
         tasks.append(("Lusha", lambda: search_lusha(lusha_api_key, contact_first_name, contact_last_name or "", company_name)))
 
@@ -433,6 +539,14 @@ def enrich_company(
                     results["direccion"] = data["direccion"]
                 if data.get("sitio_web") and not results["sitio_web"]:
                     results["sitio_web"] = data["sitio_web"]
+                if data.get("industria") and not results["industria"]:
+                    results["industria"] = data["industria"]
+                if data.get("empleados") and not results["empleados"]:
+                    results["empleados"] = data["empleados"]
+                if data.get("nombre") and not results["contacto_nombre"]:
+                    results["contacto_nombre"] = data["nombre"]
+                if data.get("cargo") and not results["contacto_cargo"]:
+                    results["contacto_cargo"] = data["cargo"]
             except Exception:
                 continue
 

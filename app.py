@@ -402,6 +402,28 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/barcelo"},
         {"empresa": "Marriott San Salvador", "dominio": "marriott.com", "sector": "Turismo", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/marriott"},
+
+        # === TECNOLOGÍA ADICIONAL ===
+        {"empresa": "Grupo Q", "dominio": "grupoq.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/grupo-q"},
+        {"empresa": "Grupo Roble", "dominio": "grupovroble.com", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/grupo-roble"},
+        {"empresa": "Holcim El Salvador", "dominio": "holcim.com.sv", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/holcim"},
+        {"empresa": "Nestlé El Salvador", "dominio": "nestle.com.sv", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/nestle"},
+        {"empresa": "Unicomer El Salvador", "dominio": "unicomer.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/unicomer"},
+        {"empresa": "Grupo Bimbo El Salvador", "dominio": "grupobimbo.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-bimbo"},
+        {"empresa": "Cargill El Salvador", "dominio": "cargill.com.sv", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cargill"},
+        {"empresa": "Grupo Calleja", "dominio": "gruposalvaneja.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-calleja"},
+        {"empresa": "Regal Color", "dominio": "regalcolor.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/regal-color"},
+        {"empresa": "Grupo Alba", "dominio": "grupoalba.com.sv", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-alba"},
     ],
     "Panamá": [
         # === TECNOLOGÍA ===
@@ -439,6 +461,37 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/copa-airlines"},
         {"empresa": "Panama Ports", "dominio": "panamaports.com", "sector": "Logística", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/panama-ports"},
+        # === LOGÍSTICA ADICIONAL ===
+        {"empresa": "Manzanillo International Terminal", "dominio": "mitpanama.com", "sector": "Logística", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/manzanillo-international-terminal"},
+        {"empresa": "Cristóbal Container Terminal", "dominio": "cct-pa.com", "sector": "Logística", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cristobal-container-terminal"},
+        # === RETAIL ADICIONAL ===
+        {"empresa": "Grupo Melo", "dominio": "grupomelo.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-melo"},
+        {"empresa": "PriceSmart Panama", "dominio": "pricesmart.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/pricesmart"},
+        {"empresa": "Multimax", "dominio": "multimax.com.pa", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/multimax"},
+        # === MANUFACTURA ADICIONAL ===
+        {"empresa": "Nestlé Panamá", "dominio": "nestle.com.pa", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/nestle"},
+        {"empresa": "Productos Alimenticios Pascual", "dominio": "pascual.com.pa", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/pascual-panama"},
+        {"empresa": "SABMiller Panamá", "dominio": "ab-inbev.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/ab-inbev"},
+        # === FINANZAS ADICIONAL ===
+        {"empresa": "Assa Compañía de Seguros", "dominio": "assa.com.pa", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/assa-seguros"},
+        {"empresa": "Global Bank", "dominio": "globalbank.com.pa", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/global-bank"},
+        {"empresa": "Banco Aliado", "dominio": "bancoaliado.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/banco-aliado"},
+        # === TELECOMUNICACIONES ADICIONAL ===
+        {"empresa": "Cable Onda", "dominio": "cableonda.com", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cable-onda"},
+        {"empresa": "Plus Net Panamá", "dominio": "plusnet.com.pa", "sector": "Telecomunicaciones", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/plusnet"},
     ],
     "Honduras": [
         # === TECNOLOGÍA ===
@@ -470,6 +523,30 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/kimberly-clark"},
         {"empresa": "Cementos Argos Honduras", "dominio": "argos.co", "sector": "Manufactura", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/cementos-argos"},
+
+        # === ADICIONALES HONDURAS ===
+        {"empresa": "Banco de Occidente", "dominio": "bancodeoccidente.hn", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/banco-de-occidente"},
+        {"empresa": "Banco Promerica Honduras", "dominio": "banco-pamerica.com", "sector": "Finanzas", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/banco-pamerica"},
+        {"empresa": "Grupo Karims", "dominio": "karims.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-karims"},
+        {"empresa": "Supermercados La Colonia", "dominio": "lacolonia.hn", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/supermercados-la-colonia"},
+        {"empresa": "Cementos del Norte (CENOSA)", "dominio": "cenosa.hn", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/cenosa"},
+        {"empresa": "Grupo OPSA", "dominio": "grupoopsa.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-opsa"},
+        {"empresa": "Corporación Dinant", "dominio": "dinant.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/corporacion-dinant"},
+        {"empresa": "Sertec Honduras", "dominio": "sertec.hn", "sector": "Tecnología", "tipo": "Canales/Distribuidores",
+         "linkedin": "https://linkedin.com/company/sertec"},
+        {"empresa": "Biolagos", "dominio": "biolagos.org", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/biolagos"},
+        {"empresa": "Palmisa", "dominio": "palmisa.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/palmisa"},
+        {"empresa": "Azucarera La Grecia", "dominio": "azucarerainhe.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/azucarera-la-grecia"},
     ],
     "Colombia": [
         # === TECNOLOGÍA ===
@@ -522,6 +599,46 @@ EMPRESAS_REALES: Dict[str, List[Dict]] = {
          "linkedin": "https://linkedin.com/company/postobon"},
         {"empresa": "Cementos Argos", "dominio": "argos.co", "sector": "Manufactura", "tipo": "Clientes Finales",
          "linkedin": "https://linkedin.com/company/cementos-argos"},
+
+        # === TECNOLOGÍA ADICIONAL ===
+        {"empresa": "Rappi", "dominio": "rappi.com", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/rappi"},
+        {"empresa": "Mercado Libre Colombia", "dominio": "mercadolibre.com.co", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/mercadolibre"},
+        {"empresa": "Microsoft Colombia", "dominio": "microsoft.com", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/microsoft"},
+        {"empresa": "Oracle Colombia", "dominio": "oracle.com", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/oracle"},
+        {"empresa": "IBM Colombia", "dominio": "ibm.com", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/ibm"},
+        {"empresa": "SAP Colombia", "dominio": "sap.com", "sector": "Tecnología", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/sap"},
+        # === RETAIL ADICIONAL ===
+        {"empresa": "Éxito", "dominio": "exito.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-exito"},
+        {"empresa": "Almacenes Tía", "dominio": "tia.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/tienda-tia"},
+        {"empresa": "D1", "dominio": "t-d1.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/d1-colombia"},
+        {"empresa": "Olimpica", "dominio": "olimpica.com", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/olimpica"},
+        # === TELECOMUNICACIONES ADICIONAL ===
+        {"empresa": "Caracol Televisión", "dominio": "caracoltv.com", "sector": "Medios", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/caracol-television"},
+        {"empresa": "RCN Televisión", "dominio": "rcntv.com", "sector": "Medios", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/rcn-television"},
+        # === TRANSPORTE ===
+        {"empresa": "Avianca", "dominio": "avianca.com", "sector": "Transporte", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/avianca"},
+        {"empresa": "Latam Colombia", "dominio": "latam.com", "sector": "Transporte", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/latam-airlines"},
+        {"empresa": "Copetran", "dominio": "copetran.com.co", "sector": "Transporte", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/copetran"},
+        # === MANUFACTURA ADICIONAL ===
+        {"empresa": "Alpina", "dominio": "alpina.com", "sector": "Manufactura", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/alpina"},
+        {"empresa": "Grupo Éxito", "dominio": "exito.com.co", "sector": "Retail", "tipo": "Clientes Finales",
+         "linkedin": "https://linkedin.com/company/grupo-exito"},
     ],
 }
 
@@ -892,7 +1009,7 @@ def main():
     with st.sidebar:
         st.image("https://img.icons8.com/color/96/email-send.png", width=80)
         st.title("PSKloud Prospector")
-        st.caption("v2.0 | Sistema REAL de Prospección B2B")
+        st.caption("v2.3 | Sistema REAL de Prospección B2B")
 
         # Campo para API key de Hunter.io
         st.divider()
@@ -1217,6 +1334,8 @@ def main():
                 column_config["Teléfono"] = st.column_config.TextColumn("📞 Teléfono", width="medium")
             if "Fuente Teléfono" in df.columns:
                 column_config["Fuente Teléfono"] = st.column_config.TextColumn("Origen", width="small")
+            if "Industria" in df.columns:
+                column_config["Industria"] = st.column_config.TextColumn("Industria", width="small")
 
             st.dataframe(df, use_container_width=True, height=400, column_config=column_config)
 
@@ -1265,13 +1384,15 @@ def main():
                         sitio_web = f"https://{dominio}" if dominio and dominio != "N/A" else None
                         contacto_nombre = lead.get("Contacto Clabe", "").strip()
                         nombres = contacto_nombre.split(" ", 1) if contacto_nombre else ["", ""]
+                        contacto_email = lead.get("Correo", "")
                         lusha_key = st.session_state.get("lusha_api_key", "")
                         datos = enrich_company(
                             empresa, pais,
                             website=sitio_web,
                             lusha_api_key=lusha_key,
                             contact_first_name=nombres[0] if nombres else "",
-                            contact_last_name=nombres[1] if len(nombres) > 1 else ""
+                            contact_last_name=nombres[1] if len(nombres) > 1 else "",
+                            contact_email=contacto_email
                         )
 
                         if datos.get("telefonos"):
@@ -1280,6 +1401,14 @@ def main():
                             df.at[idx, "Dirección"] = datos.get("direccion", "")
                             df.at[idx, "Fuente Teléfono"] = ", ".join(datos.get("fuentes_usadas", []))
                             telefonos_encontrados += 1
+                            if datos.get("industria"):
+                                df.at[idx, "Industria"] = datos["industria"]
+                            if datos.get("empleados"):
+                                df.at[idx, "Empleados"] = datos["empleados"]
+                            if datos.get("contacto_nombre"):
+                                df.at[idx, "Contacto Directo"] = datos["contacto_nombre"]
+                            if datos.get("contacto_cargo"):
+                                df.at[idx, "Cargo Directo"] = datos["contacto_cargo"]
                             with log_enrich:
                                 st.success(f"✅ {empresa}: {telefonos}")
                         else:
