@@ -1,0 +1,46 @@
+{
+  "_comment": "Configuracion del prospector autonomo",
+  "openclaw_url": "http://openclaw:9000",
+  "interval_hours": 24,
+  "max_leads_per_search": 20,
+  "leads_por_tanda": 20,
+  "limites_por_pais": {},
+  "rubros_prioritarios": [
+    "agencia de bienes raices",
+    "inmobiliaria",
+    "agencia inmobiliaria",
+    "administradora de propiedades",
+    "constructora"
+  ],
+  "rubros_top": [
+    "agencia de bienes raices",
+    "inmobiliaria",
+    "agencia inmobiliaria",
+    "administradora de propiedades",
+    "constructora",
+    "venta de terrenos",
+    "venta de apartamentos",
+    "venta de casas",
+    "real estate",
+    "asesor inmobiliario"
+  ],
+  "ubicaciones": [
+    "San Salvador, El Salvador",
+    "Santa Ana, El Salvador",
+    "San Miguel, El Salvador",
+    "Managua, Nicaragua",
+    "León, Nicaragua",
+    "Masaya, Nicaragua",
+    "San José, Costa Rica",
+    "Alajuela, Costa Rica",
+    "Cartago, Costa Rica",
+    "Tegucigalpa, Honduras",
+    "San Pedro Sula, Honduras",
+    "La Ceiba, Honduras",
+    "Bogotá, Colombia",
+    "Medellín, Colombia",
+    "Cali, Colombia",
+    "Barranquilla, Colombia",
+    "Cartagena, Colombia"
+  ]
+}

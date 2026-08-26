@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asistente OpenClaw</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-base: #090d16; --bg-surface: #0f172a; --bg-card: #1e293b;
+  --border: #1e293b; --border-light: #334155;
+  --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b;
+  --accent: #6366f1; --accent-hover: #818cf8; --accent-bg: rgba(99,102,241,0.1);
+  --success: #22c55e; --warning: #eab308; --danger: #ef4444;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg-base); color: var(--text-primary);
+  display: flex; flex-direction: column; height: 100vh; font-size: 14px; line-height: 1.5;
+}
+header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; background: var(--bg-surface); border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+header h1 { font-size: 16px; font-weight: 700; }
+header .sub { font-size: 12px; color: var(--text-muted); }
+header a { margin-left: auto; color: var(--accent); text-decoration: none; font-size: 13px; }
+#chat {
+  flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;
+}
+#chat::-webkit-scrollbar { width: 6px; }
+#chat::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+.msg { max-width: 78%; padding: 12px 16px; border-radius: 14px; white-space: pre-wrap; word-break: break-word; }
+.msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.system { align-self: center; background: var(--accent-bg); color: var(--accent); font-size: 12px; padding: 6px 14px; border-radius: 20px; }
+.msg .actions { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.msg .actions code { background: var(--bg-surface); padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+.msg .actions .ok { color: var(--success); }
+.msg .actions .err { color: var(--danger); }
+#composer {
+  display: flex; gap: 10px; padding: 14px 20px; background: var(--bg-surface);
+  border-top: 1px solid var(--border); flex-shrink: 0;
+}
+#input {
+  flex: 1; background: var(--bg-base); border: 1px solid var(--border-light);
+  border-radius: 10px; padding: 10px 14px; color: var(--text-primary);
+  font-family: inherit; font-size: 14px; outline: none; resize: none;
+}
+#input:focus { border-color: var(--accent); }
+#send {
+  background: var(--accent); color: #fff; border: none; border-radius: 10px;
+  padding: 10px 20px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+#send:hover { background: var(--accent-hover); }
+#send:disabled { opacity: 0.5; cursor: not-allowed; }
+.suggestions {
+  display: flex; gap: 8px; flex-wrap: wrap; padding: 0 20px 10px; background: var(--bg-surface);
+}
+.suggestions button {
+  background: var(--bg-card); border: 1px solid var(--border-light); color: var(--text-secondary);
+  border-radius: 20px; padding: 6px 12px; font-size: 12px; cursor: pointer; font-family: inherit;
+}
+.suggestions button:hover { border-color: var(--accent); color: var(--accent); }
+.typing { align-self: flex-start; color: var(--text-muted); font-size: 12px; padding: 4px 8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🤖 Asistente OpenClaw</h1>
+  <div class="sub">Opera el prospector en lenguaje natural</div>
+  <a href="/dashboard">← Dashboard</a>
+</header>
+
+<div id="chat"></div>
+
+<div class="suggestions">
+  <button onclick="ask('¿Dónde estás prospectando y cuántos van en cola?')">Estado y cola</button>
+  <button onclick="ask('¿Cuántos mensajes se han enviado hoy?')">Enviados hoy</button>
+  <button onclick="ask('¿Cuál es la campaña/rubro actual?')">Campaña actual</button>
+  <button onclick="ask('¿Cuáles son los mejores rubros para cierre de ventas?')">Mejores rubros</button>
+  <button onclick="ask('Pausa la prospección')">Pausar</button>
+  <button onclick="ask('Reanuda la prospección')">Reanudar</button>
+  <button onclick="ask('Cambiemos de rubro a distribuidores, arma el nuevo embudo')">Nuevo embudo</button>
+</div>
+
+<div id="composer">
+  <textarea id="input" rows="1" placeholder="Ej: ¿dónde estás prospectando? ¿cuántos en cola? ..."></textarea>
+  <button id="send" onclick="send()">Enviar</button>
+</div>
+
+<script>
+const chatEl = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+
+function addMsg(text, who) {
+  const div = document.createElement('div');
+  div.className = `msg ${who}`;
+  div.textContent = text;
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  return div;
+}
+
+function renderActions(actions) {
+  if (!actions || actions.length === 0) return;
+  const parts = actions.map(a => {
+    const isErr = a.result && a.result.error;
+    const cls = isErr ? 'err' : 'ok';
+    const data = a.result ? JSON.stringify(a.result) : '';
+    return `<code>⚙ ${a.name}</code> <span class="${cls}">${isErr ? 'ERROR' : 'OK'}</span> ${data}`;
+  });
+  const div = document.createElement('div');
+  div.className = 'msg system';
+  div.innerHTML = parts.join('<br>');
+  chatEl.appendChild(div);
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+async function send() {
+  const text = input.value.trim();
+  if (!text) return;
+  ask(text);
+}
+
+async function ask(text) {
+  input.value = '';
+  addMsg(text, 'user');
+  sendBtn.disabled = true;
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.textContent = 'El asistente está pensando…';
+  chatEl.appendChild(typing);
+  chatEl.scrollTop = chatEl.scrollHeight;
+  try {
+    const r = await fetch('/api/assistant/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: 'default' }),
+    });
+    typing.remove();
+    if (!r.ok) {
+      const e = await r.json();
+      addMsg('Error: ' + (e.error || r.status), 'system');
+      return;
+    }
+    const data = await r.json();
+    addMsg(data.reply || 'Listo.', 'bot');
+    renderActions(data.actions);
+  } catch (e) {
+    typing.remove();
+    addMsg('Error de conexión: ' + e.message, 'system');
+  } finally {
+    sendBtn.disabled = false;
+    input.focus();
+  }
+}
+
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+});
+</script>
+</body>
+</html>

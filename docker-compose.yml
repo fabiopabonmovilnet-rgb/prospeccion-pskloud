@@ -1,0 +1,117 @@
+services:
+  # =========================================================================
+  # PostgreSQL - Base de datos para Evolution API
+  # =========================================================================
+  evolution-postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-evolution_db}
+      POSTGRES_USER: ${POSTGRES_USER:-evolution}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evolution_secret_2026}
+    volumes:
+      - ~/pskloud-data/evolution_pgdata:/var/lib/postgresql/data
+    networks:
+      - openclaw-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-evolution}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # =========================================================================
+  # Redis - Cache para Evolution API
+  # =========================================================================
+  evolution-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - ~/pskloud-data/evolution_redisdata:/data
+    networks:
+      - openclaw-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # =========================================================================
+  # Evolution API - WhatsApp Gateway (Baileys)
+  # =========================================================================
+  evolution-api:
+    image: evoapicloud/evolution-api:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SERVER_TYPE: http
+      SERVER_PORT: "8080"
+      SERVER_URL: http://localhost:8080
+
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER:-evolution}:${POSTGRES_PASSWORD:-evolution_secret_2026}@evolution-postgres:5432/${POSTGRES_DB:-evolution_db}?schema=public
+
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://evolution-redis:6379/6
+
+      CORS_ORIGIN: "*"
+      CORS_METHODS: GET,POST,PUT,DELETE
+      CORS_CREDENTIALS: "true"
+
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY:-openclaw_secret_2026}
+
+      WEBHOOK_GLOBAL_ENABLED: "true"
+      WEBHOOK_GLOBAL_URL: http://openclaw:9000/webhook/evolution
+      WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS: "true"
+      WEBHOOK_EVENTS_MESSAGES_UPSERT: "true"
+      WEBHOOK_EVENTS_CONNECTION_UPDATE: "true"
+    volumes:
+      - ~/pskloud-data/evolution_instances:/evolution/store
+    depends_on:
+      evolution-postgres:
+        condition: service_healthy
+      evolution-redis:
+        condition: service_healthy
+    networks:
+      - openclaw-net
+
+  # =========================================================================
+  # OpenClaw - Agente autonomo de prospeccion
+  # =========================================================================
+  openclaw:
+    build: ./openclaw
+    image: prospeccion-pskloud-openclaw:latest
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "8501:8501"
+    environment:
+      EVOLUTION_API_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY:-openclaw_secret_2026}
+      EVOLUTION_INSTANCE: ${EVOLUTION_INSTANCE:-pskloud-prospector}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      HANDOFF_PHONE: ${HANDOFF_PHONE}
+      MAX_DAILY_OUTBOUND: ${MAX_DAILY_OUTBOUND:-50}
+      MIN_DELAY_SECONDS: ${MIN_DELAY_SECONDS:-60}
+      MAX_DELAY_SECONDS: ${MAX_DELAY_SECONDS:-120}
+      TYPING_DELAY_MIN_MS: ${TYPING_DELAY_MIN_MS:-3000}
+      TYPING_DELAY_MAX_MS: ${TYPING_DELAY_MAX_MS:-5000}
+      HOUR_START: ${HOUR_START:-9}
+      HOUR_END: ${HOUR_END:-16}
+      WORK_DAYS: ${WORK_DAYS:-0,1,2,3,4}
+      MSG_SALUDO: '${MSG_SALUDO:-Buenos dias, senores de {nombre_empresa}, un gusto saludarles.}'
+      MSG_CALIFICACION: '${MSG_CALIFICACION:-Queria consultarles brevemente: actualmente disponen de un software administrativo, contable y de control de inventario/POS que cumpla con las exigencias de ley?}'
+      MSG_PRESENTACION: '${MSG_PRESENTACION:-Pertenezco a la casa Premium-Soft creadora del software administrativo y contable disenado para adaptarse a todas las normativas de ley y facturacion electronica. Si tienes un espacio de tiempo esta semana, podemos agendar una llamada o videollamada para una demostracion en vivo de la suite y conversar sobre como podemos apoyarte con la migracion y nuestros planes flexibles.}'
+      MAX_PER_COUNTRY_DAILY: ${MAX_PER_COUNTRY_DAILY:-20}
+      PROSPECT_ACTIVE_HOURS: ${PROSPECT_ACTIVE_HOURS:-24}
+    volumes:
+      - ./:/app/data
+    depends_on:
+      - evolution-api
+    networks:
+      - openclaw-net
+
+networks:
+  openclaw-net:
+    driver: bridge

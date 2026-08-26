@@ -28,6 +28,18 @@ plantilla_personalizada.json
 .vscode/
 .idea/
 
+# Local databases
+*.db
+
+# Local data
+data/
+
+# Local secrets
+.env
+
+# Images (local screenshots)
+images/
+
 # OS
 .DS_Store
 Thumbs.db

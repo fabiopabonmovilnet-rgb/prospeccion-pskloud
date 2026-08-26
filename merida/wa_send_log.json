@@ -1,0 +1,1395 @@
+[
+  {
+    "telefono": "(0274) 2711670",
+    "nombre": "Farmacia Yoama",
+    "fecha": "2026-08-17T20:20:42.037797",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5802742711670@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "581645579298",
+    "nombre": "IMAVACOR C.A",
+    "fecha": "2026-08-17T20:20:42.339047",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"581645579298@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "0274-2631",
+    "nombre": "Farmabien",
+    "fecha": "2026-08-17T20:20:42.340045",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0274-2631"
+  },
+  {
+    "telefono": "0274.2639",
+    "nombre": "Farmacia Centro Clínico",
+    "fecha": "2026-08-17T20:20:42.340045",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0274.2639"
+  },
+  {
+    "telefono": "0412-4774",
+    "nombre": "Farmacia Salutta",
+    "fecha": "2026-08-17T20:20:42.341058",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0412-4774"
+  },
+  {
+    "telefono": "+58 274-2636733",
+    "nombre": "Farmacia Maracaibo",
+    "fecha": "2026-08-17T20:20:42.645829",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742636733@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "2019.9868",
+    "nombre": "Farmacia Más por Menos",
+    "fecha": "2026-08-17T20:20:42.646831",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 2019.9868"
+  },
+  {
+    "telefono": "0412-3545",
+    "nombre": "Farmacia Prada",
+    "fecha": "2026-08-17T20:20:42.646831",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0412-3545"
+  },
+  {
+    "telefono": "0412-6815",
+    "nombre": "Farmacia Fusión C.A RIF J-50034397-3",
+    "fecha": "2026-08-17T20:20:42.647835",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0412-6815"
+  },
+  {
+    "telefono": "0274-9352",
+    "nombre": "COMERCIALIZADORA INSOMEDICAL MERIDA",
+    "fecha": "2026-08-17T20:20:42.647835",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0274-9352"
+  },
+  {
+    "telefono": "585643944027",
+    "nombre": "Farmacia Blue",
+    "fecha": "2026-08-17T20:20:42.875937",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"585643944027@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "0414-7004",
+    "nombre": "FARMAS MERIDA Farmacia La Madrileña, C.A.",
+    "fecha": "2026-08-17T20:20:42.876939",
+    "exitoso": false,
+    "mensaje": "Teléfono inválido: 0414-7004"
+  },
+  {
+    "telefono": "582742711670",
+    "nombre": "Farmacia Yoama",
+    "fecha": "2026-08-17T20:30:15.534056",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742711670@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "581645579298",
+    "nombre": "IMAVACOR C.A",
+    "fecha": "2026-08-17T20:30:15.795624",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"581645579298@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742636733",
+    "nombre": "Farmacia Maracaibo",
+    "fecha": "2026-08-17T20:30:16.101467",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742636733@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "585643944027",
+    "nombre": "Farmacia Blue",
+    "fecha": "2026-08-17T20:30:16.339516",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"585643944027@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "581645579298",
+    "nombre": "Farmacia Mercado Principal",
+    "fecha": "2026-08-17T20:30:16.619319",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"581645579298@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742636733",
+    "nombre": "Farmacia Maracaibo Andina",
+    "fecha": "2026-08-17T20:30:16.839243",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742636733@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "581066165581",
+    "nombre": "Farmacia Saas Humboldt",
+    "fecha": "2026-08-17T20:30:17.127537",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"581066165581@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742666591",
+    "nombre": "Centro Comercial Vessada II",
+    "fecha": "2026-08-17T20:30:17.433994",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742666591@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "586666294789",
+    "nombre": "Momentos de Café",
+    "fecha": "2026-08-17T20:30:17.742294",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"586666294789@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247501875",
+    "nombre": "La Casa del Valle",
+    "fecha": "2026-08-17T20:30:27.733939",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584120212598",
+    "nombre": "Montaña Grill",
+    "fecha": "2026-08-17T20:30:32.216122",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742667642",
+    "nombre": "Mediterraneo | Restaurante Merida | Paella - Asopado de Marisco - Cafe - Postre - Cocteles",
+    "fecha": "2026-08-17T20:30:32.637911",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742667642@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "5802742711670",
+    "nombre": "Farmacia Yoama",
+    "fecha": "2026-08-18T11:20:47.409066",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5802742711670@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "581645579298",
+    "nombre": "IMAVACOR C.A",
+    "fecha": "2026-08-18T11:21:47.549868",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"581645579298@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247786729",
+    "nombre": "Farmabien",
+    "fecha": "2026-08-18T11:22:51.082466",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "5866662947899",
+    "nombre": "Farmacia Centro Clínico",
+    "fecha": "2026-08-18T11:23:51.218557",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5866662947899@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "5827688502133",
+    "nombre": "Farmacia Salutta",
+    "fecha": "2026-08-18T11:24:51.356257",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5827688502133@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "582742630466",
+    "nombre": "Farmacia los Chaguaramos C.A",
+    "fecha": "2026-08-18T11:25:51.498368",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742630466@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742636733",
+    "nombre": "Farmacia Maracaibo",
+    "fecha": "2026-08-18T11:26:51.643181",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742636733@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "5872656637265",
+    "nombre": "Farmacia Más por Menos",
+    "fecha": "2026-08-18T11:27:51.800230",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5872656637265@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "58520102742630",
+    "nombre": "Farmacia Prada",
+    "fecha": "2026-08-18T11:28:51.981131",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"58520102742630@s.whatsapp.net\",\"e"
+  },
+  {
+    "telefono": "582749352570",
+    "nombre": "COMERCIALIZADORA INSOMEDICAL MERIDA",
+    "fecha": "2026-08-18T11:29:52.116106",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582749352570@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "5804126510546",
+    "nombre": "Pizzarito",
+    "fecha": "2026-08-18T11:33:03.271768",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"5804126510546@s.whatsapp.net\",\"ex"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "Pizzarito",
+    "fecha": "2026-08-18T11:34:04.849646",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-18T15:20:34.865211",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584147463569",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-18T15:20:50.897961",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584168727100",
+    "nombre": "abastos en mérida",
+    "fecha": "2026-08-18T15:21:06.789069",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-18T16:26:23.181197",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584147463569",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-18T16:26:39.533134",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "584168727100",
+    "nombre": "abastos en mérida",
+    "fecha": "2026-08-18T16:26:55.891086",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "Bebidas en Mérida en Cylex",
+    "fecha": "2026-08-18T16:27:11.088889",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742661380@"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "cylex.com.ve",
+    "fecha": "2026-08-18T16:27:26.290203",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742661380@"
+  },
+  {
+    "telefono": "582747721061",
+    "nombre": "Contacto",
+    "fecha": "2026-08-18T16:27:41.466031",
+    "exitoso": false,
+    "mensaje": "{\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582747721061@"
+  },
+  {
+    "telefono": "582742630927",
+    "nombre": "farmacia prada",
+    "fecha": "2026-08-19T21:23:43.917913",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742630927@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584128265511",
+    "nombre": "clínica mérida",
+    "fecha": "2026-08-19T21:24:50.460009",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584145320771",
+    "nombre": "la casa del valle",
+    "fecha": "2026-08-19T21:25:53.479549",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584247475468",
+    "nombre": "dolce & bake",
+    "fecha": "2026-08-19T21:26:57.563082",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584247065831",
+    "nombre": "ksamigos café",
+    "fecha": "2026-08-19T21:28:01.629329",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-19T21:29:05.699347",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584143751877",
+    "nombre": "pizzería da enzo",
+    "fecha": "2026-08-19T21:30:09.770833",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584120412177",
+    "nombre": "diego's café",
+    "fecha": "2026-08-19T21:31:13.836315",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584249170237",
+    "nombre": "industrias freeways",
+    "fecha": "2026-08-19T21:32:17.911653",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584247727473",
+    "nombre": "inmobiliaria mérida",
+    "fecha": "2026-08-19T21:33:21.968695",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584120746645",
+    "nombre": "laboratorio mérida",
+    "fecha": "2026-08-19T21:34:26.037470",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584147463569",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-19T21:35:30.091678",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584168727100",
+    "nombre": "abastos en mérida",
+    "fecha": "2026-08-19T21:36:34.165563",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "Bebidas en Mérida en Cylex",
+    "fecha": "2026-08-19T21:37:38.248342",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "cylex.com.ve",
+    "fecha": "2026-08-19T21:38:42.329836",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "582747721061",
+    "nombre": "Contacto",
+    "fecha": "2026-08-19T21:39:46.404705",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584120914676",
+    "nombre": "Grupo Bio (Bio GB)",
+    "fecha": "2026-08-19T21:40:50.471963",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584247782106",
+    "nombre": "Supli Alimentos Distribuciones (Grupo Torres)",
+    "fecha": "2026-08-19T21:41:54.568286",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "582742630927",
+    "nombre": "farmacia prada",
+    "fecha": "2026-08-19T21:43:25.366695",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584247475468",
+    "nombre": "dolce & bake",
+    "fecha": "2026-08-19T21:44:29.436646",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584247065831",
+    "nombre": "ksamigos café",
+    "fecha": "2026-08-19T21:45:33.504853",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-19T21:46:37.584258",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584143751877",
+    "nombre": "pizzería da enzo",
+    "fecha": "2026-08-19T21:47:41.646229",
+    "exitoso": false,
+    "mensaje": "Error: HTTPConnectionPool(host='localhost', port=8080): Max retries exceeded with url: /message/sendText/ps"
+  },
+  {
+    "telefono": "584120412177",
+    "nombre": "diego's café",
+    "fecha": "2026-08-19T21:48:51.864317",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742630927",
+    "nombre": "farmacia prada",
+    "fecha": "2026-08-19T21:50:28.696510",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742630927@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247475468",
+    "nombre": "dolce & bake",
+    "fecha": "2026-08-19T21:51:33.245152",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584247065831",
+    "nombre": "ksamigos café",
+    "fecha": "2026-08-19T21:52:36.874697",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-19T21:53:41.419592",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584143751877",
+    "nombre": "pizzería da enzo",
+    "fecha": "2026-08-19T21:54:48.760487",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584249170237",
+    "nombre": "industrias freeways",
+    "fecha": "2026-08-19T21:55:54.690789",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584247727473",
+    "nombre": "inmobiliaria mérida",
+    "fecha": "2026-08-19T21:56:58.244871",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584120746645",
+    "nombre": "laboratorio mérida",
+    "fecha": "2026-08-19T21:58:01.291316",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584147463569",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-19T21:59:05.537279",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584168727100",
+    "nombre": "abastos en mérida",
+    "fecha": "2026-08-19T22:00:13.645546",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742630927",
+    "nombre": "farmacia prada",
+    "fecha": "2026-08-19T22:01:11.629430",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742630927@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584126510546",
+    "nombre": "pizzarito",
+    "fecha": "2026-08-19T22:02:17.476535",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584147463569",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-19T22:03:20.776971",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584168727100",
+    "nombre": "abastos en mérida",
+    "fecha": "2026-08-19T22:04:24.931787",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "Bebidas en Mérida en Cylex",
+    "fecha": "2026-08-19T22:05:25.180215",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742661380@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742661380",
+    "nombre": "cylex.com.ve",
+    "fecha": "2026-08-19T22:06:25.369263",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742661380@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582747721061",
+    "nombre": "Contacto",
+    "fecha": "2026-08-19T22:07:25.605252",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582747721061@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584120914676",
+    "nombre": "Grupo Bio (Bio GB)",
+    "fecha": "2026-08-19T22:08:31.258993",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584247782106",
+    "nombre": "Supli Alimentos Distribuciones (Grupo Torres)",
+    "fecha": "2026-08-19T22:09:36.022511",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582749991092",
+    "nombre": "Corporación El Campesino",
+    "fecha": "2026-08-19T22:10:36.281177",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582749991092@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582749991324",
+    "nombre": "Corporación El Campesino (sucursal 2)",
+    "fecha": "2026-08-19T22:11:36.494278",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582749991324@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742217022",
+    "nombre": "Grupo Diga",
+    "fecha": "2026-08-19T22:12:36.684740",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742217022@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742523610",
+    "nombre": "Distribuidora Jama CA",
+    "fecha": "2026-08-19T22:13:36.892102",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742523610@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584129977274",
+    "nombre": "Droguería Venezuela (Drovenca)",
+    "fecha": "2026-08-19T22:14:40.620871",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584147462073",
+    "nombre": "American World Comercializadora",
+    "fecha": "2026-08-19T22:15:45.044801",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584149717864",
+    "nombre": "Alimentos Don José",
+    "fecha": "2026-08-19T22:16:49.663594",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742601548",
+    "nombre": "RB Alimentos",
+    "fecha": "2026-08-19T22:17:49.873778",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742601548@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582755168086",
+    "nombre": "Distribuidora de Alimentos Ulisis",
+    "fecha": "2026-08-19T22:18:50.073030",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582755168086@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742662076",
+    "nombre": "Frian C.A.",
+    "fecha": "2026-08-19T22:19:50.282866",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742662076@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584149771838",
+    "nombre": "CIAWONG C.A.",
+    "fecha": "2026-08-19T22:20:55.014027",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742716155",
+    "nombre": "Grupo Sisstro / INDISE CA",
+    "fecha": "2026-08-19T22:21:55.314002",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742716155@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742716155",
+    "nombre": "Industria Electrónica Andina",
+    "fecha": "2026-08-19T22:22:55.530666",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742716155@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742716155",
+    "nombre": "TRAVICA Traffic Vial CA",
+    "fecha": "2026-08-19T22:23:55.728548",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742716155@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742660646",
+    "nombre": "Materiales Andino C.A.",
+    "fecha": "2026-08-19T22:24:55.956545",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742660646@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744158299",
+    "nombre": "DITRONIC C.A.",
+    "fecha": "2026-08-19T22:25:56.176129",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744158299@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584124730772",
+    "nombre": "Compumach",
+    "fecha": "2026-08-19T22:27:02.130045",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584247618236",
+    "nombre": "Grupo JC Seguridad",
+    "fecha": "2026-08-19T22:28:06.653050",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742529577",
+    "nombre": "Jakera Adventure Venezuela",
+    "fecha": "2026-08-19T22:29:06.858522",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742529577@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742524961",
+    "nombre": "Colibrí Tours C.A.",
+    "fecha": "2026-08-19T22:30:07.081256",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742524961@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247825545",
+    "nombre": "RAM Inversiones C.A.",
+    "fecha": "2026-08-19T22:31:07.350063",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"584247825545@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742666042",
+    "nombre": "Dafilca de Occidente C.A.",
+    "fecha": "2026-08-19T22:32:07.556510",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742666042@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584123503481",
+    "nombre": "Crowe Venezuela (Márquez Perdomo & Asoc.)",
+    "fecha": "2026-08-19T22:33:07.801979",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"584123503481@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584261158668",
+    "nombre": "Asociación Civil Corpus Juris",
+    "fecha": "2026-08-19T22:34:15.048767",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582744145057",
+    "nombre": "Pro Recarga",
+    "fecha": "2026-08-19T22:35:15.294999",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744145057@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742620355",
+    "nombre": "Velázquez & Rangel Inmobiliaria",
+    "fecha": "2026-08-19T22:36:15.563922",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742620355@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247574694",
+    "nombre": "Premium Bienes Raíces",
+    "fecha": "2026-08-19T22:37:18.709914",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "584122787700",
+    "nombre": "Inmobiliaria Tu Casa Mérida C.A.",
+    "fecha": "2026-08-19T22:38:24.802914",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742510300",
+    "nombre": "Warranty C.A. Agencia Inmobiliaria",
+    "fecha": "2026-08-19T22:39:25.036427",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742510300@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742219325",
+    "nombre": "Constructora Sicca",
+    "fecha": "2026-08-19T22:40:25.265095",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742219325@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742212601",
+    "nombre": "Comercial Delgado C.A.",
+    "fecha": "2026-08-19T22:41:25.469393",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742212601@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742219298",
+    "nombre": "Comercial Villasmil C.A.",
+    "fecha": "2026-08-19T22:42:25.693775",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742219298@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742211348",
+    "nombre": "Extra Import C.A.",
+    "fecha": "2026-08-19T22:43:25.953295",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742211348@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742215495",
+    "nombre": "Mercantil de Refrigeración C.A.",
+    "fecha": "2026-08-19T22:44:26.192006",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742215495@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742210194",
+    "nombre": "Distribuidora Nelson Guerrero",
+    "fecha": "2026-08-19T22:45:26.434126",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742210194@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742452638",
+    "nombre": "Seguivenca",
+    "fecha": "2026-08-19T22:46:26.657032",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742452638@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742212455",
+    "nombre": "Clínica Ejido C.A.",
+    "fecha": "2026-08-19T22:47:26.910495",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742212455@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582748086680",
+    "nombre": "D&C Medical C.A.",
+    "fecha": "2026-08-19T22:48:27.176849",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582748086680@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584147454325",
+    "nombre": "Bracho Salas C.A.",
+    "fecha": "2026-08-19T22:49:27.366615",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"584147454325@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742214218",
+    "nombre": "El Pollo Avícola",
+    "fecha": "2026-08-19T22:50:27.569380",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742214218@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742216868",
+    "nombre": "Motel Villa Suite",
+    "fecha": "2026-08-19T22:51:27.818556",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742216868@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742631580",
+    "nombre": "Agencia de Viajes Mérida",
+    "fecha": "2026-08-19T22:52:28.086589",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742631580@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742718890",
+    "nombre": "Agropecuaria Sierra Nevada",
+    "fecha": "2026-08-19T22:53:28.346950",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742718890@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742712000",
+    "nombre": "Alimentos Los Andes (ALASA)",
+    "fecha": "2026-08-19T22:54:28.664385",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742712000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742813030",
+    "nombre": "Automotriz El Ejido",
+    "fecha": "2026-08-19T22:55:28.886110",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742813030@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742660500",
+    "nombre": "Automotriz Los Andes C.A.",
+    "fecha": "2026-08-19T22:56:29.086714",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742660500@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742631111",
+    "nombre": "Banco Provincial",
+    "fecha": "2026-08-19T22:57:29.304366",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742631111@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742812222",
+    "nombre": "Bodegón El Ejido",
+    "fecha": "2026-08-19T22:58:29.514992",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742812222@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744312000",
+    "nombre": "Bodegón El Vigía",
+    "fecha": "2026-08-19T22:59:29.736674",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744312000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742710550",
+    "nombre": "C.A. Central La Fina",
+    "fecha": "2026-08-19T23:00:30.015123",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742710550@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742667000",
+    "nombre": "C.C. Alto Prado",
+    "fecha": "2026-08-19T23:01:30.257121",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742667000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742817070",
+    "nombre": "C.C. El Ejido",
+    "fecha": "2026-08-19T23:02:30.469520",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742817070@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744314000",
+    "nombre": "C.C. El Vigía",
+    "fecha": "2026-08-19T23:03:30.786134",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744314000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742445500",
+    "nombre": "C.C. Plaza Mayor",
+    "fecha": "2026-08-19T23:04:30.967043",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742445500@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742817777",
+    "nombre": "Café El Progreso",
+    "fecha": "2026-08-19T23:05:31.198436",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742817777@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744317000",
+    "nombre": "Café El Vigía",
+    "fecha": "2026-08-19T23:06:31.425491",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744317000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742515151",
+    "nombre": "Casa Rústica",
+    "fecha": "2026-08-19T23:07:31.635225",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742515151@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742814444",
+    "nombre": "Centro Médico El Ejido",
+    "fecha": "2026-08-19T23:08:31.952609",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742814444@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744314000",
+    "nombre": "Centro Médico El Vigía",
+    "fecha": "2026-08-19T23:09:32.153798",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744314000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742529015",
+    "nombre": "Centro Médico Marval",
+    "fecha": "2026-08-19T23:10:32.402414",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742529015@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742447011",
+    "nombre": "Clínica Albarregas",
+    "fecha": "2026-08-19T23:11:32.697239",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742447011@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744315000",
+    "nombre": "Clínica El Vigía",
+    "fecha": "2026-08-19T23:12:32.961114",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744315000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742815555",
+    "nombre": "Clínica Los Ángeles",
+    "fecha": "2026-08-19T23:13:33.392660",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742815555@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742523344",
+    "nombre": "Clínica Mérida",
+    "fecha": "2026-08-19T23:14:33.643010",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742523344@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742521222",
+    "nombre": "Convención Hotel Boutique",
+    "fecha": "2026-08-19T23:15:33.847444",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742521222@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742714510",
+    "nombre": "Distribuidora Los Curos C.A.",
+    "fecha": "2026-08-19T23:16:34.196437",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742714510@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584247291806",
+    "nombre": "Dolce & Bake",
+    "fecha": "2026-08-19T23:17:41.417632",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742816666",
+    "nombre": "Farmacia El Ejido",
+    "fecha": "2026-08-19T23:18:41.664286",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742816666@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744316000",
+    "nombre": "Farmacia El Vigía",
+    "fecha": "2026-08-19T23:19:41.978980",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744316000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584120747523",
+    "nombre": "Farmacia Más por Menos",
+    "fecha": "2026-08-19T23:20:46.169815",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742634467",
+    "nombre": "Farmacia Yoama",
+    "fecha": "2026-08-19T23:21:46.388056",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742634467@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742812020",
+    "nombre": "Ferretería El Candado",
+    "fecha": "2026-08-19T23:22:46.613895",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742812020@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584226341841",
+    "nombre": "Ferretería FEVARCA",
+    "fecha": "2026-08-19T23:23:47.031838",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"584226341841@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742520986",
+    "nombre": "Ferretería Hermanos Vielma",
+    "fecha": "2026-08-19T23:24:47.246890",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742520986@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742525252",
+    "nombre": "González y González",
+    "fecha": "2026-08-19T23:25:47.428024",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742525252@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742443322",
+    "nombre": "Hacienda El Rosal",
+    "fecha": "2026-08-19T23:26:47.671807",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742443322@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742714420",
+    "nombre": "Hospital Clínico del Valle",
+    "fecha": "2026-08-19T23:27:47.884929",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742714420@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742663722",
+    "nombre": "Hotel Belensate",
+    "fecha": "2026-08-19T23:28:48.096677",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742663722@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742521222",
+    "nombre": "Hotel Convención Boutique",
+    "fecha": "2026-08-19T23:29:48.310790",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742521222@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742815050",
+    "nombre": "Hotel El Centro",
+    "fecha": "2026-08-19T23:30:48.627362",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742815050@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744311000",
+    "nombre": "Hotel El Vigía",
+    "fecha": "2026-08-19T23:31:48.840670",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744311000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742633333",
+    "nombre": "Hotel Presidente",
+    "fecha": "2026-08-19T23:32:49.151314",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742633333@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742400000",
+    "nombre": "hotel tibisay mérida",
+    "fecha": "2026-08-19T23:33:49.367515",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742400000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742515151",
+    "nombre": "Inversiones La Pedregosa",
+    "fecha": "2026-08-19T23:34:49.581039",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742515151@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742528282",
+    "nombre": "La Casa de las Enchiladas",
+    "fecha": "2026-08-19T23:35:49.817515",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742528282@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742528282",
+    "nombre": "La Estación",
+    "fecha": "2026-08-19T23:36:50.039983",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742528282@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742443322",
+    "nombre": "La Venezuela de Antier",
+    "fecha": "2026-08-19T23:37:50.323177",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742443322@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742443090",
+    "nombre": "Laboratorio Multilab Mérida",
+    "fecha": "2026-08-19T23:38:50.639049",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742443090@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742818888",
+    "nombre": "Lácteos El Ejido",
+    "fecha": "2026-08-19T23:39:50.863835",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742818888@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744318000",
+    "nombre": "Lácteos El Vigía",
+    "fecha": "2026-08-19T23:40:51.166367",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744318000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742401111",
+    "nombre": "Lácteos Santa Rosa",
+    "fecha": "2026-08-19T23:41:51.484135",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742401111@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584144003134",
+    "nombre": "Maderas Imeca Suc. Mérida",
+    "fecha": "2026-08-19T23:42:55.825728",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742811010",
+    "nombre": "Materiales El Ejido",
+    "fecha": "2026-08-19T23:43:56.096869",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742811010@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742713022",
+    "nombre": "Materiales Los Andes",
+    "fecha": "2026-08-19T23:44:56.321855",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742713022@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742633333",
+    "nombre": "Mérida Shopping",
+    "fecha": "2026-08-19T23:45:56.631476",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742633333@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742819999",
+    "nombre": "Panadería El Sabor",
+    "fecha": "2026-08-19T23:46:56.952972",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742819999@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744319000",
+    "nombre": "Panadería El Vigía",
+    "fecha": "2026-08-19T23:47:57.269327",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744319000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742514242",
+    "nombre": "Panadería La Francesa",
+    "fecha": "2026-08-19T23:48:57.482735",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742514242@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744313000",
+    "nombre": "Parque El Vigía",
+    "fecha": "2026-08-19T23:49:57.694106",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744313000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742441244",
+    "nombre": "Parque Temático Los Aleros",
+    "fecha": "2026-08-19T23:50:58.011104",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742441244@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742524164",
+    "nombre": "Posada Casa Sibana",
+    "fecha": "2026-08-19T23:51:58.299568",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742524164@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742524164",
+    "nombre": "Posada Casa Sol",
+    "fecha": "2026-08-19T23:52:58.548482",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742524164@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742814040",
+    "nombre": "Posada El Ejido",
+    "fecha": "2026-08-19T23:53:58.854973",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742814040@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744312000",
+    "nombre": "Posada El Vigía",
+    "fecha": "2026-08-19T23:54:59.069528",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744312000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "584147481120",
+    "nombre": "Posada La Montaña",
+    "fecha": "2026-08-19T23:56:03.233966",
+    "exitoso": true,
+    "mensaje": "WhatsApp enviado"
+  },
+  {
+    "telefono": "582742522080",
+    "nombre": "Posada y Ecoturismo Guamanchi",
+    "fecha": "2026-08-19T23:57:03.449946",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742522080@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742816060",
+    "nombre": "Restaurante El Sabor",
+    "fecha": "2026-08-19T23:58:03.701388",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742816060@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742400000",
+    "nombre": "Tibisay Hotel Mérida",
+    "fecha": "2026-08-19T23:59:03.913158",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742400000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582744313000",
+    "nombre": "Tienda El Poblado",
+    "fecha": "2026-08-20T00:00:04.126833",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582744313000@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742448011",
+    "nombre": "Traki Mérida",
+    "fecha": "2026-08-20T00:01:04.444229",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742448011@s.whatsapp.net\",\"exi"
+  },
+  {
+    "telefono": "582742528282",
+    "nombre": "Turismo Andino",
+    "fecha": "2026-08-20T00:02:04.657405",
+    "exitoso": false,
+    "mensaje": "Error 400: {\"status\":400,\"error\":\"Bad Request\",\"response\":{\"message\":[{\"jid\":\"582742528282@s.whatsapp.net\",\"exi"
+  }
+]

@@ -1,0 +1,39 @@
+{
+  "_comment": "Configuracion del prospector autonomo",
+  "openclaw_url": "http://openclaw:9000",
+  "interval_hours": 24,
+  "max_leads_per_search": 20,
+  "leads_por_tanda": 10,
+  "limites_por_pais": {
+    "Argentina": 2,
+    "Chile": 2,
+    "Ecuador": 2,
+    "Perú": 2,
+    "México": 2
+  },
+  "rubros_prioritarios": [
+    "salon de belleza",
+    "peluqueria",
+    "barberia",
+    "spa"
+  ],
+  "ubicaciones": [
+    "Ciudad de Panamá, Panamá",
+    "San Salvador, El Salvador",
+    "Managua, Nicaragua",
+    "San José, Costa Rica",
+    "Alajuela, Costa Rica",
+    "Cartago, Costa Rica",
+    "Tegucigalpa, Honduras",
+    "San Pedro Sula, Honduras",
+    "Bogotá, Colombia",
+    "Medellín, Colombia",
+    "Cali, Colombia",
+    "Barranquilla, Colombia",
+    "Buenos Aires, Argentina",
+    "Santiago, Chile",
+    "Quito, Ecuador",
+    "Lima, Perú",
+    "Ciudad de México, México"
+  ]
+}

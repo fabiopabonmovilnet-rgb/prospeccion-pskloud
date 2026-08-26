@@ -1,0 +1,60 @@
+[
+  {
+    "client_id": "254eee6c",
+    "channel": "whatsapp",
+    "messages": [
+      {
+        "step": 1,
+        "text": "{{ {saludo}, señores de {nombre_empresa}, un gusto saludarles.| {saludo}, equipo de {nombre_empresa}, un placer saludarles.| Hola, un gusto dirigirme al equipo de {nombre_empresa}.| {saludo}, saludos cordiales para el equipo de {nombre_empresa}.| Hola, feliz día a todo el equipo de {nombre_empresa}.| {saludo}, un cordial saludo para todo el equipo de {nombre_empresa}.| Hola, les saluda un consultor de software para {nombre_empresa}.| Saludos a todo el personal de {nombre_empresa}, encantado de escribirles.}}",
+        "enabled": true
+      },
+      {
+        "step": 2,
+        "text": "{{Quería consultarles brevemente: ¿actualmente disponen de un software administrativo, contable y de control de inventario/POS que cumpla con las exigencias de ley?|Quisiera preguntarles: ¿hoy cuentan con un sistema administrativo y contable que integre inventario/POS y cumpla las normativas fiscales de su país?|Les escribo para saber si ya manejan un software que una lo administrativo, lo contable y el control de inventario/POS conforme a la ley.|Quería saber si disponen de una plataforma administrativa y contable con facturación electrónica e inventario/POS al día.|Me permito preguntar: ¿llevan hoy su administración, contabilidad e inventario con un software que cumpla las exigencias de la ley?|¿Ya trabajan con un sistema que integre lo administrativo, contable e inventario/POS y esté alineado a la normativa fiscal vigente?}}",
+        "enabled": true
+      },
+      {
+        "step": 3,
+        "text": "{{Pertenezco a la casa Premium-Soft, creadora de un software administrativo y contable diseñado para adaptarse a las normativas de ley y facturación electrónica de cada país. Si tienen un espacio esta semana, podemos agendar una llamada o videollamada para mostrarles una demo en vivo sin compromiso.|Soy consultor de PSKloud, de Premium-Soft; desarrollamos software administrativo y contable que se ajusta a la facturación electrónica y las exigencias de ley. ¿Les quedaría bien una breve videollamada esta semana para ver la plataforma en vivo y sin compromiso?|Del lado de Premium-Soft, ofrecemos un sistema administrativo y contable con facturación electrónica y control de inventario/POS. Si les interesa, con gusto les hago una demo en vivo esta semana, sin ningún compromiso.|Trabajo con Premium-Soft, casa creadora de software administrativo y contable adaptado a la normativa fiscal y la facturación electrónica. ¿Podemos agendar una llamada corta para mostrarles la suite y ver cómo encaja con su operación?|Soy parte del equipo de Premium-Soft: ayudamos a negocios de Latinoamérica a automatizar su administración, contabilidad e inventario con facturación electrónica al día. ¿Les parece si les muestro una demo rápida esta semana?|Le escribo de Premium-Soft; creamos software administrativo y contable ajustado a la facturación electrónica y a la normativa de su país. Con gusto les agendo una breve demostración en línea para que la conozcan. Por aquí pueden agendar su demo: {bot_wa}}}",
+        "enabled": true
+      }
+    ]
+  },
+  {
+    "client_id": "254eee6c",
+    "channel": "email",
+    "messages": [
+      {
+        "step": 1,
+        "text": "Hola {nombre_empresa},\n\nSomos Premium-Soft, especialistas en software administrativo y contable para Latinoamérica.\n\n¿Les gustaría conocer cómo podemos ayudarles a optimizar su gestión?",
+        "enabled": true
+      },
+      {
+        "step": 2,
+        "text": "Hola {nombre_empresa},\n\nQueríamos dar seguimiento a nuestro anterior mensaje. Tenemos planes flexibles adaptados a empresas como la suya.",
+        "enabled": true
+      },
+      {
+        "step": 3,
+        "text": "Hola {nombre_empresa},\n\nComo último contacto, les ofrecemos una demo gratuita de nuestra suite administrativa. Sin compromiso.",
+        "enabled": true
+      }
+    ]
+  },
+  {
+    "client_id": "254eee6c",
+    "channel": "instagram",
+    "messages": [
+      {
+        "step": 1,
+        "text": "¡Hola {nombre_empresa}! Somos Premium-Soft, te escribimos porque tenemos una solución que puede interesarles.",
+        "enabled": true
+      },
+      {
+        "step": 2,
+        "text": "¿Les gustaría agendar una breve llamada para conocer más?",
+        "enabled": true
+      }
+    ]
+  }
+]

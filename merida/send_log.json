@@ -1,0 +1,929 @@
+[
+  {
+    "email": "webmaster@andesholidays.com",
+    "nombre": "Farmacia Yoama",
+    "fecha": "2026-08-17T17:27:50.172061",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "tienda@admerida.es",
+    "nombre": "IMAVACOR C.A",
+    "fecha": "2026-08-17T17:28:51.676384",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "soporte@farmabien.com",
+    "nombre": "Farmabien",
+    "fecha": "2026-08-17T17:29:53.136674",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "directoriosaludme@gmail.com",
+    "nombre": "Farmacia Centro Clínico",
+    "fecha": "2026-08-17T17:30:55.398117",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "rrhh.tiendasalud@gmail.com",
+    "nombre": "Farmacia Salutta",
+    "fecha": "2026-08-17T17:31:57.306686",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "farmatelmaracaibo@gmail.com",
+    "nombre": "Farmacia Maracaibo",
+    "fecha": "2026-08-17T17:32:59.246147",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "martalopmari@gmail.com",
+    "nombre": "Farmacia Prada",
+    "fecha": "2026-08-17T17:34:00.876077",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "cia.farmafusion@gmail.com",
+    "nombre": "Farmacia Fusión C.A RIF J-50034397-3",
+    "fecha": "2026-08-17T17:35:02.925992",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "v.insumedical@gmail.com",
+    "nombre": "COMERCIALIZADORA INSOMEDICAL MERIDA",
+    "fecha": "2026-08-17T17:36:05.187931",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "esdrasmayen@gmail.com",
+    "nombre": "Farmacia Blue",
+    "fecha": "2026-08-17T17:37:07.025817",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "info@farmaciamerida.com",
+    "nombre": "FARMAS MERIDA Farmacia La Madrileña, C.A.",
+    "fecha": "2026-08-17T17:38:08.507856",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "reclutamientosancristobal@hotmail.com",
+    "nombre": "Farmacia Mercado Principal",
+    "fecha": "2026-08-17T17:39:10.433201",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "directoriosaludme@gmail.com",
+    "nombre": "Farmacia Maracaibo Andina",
+    "fecha": "2026-08-17T17:40:11.950968",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "info@clinicasdentalestetic.com",
+    "nombre": "Clínica Mérida",
+    "fecha": "2026-08-17T17:41:14.377333",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "directoriosaludme@gmail.com",
+    "nombre": "Grupo Farmamundo Farmacia 16 de Septiembre, C.A.",
+    "fecha": "2026-08-17T17:42:16.089884",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "fabioepabonr@gmail.com",
+    "nombre": "Desconocido",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "fabioepabonr@gmail.com",
+    "nombre": "Desconocido",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "fabioepabonr@gmail.com",
+    "nombre": "Desconocido",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "recurso-2@4x-300x199.png",
+    "nombre": "Farmacia Más por Menos",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "farmaciahumboldt@grupoqr.com.ve",
+    "nombre": "Farmacia Saas Humboldt",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "polloenbrasaslasamericas@gmail.com",
+    "nombre": "Pollo en Brasas Las Américas",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "ventas@dromega.com.ve",
+    "nombre": "Mega Farmacia",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "fundacionalbertoadriani@gmail.com",
+    "nombre": "Centro Comercial Los Chaguaramos",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "j.albertoazmitia@gmail.com",
+    "nombre": "Momentos de Café",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "lachistorraangel@hotmail.com.store",
+    "nombre": "La Chistorra",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "bocatascafe@gmail.com",
+    "nombre": "El Ático del Cine",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "reservasxiniaypeter@gmail.com",
+    "nombre": "La Casa del Valle",
+    "fecha": "2026-08-17T19:45:08.465539",
+    "exitoso": true,
+    "mensaje": "Enviado (verificado via Gmail)",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "montanagrilltlaxcala@outlook.com",
+    "nombre": "Montaña Grill",
+    "fecha": "2026-08-17T19:46:49.843822",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "dolceandbake.com.ve@gmail.com",
+    "nombre": "Dolce & Bake",
+    "fecha": "2026-08-17T19:47:52.195968",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "mediterraneobc@hotmail.com",
+    "nombre": "Mediterraneo | Restaurante Merida | Paella - Asopado de Marisco - Cafe - Postre - Cocteles",
+    "fecha": "2026-08-17T19:48:54.366210",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "tianicota@gmail.com",
+    "nombre": "Tia Nicota",
+    "fecha": "2026-08-17T19:49:57.541797",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "ksamigos@gmail.com",
+    "nombre": "Ksamigos Café",
+    "fecha": "2026-08-17T19:50:59.809520",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "info@guiapana.com",
+    "nombre": "La Porchetta",
+    "fecha": "2026-08-17T19:52:02.173567",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "heladoscarabobo.merida@gmail.com",
+    "nombre": "Copos Gelato Bar",
+    "fecha": "2026-08-17T19:53:04.286135",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "lacarbonera.ve@gmail.com",
+    "nombre": "La Carbonera",
+    "fecha": "2026-08-17T19:54:07.574703",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "moffynscafe@hotmail.com",
+    "nombre": "Moffyns Café",
+    "fecha": "2026-08-17T19:55:09.466017",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "pizzaritoexpressca@gmail.com",
+    "nombre": "Pizzarito",
+    "fecha": "2026-08-17T19:56:11.810972",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "info@guiapana.com",
+    "nombre": "Merida Grill",
+    "fecha": "2026-08-17T19:57:13.914328",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "ligia.velasquez@gmail.com",
+    "nombre": "Sarrapia",
+    "fecha": "2026-08-17T19:58:17.126655",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "cordero300923@gmail.com",
+    "nombre": "Pizzería Da Enzo",
+    "fecha": "2026-08-17T19:59:19.126318",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "m-maps@support.yandex.ru",
+    "nombre": "Delicias de la Casa 1413",
+    "fecha": "2026-08-17T20:00:21.181998",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "m-maps@support.yandex.ru",
+    "nombre": "Panadería Croacia",
+    "fecha": "2026-08-17T20:01:23.340280",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "pjnocetti2015@gmail.com",
+    "nombre": "Panadería Masa Madre",
+    "fecha": "2026-08-17T20:02:25.315294",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "jcbruzual1@gmail.com",
+    "nombre": "EL PAN DE LA ABUELA",
+    "fecha": "2026-08-17T20:03:27.352301",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "rhdiegoscafe@gmail.com",
+    "nombre": "Diego's Café",
+    "fecha": "2026-08-17T20:04:40.773556",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente",
+    "template": "ExpoTrabajo & Business Consulting Day"
+  },
+  {
+    "email": "ventas@industriasfreeways.com",
+    "nombre": "industrias freeways",
+    "fecha": "2026-08-18T14:38:19.209713",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ventasmerida@dbsmx.com",
+    "nombre": "distribuidora de baleros del sureste",
+    "fecha": "2026-08-18T14:39:20.824631",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "administracion@terrabienesfrca.com",
+    "nombre": "centro médico quirúrgico stma. trinidad",
+    "fecha": "2026-08-18T14:40:22.214950",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "merida@cruzroja.ve",
+    "nombre": "cruz roja venezolana",
+    "fecha": "2026-08-18T14:41:24.048010",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "revistascientificas@ucla.edu.ve",
+    "nombre": "ágora de heterodoxias",
+    "fecha": "2026-08-18T14:42:25.695464",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "evrengurbuz@hotmail.com",
+    "nombre": "bahar dağlı gürbüz özel sağlık meslek...",
+    "fecha": "2026-08-18T14:43:27.370134",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "satornocentro@gmail.com",
+    "nombre": "rb alimentos c.a",
+    "fecha": "2026-08-18T14:44:28.920686",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "cupublicaciones@gmail.com",
+    "nombre": "agricultura por contrato",
+    "fecha": "2026-08-18T14:45:30.492806",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "contacto@inmobiliariamerida.com",
+    "nombre": "inmobiliaria mérida",
+    "fecha": "2026-08-18T14:46:32.264247",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "atencionalcliente@cec.com.ve",
+    "nombre": "corporación el campesino",
+    "fecha": "2026-08-18T14:47:33.934440",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "eduardopmerida@gmail.com",
+    "nombre": "laboratorio mérida",
+    "fecha": "2026-08-18T14:48:35.398069",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "hotelelsolar@hotmail.com",
+    "nombre": "hotel bar restaurant altamira",
+    "fecha": "2026-08-18T14:49:37.299098",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "hotelgaleria10@gmail.com",
+    "nombre": "\"hotel páramo la culata ...",
+    "fecha": "2026-08-18T14:50:38.950652",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "hotel-luna-blanca@hotmail.com",
+    "nombre": "hoteles y posadas cerca de la ...",
+    "fecha": "2026-08-18T14:51:40.478388",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "buonviaggiorodeoplaza@gmail.com",
+    "nombre": "hotel apartamento",
+    "fecha": "2026-08-18T14:52:41.900831",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "evelyn.caribaytours@hotmail.com",
+    "nombre": "caribay tours",
+    "fecha": "2026-08-18T14:53:43.491444",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "arassari1@gmail.com",
+    "nombre": "arassari trek",
+    "fecha": "2026-08-18T14:54:44.972591",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@noatica.com",
+    "nombre": "noática",
+    "fecha": "2026-08-18T14:55:46.387194",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "last_initial@shmerida.com",
+    "nombre": "software house mérida email format",
+    "fecha": "2026-08-18T14:56:47.784503",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "pytronicca@gmail.com",
+    "nombre": "pytronic, c.a.",
+    "fecha": "2026-08-18T14:57:49.376191",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "contacto@meridalegal.com",
+    "nombre": "areas",
+    "fecha": "2026-08-18T14:58:50.958965",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "seginteca.merida@gmail.com",
+    "nombre": "vigilancia privada (@seginteca)",
+    "fecha": "2026-08-18T14:59:52.596071",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "goxpressdev@gmail.com",
+    "nombre": "go express",
+    "fecha": "2026-08-18T15:00:54.191675",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "carroceriaschama@gmail.com",
+    "nombre": "carrocerias chama",
+    "fecha": "2026-08-18T15:01:55.585207",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ventas@panelsolarvenezuela.com",
+    "nombre": "ecosolaris",
+    "fecha": "2026-08-18T15:02:57.339419",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "contacto@tupanelsolarve.com",
+    "nombre": "tu panel solar ve",
+    "fecha": "2026-08-18T15:03:58.975533",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@vemexenergy.com",
+    "nombre": "vemex energy",
+    "fecha": "2026-08-18T15:05:00.520757",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "sagasdg2014@gmail.com",
+    "nombre": "ente nacional del gas",
+    "fecha": "2026-08-18T15:06:02.073425",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@clinicaaransalud.com",
+    "nombre": "clínicas en mérida con clínica aransalud",
+    "fecha": "2026-08-18T15:07:03.602445",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "clinicas.hm@gmail.com",
+    "nombre": "clínicas hm",
+    "fecha": "2026-08-18T15:08:04.980290",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "miguel.fernandezb@salud-juntaex.es",
+    "nombre": "hospital de mérida",
+    "fecha": "2026-08-18T15:09:06.398231",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "gerencia@topdentalhealth.net",
+    "nombre": "top dental",
+    "fecha": "2026-08-18T15:10:07.915980",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "merida.aventura@gmail.com",
+    "nombre": "mérida turística",
+    "fecha": "2026-08-18T15:11:09.590593",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "aventurastoursb.a@gmail.com",
+    "nombre": "aventuras tours mérida",
+    "fecha": "2026-08-18T15:12:11.078930",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "marketingjc04@gmail.com",
+    "nombre": "alimentos y bebidas jc",
+    "fecha": "2026-08-18T15:13:12.696447",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ortis@uptm.edu.ve",
+    "nombre": "pnf en informática",
+    "fecha": "2026-08-18T15:14:14.398119",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "merfri@merfri.com",
+    "nombre": "merfri",
+    "fecha": "2026-08-18T15:15:15.977726",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "solarandescontacto@gmail.com",
+    "nombre": "solar andes",
+    "fecha": "2026-08-18T15:16:17.313418",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "atencionalcliente@lacteossantamaria.com",
+    "nombre": "lacteos santa maría",
+    "fecha": "2026-08-18T15:17:18.700875",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "atencionalcliente@hoteles-tibisay.com",
+    "nombre": "hotel tibisay mérida",
+    "fecha": "2026-08-18T15:18:20.132639",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "contacto@audicont.com.ve",
+    "nombre": "audicont",
+    "fecha": "2026-08-18T15:19:21.650405",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@disbatterylubricantes.com",
+    "nombre": "Contáctenos",
+    "fecha": "2026-08-18T16:00:47.842284",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "colibri_merida@hotmail.com",
+    "nombre": "A Treasure In The Andes",
+    "fecha": "2026-08-18T16:01:49.372970",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "comercioexterior@lalacteo.com",
+    "nombre": "EMPRESA",
+    "fecha": "2026-08-18T16:02:51.056279",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@cultivostropicalespanamericana.com",
+    "nombre": "Cultivos Tropicales Panamericana C.A.",
+    "fecha": "2026-08-18T16:03:52.491715",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "enrique.lamarca@gmail.com",
+    "nombre": "Paisajes",
+    "fecha": "2026-08-18T16:04:53.950058",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ventas.vehiculos@toyoval.com.ve",
+    "nombre": "Toyota",
+    "fecha": "2026-08-18T16:05:58.638877",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@bridelo.com",
+    "nombre": "VEHICULOS",
+    "fecha": "2026-08-18T16:07:00.178591",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@coliseomotor.com.en",
+    "nombre": "Coliseo Motor Venta de vehículos de ocasión en Mérida",
+    "fecha": "2026-08-18T16:08:01.713470",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ventaspanamericana@gmail.com",
+    "nombre": "Automotriz Panamericana",
+    "fecha": "2026-08-18T16:09:03.064689",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "frescasadecv@hotmail.com",
+    "nombre": "Aguas purificadas",
+    "fecha": "2026-08-18T16:10:21.192192",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@grupocayco.com.ve",
+    "nombre": "Cayco",
+    "fecha": "2026-08-18T16:11:26.242729",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "warrantinmobiliaria@gmail.com",
+    "nombre": "Warranty, C.A",
+    "fecha": "2026-08-18T16:12:27.783561",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "rocamo20@gmail.com",
+    "nombre": "Individuo de Número",
+    "fecha": "2026-08-18T16:13:29.471146",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "presupuesto@centromedicosigma.com",
+    "nombre": "Contacto",
+    "fecha": "2026-08-18T16:14:31.343809",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "ventas@cosurco.com",
+    "nombre": "Arroz",
+    "fecha": "2026-08-18T16:15:33.024608",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "gesquivels@proteinol.com",
+    "nombre": "Aceites y Grasas Comestibles",
+    "fecha": "2026-08-18T16:16:45.713809",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@alivezla.com",
+    "nombre": "Alivezla",
+    "fecha": "2026-08-18T16:17:51.469272",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "rumbaempates.merida@gmail.com",
+    "nombre": "Mérida",
+    "fecha": "2026-08-18T16:18:52.814924",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@merkionis.com",
+    "nombre": "Contáctanos",
+    "fecha": "2026-08-18T16:19:54.475796",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "quesosantiagomadera@gmail.com",
+    "nombre": "Quesería Madera",
+    "fecha": "2026-08-18T16:20:56.097906",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "contacto@transparenciave.org",
+    "nombre": "Lácteos Los Andes",
+    "fecha": "2026-08-18T16:21:57.545734",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@fumplaven.com",
+    "nombre": "¿Quiénes somos?",
+    "fecha": "2026-08-18T16:23:10.402049",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "gmail.com@autobranmar.motores",
+    "nombre": "Red de atención al cliente",
+    "fecha": "2026-08-18T16:24:11.972096",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "info@hyundaivenezuela.com",
+    "nombre": "Concesionarios autorizados en Anzoátegui",
+    "fecha": "2026-08-18T16:25:13.512723",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "consultas@mavenehijos.com",
+    "nombre": "Concesionarios y horarios",
+    "fecha": "2026-08-18T16:26:15.206073",
+    "exitoso": true,
+    "mensaje": "OK"
+  },
+  {
+    "email": "administracion@grupobiolatam.com",
+    "nombre": "Grupo Bio (Bio GB)",
+    "fecha": "2026-08-19T20:47:24.422468",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "redes@grupotorres.com.ve",
+    "nombre": "Supli Alimentos Distribuciones (Grupo Torres)",
+    "fecha": "2026-08-19T20:48:26.165991",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "rafael.stroobants@crowe.com.ve",
+    "nombre": "Crowe Venezuela (Márquez Perdomo & Asoc.)",
+    "fecha": "2026-08-19T20:49:27.815354",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "info@agenciadviajesmerida.com",
+    "nombre": "Agencia de Viajes Mérida",
+    "fecha": "2026-08-19T20:50:29.973806",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "agropecuariasierranevada@gmail.com",
+    "nombre": "Agropecuaria Sierra Nevada",
+    "fecha": "2026-08-19T20:51:32.540721",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "ventas@alasa.com.ve",
+    "nombre": "Alimentos Los Andes (ALASA)",
+    "fecha": "2026-08-19T20:52:38.286029",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "automotrizeljido@gmail.com",
+    "nombre": "Automotriz El Ejido",
+    "fecha": "2026-08-19T20:53:40.051435",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "ventas@automotrizlosandes.com",
+    "nombre": "Automotriz Los Andes C.A.",
+    "fecha": "2026-08-19T20:54:41.649810",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "info@banco.provincial.com",
+    "nombre": "Banco Provincial",
+    "fecha": "2026-08-19T20:55:44.147117",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "bodegoneljido@gmail.com",
+    "nombre": "Bodegón El Ejido",
+    "fecha": "2026-08-19T20:56:47.636541",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "bodegonelvigia@gmail.com",
+    "nombre": "Bodegón El Vigía",
+    "fecha": "2026-08-19T20:57:53.063042",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "ventas@lafina.com.ve",
+    "nombre": "C.A. Central La Fina",
+    "fecha": "2026-08-19T20:58:54.720031",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "info@ccaltoprado.com",
+    "nombre": "C.C. Alto Prado",
+    "fecha": "2026-08-19T20:59:56.879101",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "cceljido@gmail.com",
+    "nombre": "C.C. El Ejido",
+    "fecha": "2026-08-19T21:00:59.133911",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  },
+  {
+    "email": "ccelvigia@gmail.com",
+    "nombre": "C.C. El Vigía",
+    "fecha": "2026-08-19T21:02:01.196760",
+    "exitoso": true,
+    "mensaje": "Enviado correctamente"
+  }
+]

@@ -1,0 +1,51 @@
+=============================================================
+  INSTRUCTIVO - PSKloud Prospector Portable (Pendrive)
+=============================================================
+
+REQUISITOS EN LA OTRA PC
+------------------------
+- Windows 10/11 (64-bit)
+- Internet (solo la primera vez para instalar Docker en WSL)
+- Permisos de Administrador (solo la primera vez)
+
+PRIMERA VEZ (5 minutos, requiere admin)
+----------------------------------------
+1. Insertar el pendrive
+2. Copiar la carpeta "prospeccion-pskloud" al escritorio
+   (o correr directo desde el pendrive)
+3. Clic derecho en "setup_docker.bat" > "Ejecutar como administrador"
+4. Si pide reiniciar el PC, reiniciar y volver al paso 3
+5. Esperar a que instale Docker en WSL (~3 min)
+6. Listo! Ya no necesitas admin nunca mas.
+
+CADA VEZ QUE USES EL PROSPECTOR
+--------------------------------
+1. Doble clic en "iniciar_prospector.bat"
+2. Esperar 15-20 segundos
+3. Se abre el navegador automaticamente
+4. Dashboard: http://localhost:9000
+
+DETENER
+-------
+Doble clic en "detener_prospector.bat"
+
+ACTUALIZAR DESDE LA PC DE CASA
+-------------------------------
+1. En la PC de casa: ejecutar "exportar_imagenes.bat"
+2. Copiar la carpeta actualizada al pendrive
+3. En la otra PC: detener, copiar encima, iniciar de nuevo
+
+PUERTOS
+-------
+  9000  - Dashboard OpenClaw (principal)
+  8501  - Streamlit (analytics / Merida)
+  8080  - Evolution API (WhatsApp)
+
+SOLUCION DE PROBLEMAS
+---------------------
+- "Docker no esta corriendo": Abre Docker Desktop o WSL
+- "Puerto ocupado": Cerrar el navegador y volver a iniciar
+- "Error al importar imagenes": Ejecutar setup_docker.bat de nuevo
+- Si WSL no funciona: dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+
+=============================================================

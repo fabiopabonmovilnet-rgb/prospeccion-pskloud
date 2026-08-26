@@ -1,0 +1,87 @@
+[
+ {
+  "id": "254eee6c",
+  "name": "PSKloud Latam",
+  "rubros": [
+   "bienes raíces",
+   "inmobiliaria",
+   "real estate"
+  ],
+  "ubicaciones": [
+   "San Salvador, El Salvador",
+   "Santa Ana, El Salvador",
+   "San Miguel, El Salvador",
+   "Managua, Nicaragua",
+   "León, Nicaragua",
+   "Masaya, Nicaragua",
+   "San José, Costa Rica",
+   "Alajuela, Costa Rica",
+   "Cartago, Costa Rica",
+   "Tegucigalpa, Honduras",
+   "San Pedro Sula, Honduras",
+   "La Ceiba, Honduras",
+   "Bogotá, Colombia",
+   "Medellín, Colombia",
+   "Cali, Colombia",
+   "Barranquilla, Colombia",
+   "Cartagena, Colombia"
+  ],
+  "whatsapp": {
+   "enabled": true,
+   "max_daily": 500,
+   "min_delay_seconds": 45,
+   "max_delay_seconds": 90,
+   "typing_delay_min_ms": 3000,
+   "typing_delay_max_ms": 5000,
+   "hour_start": 8,
+   "hour_end": 20,
+   "work_days": [0, 1, 2, 3, 4],
+   "evolution_api_url": "http://evolution-api:8080",
+   "evolution_api_key": "psk-evo-a7f3k9m2x5p8q1w4",
+   "evolution_instance": "pskloud-prospector",
+   "media_url": "/media/Soluciones.png",
+   "media_type": "image"
+  },
+  "email": {
+   "enabled": false,
+   "max_daily": 50,
+   "min_delay_seconds": 120,
+   "max_delay_seconds": 300,
+   "typing_delay_min_ms": 3000,
+   "typing_delay_max_ms": 5000,
+   "hour_start": 8,
+   "hour_end": 17,
+   "work_days": [0, 1, 2, 3, 4],
+   "smtp_host": "",
+   "smtp_port": 587,
+   "smtp_user": "",
+   "smtp_password": "",
+   "from_name": "",
+   "from_email": ""
+  },
+  "instagram": {
+   "enabled": false,
+   "max_daily": 3,
+   "min_delay_seconds": 180,
+   "max_delay_seconds": 300,
+   "typing_delay_min_ms": 3000,
+   "typing_delay_max_ms": 5000,
+   "hour_start": 8,
+   "hour_end": 17,
+   "work_days": [0, 1, 2, 3, 4],
+   "instagram_username": "pskloud.fp",
+   "instagram_password": "Fab2805.",
+   "ig_proxy": "",
+   "ig_wa_phone": "50764267262",
+   "ig_hashtags": [
+    "bienesraices",
+    "inmobiliaria",
+    "realstate",
+    "venta de casas",
+    "venta de apartamentos",
+    "propiedades"
+   ]
+  },
+  "created_at": "2026-07-29T16:20:00"
+ }
+]

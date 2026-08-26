@@ -1,0 +1,2774 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSKloud Prospector | Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg-base: #0B2138;
+  --bg-surface: #0E2A45;
+  --bg-card: #132E4F;
+  --bg-elevated: #1A3A5C;
+  --border: #1A3A5C;
+  --border-light: #1A3A5C;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8FA8C8;
+  --text-muted: #5A7A9B;
+  --accent: #8FC54B;
+  --accent-hover: #A5D95E;
+  --accent-bg: rgba(143, 197, 75, 0.12);
+  --success: #22c55e;
+  --warning: #eab308;
+  --danger: #ef4444;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  display: flex;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+.sidebar-header {
+  padding: 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h1 {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #8FC54B, #A5D95E);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sidebar-header .sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.sidebar-nav {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 13px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { background: var(--bg-card); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-weight: 600;
+}
+.nav-item .icon { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
+.nav-item .badge {
+  margin-left: auto;
+  font-size: 11px;
+  background: var(--bg-elevated);
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: var(--text-secondary);
+}
+.nav-item.active .badge { background: var(--accent); color: #000; }
+.nav-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 12px 12px 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.nav-group-label:first-child { border-top: none; margin-top: 0; }
+.nav-group-label { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
+.nav-group-label::after { content: '▸'; font-size: 10px; transition: transform 0.2s; }
+.nav-group-label.open::after { transform: rotate(90deg); }
+.nav-group-items { overflow: hidden; max-height: 0; transition: max-height 0.25s ease; }
+.nav-group-items.open { max-height: 300px; }
+.nav-item .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
+.status-dot.offline { background: var(--text-muted); }
+.status-dot.paused { background: var(--warning); }
+
+/* Main */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.topbar .page-title { font-size: 16px; font-weight: 700; }
+.topbar .meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.topbar .meta .label { color: var(--text-secondary); }
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+.content::-webkit-scrollbar { width: 6px; }
+.content::-webkit-scrollbar-track { background: transparent; }
+.content::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Grid */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) {
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+
+/* Stat blocks */
+.stat-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.stat-block {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+}
+.stat-block .value {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+.stat-block .label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 4px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #16a34a; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-warning { background: var(--warning); color: #000; }
+.btn-warning:hover { background: #d97706; }
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+.btn-lg { padding: 10px 20px; font-size: 14px; }
+.btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* Form */
+.input {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.input:focus { border-color: var(--accent); }
+.input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.input-group .input { flex: 1; }
+.input-group .btn { flex-shrink: 0; }
+
+/* Activity log */
+.activity-list {
+  list-style: none;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.activity-list::-webkit-scrollbar { width: 4px; }
+.activity-list::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+.activity-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.activity-item:last-child { border-bottom: none; }
+.activity-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 70px;
+  padding-top: 1px;
+}
+.activity-icon { font-size: 14px; flex-shrink: 0; width: 20px; text-align: center; }
+.activity-msg { color: var(--text-secondary); word-break: break-word; }
+
+/* Channels */
+.channel-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.channel-status.running { background: rgba(34,197,94,0.15); color: var(--success); }
+.channel-status.paused { background: rgba(234,179,8,0.15); color: var(--warning); }
+.channel-status.offline { background: rgba(239,68,68,0.15); color: var(--danger); }
+.channel-status.idle { background: rgba(148,163,184,0.15); color: var(--text-secondary); }
+
+/* Historical table */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Assistant chat */
+.assistant-chat {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  height: 380px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.assistant-chat::-webkit-scrollbar { width: 4px; }
+.assistant-chat::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+.a-msg { max-width: 80%; padding: 10px 14px; border-radius: 12px; white-space: pre-wrap; word-break: break-word; font-size: 13px; }
+.a-msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+.a-msg.bot { align-self: flex-start; background: var(--bg-card); border: 1px solid var(--border); border-bottom-left-radius: 4px; color: var(--text-secondary); }
+.a-msg.system { align-self: center; background: var(--accent-bg); color: var(--accent); font-size: 12px; padding: 6px 14px; border-radius: 20px; }
+.a-msg .a-actions { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+.a-msg .a-actions code { background: var(--bg-surface); padding: 2px 6px; border-radius: 4px; color: var(--accent); }
+.a-msg .a-actions .ok { color: var(--success); }
+.a-msg .a-actions .err { color: var(--danger); }
+.assistant-suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.assistant-composer { display: flex; gap: 10px; align-items: flex-end; }
+.assistant-composer .input { resize: none; }
+.assistant-composer .btn { flex-shrink: 0; }
+.typing { align-self: flex-start; color: var(--text-muted); font-size: 12px; padding: 4px 8px; }
+
+/* Analytics bars */
+.an-bars { display: flex; align-items: flex-end; gap: 6px; height: 160px; padding-top: 8px; }
+.an-bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+.an-bar .fill { width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; }
+.an-bar .lbl { font-size: 10px; color: var(--text-muted); }
+.an-bar:hover .fill { background: var(--accent-hover); }
+.an-bar .val { font-size: 10px; color: var(--text-secondary); }
+
+/* Visual show/hide */
+.an-visual { margin-bottom: 14px; }
+.an-visual.hidden { display: none; }
+.an-visual .fill.fill-found { background: var(--text-muted); }
+.an-visual .fill.fill-sent { background: var(--accent); }
+.an-visual .fill.fill-enqueued { background: #5b8def; }
+
+/* Column toggles */
+.col-toggles {
+  display: flex;
+  gap: 10px 14px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.col-toggles label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.col-toggles input { accent-color: var(--accent); cursor: pointer; }
+.col-toggles .toggle-title {
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  margin-right: 4px;
+}
+table.col-hidden th, table.col-hidden td { display: table-cell; }
+
+/* Toast / Notif */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 9999;
+  animation: slideIn 0.3s ease;
+  box-shadow: var(--shadow);
+}
+.toast.success { background: var(--success); color: #000; }
+.toast.error { background: var(--danger); color: #fff; }
+.toast.info { background: var(--accent); color: #fff; }
+@keyframes slideIn {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Loading */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-light);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>PSKloud</h1>
+    <div class="sub">Prospecting Dashboard</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group-label open" onclick="toggleNavGroup(this)">Prospección</div>
+    <div class="nav-group-items open">
+      <button class="nav-item active" data-tab="local">
+        <span class="icon">🏪</span> Local
+        <span class="status-dot" id="dot-local"></span>
+      </button>
+      <button class="nav-item" data-tab="instagram">
+        <span class="icon">📸</span> Instagram
+        <span class="status-dot" id="dot-instagram"></span>
+      </button>
+      <button class="nav-item" data-tab="distribuidores">
+        <span class="icon">🏢</span> Distribuidores
+        <span class="badge" id="badge-dist">0</span>
+      </button>
+    </div>
+    <div class="nav-group-label open" onclick="toggleNavGroup(this)">Campañas</div>
+    <div class="nav-group-items open">
+      <button class="nav-item" data-tab="email">
+        <span class="icon">📧</span> Email
+        <span class="status-dot" id="dot-email"></span>
+      </button>
+      <button class="nav-item" data-tab="whatsapp">
+        <span class="icon">💬</span> WhatsApp
+        <span class="status-dot" id="dot-whatsapp"></span>
+      </button>
+    </div>
+    <div class="nav-group-label" onclick="toggleNavGroup(this)">Análisis</div>
+    <div class="nav-group-items">
+      <button class="nav-item" data-tab="historical">
+        <span class="icon">📊</span> Histórico
+        <span class="badge" id="badge-historical">0</span>
+      </button>
+      <button class="nav-item" data-tab="analytics">
+        <span class="icon">📈</span> Analíticas
+      </button>
+    </div>
+    <div class="nav-group-label" onclick="toggleNavGroup(this)">Herramientas</div>
+    <div class="nav-group-items">
+      <button class="nav-item" data-tab="assistant">
+        <span class="icon">🤖</span> Asistente
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <span class="icon">⚙️</span> Configuración
+      </button>
+    </div>
+  </nav>
+  <div style="padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">
+    <div id="global-queue" style="margin-bottom: 4px;">Queue: --</div>
+    <div id="global-last-cycle">PSKloud v2.0</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">🏪 Prospección Local</div>
+    <div class="meta">
+      <span><span class="label">Queue</span> <span id="topbar-queue">--</span></span>
+      <span><span class="label">Today</span> <span id="topbar-today">--</span></span>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ==================== LOCAL PANEL ==================== -->
+    <div class="panel active" id="panel-local">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="local-status-text">--</div>
+          <div class="label">Estado</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="local-rubro-display">--</div>
+          <div class="label">Rubro Actual</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="local-found-today">0</div>
+          <div class="label">Encontrados Hoy</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Controles</div>
+            <div class="card-subtitle">Gestiona la prospección local (web scraping)</div>
+          </div>
+          <span class="channel-status running" id="local-channel-status">● Running</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-local-pause" onclick="togglePause('local')">⏸ Pausar</button>
+          <button class="btn btn-success" id="btn-local-resume" onclick="toggleResume('local')" style="display:none">▶ Reanudar</button>
+          <button class="btn btn-outline" onclick="replayCycle('local')">↻ Replay</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Cambiar Rubro</div>
+            <div class="card-subtitle">Modifica los términos de búsqueda</div>
+          </div>
+        </div>
+        <div class="input-group">
+          <input class="input" id="local-rubro-input" placeholder="ej: salon de belleza, barberia, centro de estetica" value="salon de belleza, barberia, centro de estetica">
+          <button class="btn btn-primary" onclick="setRubro('local')">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Actividad Reciente</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadActivity('local')">↻</button>
+        </div>
+        <ul class="activity-list" id="activity-local">
+          <li style="color: var(--text-muted); padding: 12px 0; text-align: center;">Loading...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ==================== INSTAGRAM PANEL ==================== -->
+    <div class="panel" id="panel-instagram">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="ig-status-text">--</div>
+          <div class="label">Estado</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="ig-remaining">0</div>
+          <div class="label">DMs Restantes Hoy</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="ig-hashtag">--</div>
+          <div class="label">Hashtag Actual</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Controles</div>
+            <div class="card-subtitle">Gestiona la prospección por Instagram</div>
+          </div>
+          <span class="channel-status idle" id="ig-channel-status">⏸ Idle</span>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btn-ig-pause" onclick="togglePause('ig')">⏸ Pausar</button>
+          <button class="btn btn-success" id="btn-ig-resume" onclick="toggleResume('ig')" style="display:none">▶ Reanudar</button>
+          <button class="btn btn-outline" onclick="replayCycle('ig')">↻ Buscar ahora</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Cambiar Hashtags</div>
+            <div class="card-subtitle">Define los hashtags para búsqueda en IG</div>
+          </div>
+        </div>
+        <div class="input-group">
+          <input class="input" id="ig-hashtag-input" placeholder="ej: salondebelleza, barberia, esteticacorporal" value="salondebelleza,barberia,esteticacorporal">
+          <button class="btn btn-primary" onclick="setIgHashtags()">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Actividad Reciente</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadActivity('ig')">↻</button>
+        </div>
+        <ul class="activity-list" id="activity-ig">
+          <li style="color: var(--text-muted); padding: 12px 0; text-align: center;">Loading...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ==================== EMAIL PANEL ==================== -->
+    <div class="panel" id="panel-email">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="email-sent-today">0</div>
+          <div class="label">Enviados Hoy</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="email-total">0</div>
+          <div class="label">Total Histórico</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="email-exitosos">0</div>
+          <div class="label">Exitosos</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="email-smtp-state">--</div>
+          <div class="label">SMTP</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">⚙️ Configuración SMTP</div>
+              <div class="card-subtitle">Gmail: smtp.gmail.com:587 | Contraseña de aplicación</div>
+            </div>
+          </div>
+          <div class="form-stack">
+            <label class="input-label">Servidor SMTP
+              <input class="input" id="smtp-host" value="smtp.gmail.com" placeholder="smtp.gmail.com">
+            </label>
+            <div class="grid-2">
+              <label class="input-label">Puerto
+                <input class="input" id="smtp-port" value="587" type="number">
+              </label>
+              <label class="input-label">Correo remitente
+                <input class="input" id="smtp-from" placeholder="tu@email.com">
+              </label>
+            </div>
+            <label class="input-label">Usuario SMTP
+              <input class="input" id="smtp-user" placeholder="tu@email.com">
+            </label>
+            <label class="input-label">Contraseña / Token de aplicación
+              <input class="input" id="smtp-password" type="password" placeholder="••••••••">
+            </label>
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="saveSmtp()">💾 Guardar</button>
+              <button class="btn btn-outline" onclick="testSmtp()">🧪 Probar conexión</button>
+            </div>
+            <div id="smtp-msg" style="margin-top:8px"></div>
+            <details style="margin-top:10px">
+              <summary>ℹ️ Cómo configurar Gmail (contraseña de aplicación)</summary>
+              <ol style="padding-left:18px;font-size:12px;color:var(--text-muted)">
+                <li>myaccount.google.com → Seguridad</li>
+                <li>Activa Verificación en 2 pasos</li>
+                <li>Seguridad → Contraseñas de aplicaciones</li>
+                <li>"Otra" → "PSKloud Prospector"</li>
+                <li>Copia la contraseña de 16 caracteres aquí</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📝 Plantilla del correo</div>
+              <div class="card-subtitle">Variables: {{nombre}} {{empresa}} {{pais}} {{cargo}} {{email}}</div>
+            </div>
+          </div>
+          <div class="form-stack">
+            <label class="input-label">Asunto
+              <input class="input" id="tpl-asunto" placeholder="Asunto...">
+            </label>
+            <label class="input-label">Cuerpo
+              <textarea class="input" id="tpl-cuerpo" rows="10" placeholder="Cuerpo del correo..."></textarea>
+            </label>
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="savePlantilla()">💾 Guardar Plantilla</button>
+            </div>
+            <div id="tpl-msg" style="margin-top:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🚀 Envío</div>
+            <div class="card-subtitle">Envía a un lead específico o a todos los seleccionados</div>
+          </div>
+        </div>
+        <div class="form-stack">
+          <div class="grid-2">
+            <label class="input-label">Email destino
+              <input class="input" id="mail-to" placeholder="contacto@empresa.com">
+            </label>
+            <label class="input-label">Nombre
+              <input class="input" id="mail-nombre" placeholder="Nombre contacto">
+            </label>
+          </div>
+          <div class="grid-2">
+            <label class="input-label">Empresa
+              <input class="input" id="mail-empresa" placeholder="Empresa">
+            </label>
+            <label class="input-label">País
+              <input class="input" id="mail-pais" placeholder="País">
+            </label>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-primary" onclick="enviarUnCorreo()">📧 Enviar este correo</button>
+          </div>
+          <div id="envio-msg" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📜 Historial de envíos</div>
+            <div class="card-subtitle">Últimos correos enviados</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Fecha</th><th>Email</th><th>Empresa</th><th>Estado</th><th>Detalle</th></tr></thead>
+            <tbody id="envios-body"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== HISTORICAL PANEL ==================== -->
+    <div class="panel" id="panel-historical">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="hist-total-cycles">0</div>
+          <div class="label">Ciclos Totales</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="hist-total-leads">0</div>
+          <div class="label">Leads Encontrados</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="hist-total-enqueued">0</div>
+          <div class="label">Encolados</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Ciclos Anteriores</div>
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="loadHistorical()">↻</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Cliente</th>
+                <th>Rubro</th>
+                <th>Ubicación</th>
+                <th>Encontrados</th>
+                <th>Teléfono</th>
+                <th>Encolados</th>
+              </tr>
+            </thead>
+            <tbody id="hist-table-body">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ASISTENTE PANEL ==================== -->
+    <div class="panel" id="panel-assistant">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🤖 Asistente de prospección</div>
+            <div class="card-subtitle">Opera el prospector en lenguaje natural (estado, cola, rubros, pausa/reanuda, resúmenes)</div>
+          </div>
+        </div>
+        <div id="chat" class="assistant-chat"></div>
+        <div class="assistant-suggestions">
+          <button class="btn btn-outline btn-sm" onclick="ask('¿Dónde estás prospectando y cuántos van en cola?')">Estado y cola</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('¿Cuántos mensajes se han enviado hoy?')">Enviados hoy</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('¿Cuál es la campaña/rubro actual?')">Campaña actual</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('¿Cuáles son los mejores rubros para cierre de ventas?')">Mejores rubros</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('Pausa la prospección')">⏸ Pausar</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('Reanuda la prospección')">▶ Reanudar</button>
+          <button class="btn btn-outline btn-sm" onclick="ask('Cambiemos de rubro a distribuidores, arma el nuevo embudo')">Nuevo embudo</button>
+        </div>
+        <div class="assistant-composer">
+          <textarea class="input" id="assistant-input" rows="2" placeholder="Ej: ¿dónde estás prospectando? ¿cuántos en cola? ..."></textarea>
+          <button class="btn btn-primary" id="assistant-send" onclick="assistantSend()">Enviar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== ANALÍTICAS 365 PANEL ==================== -->
+    <div class="panel" id="panel-analytics">
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">👁️ Visuales</div>
+            <div class="card-subtitle">Muestra u oculta cada visual del dashboard (se guarda en tu navegador)</div>
+          </div>
+        </div>
+        <div class="col-toggles" id="an-visual-toggles"></div>
+      </div>
+
+      <div class="stat-row" id="an-kpis"></div>
+
+      <div class="an-visual" data-v="hourly">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Distribución horaria de envíos</div>
+              <div class="card-subtitle">De qué a qué hora se prospecta (actividad real)</div>
+            </div>
+          </div>
+          <div id="an-hourly" class="an-bars"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Envíos por día (últimos 14)</div>
+              <div class="card-subtitle">Barras de enviados diarios</div>
+            </div>
+          </div>
+          <div id="an-daily-bars" class="an-bars"></div>
+        </div>
+      </div>
+      </div>
+
+      <div class="an-visual" data-v="daily">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Serie diaria (últimos 14 días)</div>
+            <div class="card-subtitle">Encontrados / Encolados / Enviados</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Fecha</th><th>Encontrados</th><th>Encolados</th><th>Enviados</th><th>Followups</th>
+            </tr></thead>
+            <tbody id="an-daily-body"><tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+
+      <div class="an-visual" data-v="country">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Por país</div>
+              <div class="card-subtitle">Enviados, conversaciones, respuestas y pool disponible</div>
+            </div>
+          </div>
+        <div class="col-toggles" id="cols-country"></div>
+        <div class="table-wrap">
+          <table id="tbl-country">
+            <thead><tr>
+              <th>País</th><th>Enviados</th><th>Conversaciones</th><th>Respondieron</th><th>Tasa respuesta</th><th>Pool scrapeado</th>
+            </tr></thead>
+            <tbody id="an-country-body"><tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      </div>
+
+      <div class="an-visual" data-v="rubro">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Por rubro</div>
+              <div class="card-subtitle">Enviados vs pool scrapeado</div>
+            </div>
+          </div>
+          <div class="col-toggles" id="cols-rubro"></div>
+          <div class="table-wrap">
+            <table id="tbl-rubro">
+              <thead><tr><th>Rubro</th><th>Enviados</th><th>Pool</th></tr></thead>
+              <tbody id="an-rubro-body"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Top ciudades por pool</div>
+              <div class="card-subtitle">Dónde hay más prospectos scrapeados</div>
+            </div>
+          </div>
+          <div class="col-toggles" id="cols-city"></div>
+          <div class="table-wrap">
+            <table id="tbl-city">
+              <thead><tr><th>Ciudad</th><th>País</th><th>Pool</th></tr></thead>
+              <tbody id="an-city-body"><tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="an-visual" data-v="conv">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Conversaciones en curso</div>
+              <div class="card-subtitle">Estado, clasificación y última actividad</div>
+            </div>
+          </div>
+          <div class="col-toggles" id="cols-conv"></div>
+          <div class="table-wrap">
+          <table id="tbl-conv">
+            <thead><tr>
+              <th>Empresa</th><th>País</th><th>Rubro</th><th>Estado</th><th>Paso</th><th>Clasificación</th><th>Inicio</th><th>Última respuesta</th>
+            </tr></thead>
+            <tbody id="an-conv-body"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Cargando...</td></tr></tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== WHATSAPP PANEL ==================== -->
+    <div class="panel" id="panel-whatsapp">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="wa-pending">--</div>
+          <div class="label">Pendientes</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="wa-sent-today">0</div>
+          <div class="label">Enviados Hoy</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="wa-remaining">10</div>
+          <div class="label">Restantes Hoy</div>
+        </div>
+      </div>
+
+      <!-- Status indicator -->
+      <div id="wa-status-banner" style="padding:10px 16px;border-radius:var(--radius-sm);margin-bottom:12px;border:1px solid #94a3b8;background:rgba(148,163,184,.12);">
+        <span style="color:#94a3b8;font-weight:600;">⏸ ESPERANDO</span> — Cola inactiva
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">WhatsApp Business</div>
+            <div class="card-subtitle">Control de envíos masivos vía Evolution API</div>
+          </div>
+          <span class="channel-status idle" id="wa-channel-status">⏸ Pendiente</span>
+        </div>
+
+        <!-- Play / Stop / Replay controls -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-success" id="btn-wa-play" onclick="queuePlay()" style="flex:1;display:none;">▶ Play / Reanudar</button>
+          <button class="btn btn-danger" id="btn-wa-stop" onclick="queueStop()" style="flex:1;">⏹ Detener / Pausar</button>
+          <button class="btn btn-outline" id="btn-wa-replay" onclick="queueReplay()" style="flex:1;">↻ Replay</button>
+        </div>
+
+        <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">
+          <strong>Play:</strong> Reanuda envío de mensajes en segundo plano.<br>
+          <strong>Stop:</strong> Detiene inmediatamente todos los envíos.<br>
+          <strong>Replay:</strong> Recarga la cola desde disco y reanuda.
+        </p>
+        <div class="btn-group">
+          <button class="btn btn-outline" onclick="loadQueue()">↻ Actualizar Cola</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SETTINGS PANEL ==================== -->
+    <div class="panel" id="panel-settings">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🔑 API Keys</div>
+            <div class="card-subtitle">Configura las claves de servicios externos</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Hunter.io API Key</label>
+            <input class="input" id="cfg-hunter-key" placeholder="f41f5e..." value="">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Lusha API Key</label>
+            <input class="input" id="cfg-lusha-key" placeholder="Lusha key..." value="">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">RocketReach API Key</label>
+            <input class="input" id="cfg-rocketreach-key" placeholder="RocketReach key..." value="">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">CUFinder API Key</label>
+            <input class="input" id="cfg-cufinder-key" placeholder="CUFinder key..." value="">
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary" onclick="saveApiKeys()">💾 Guardar API Keys</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📧 Configuración SMTP</div>
+            <div class="card-subtitle">Servidor de correo para campañas</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Servidor</label>
+            <input class="input" id="cfg-smtp-server" value="smtp.gmail.com">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Puerto</label>
+            <input class="input" id="cfg-smtp-port" value="587">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Email From</label>
+            <input class="input" id="cfg-smtp-from" value="pskloud.fpabon@gmail.com">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Password (App)</label>
+            <input class="input" id="cfg-smtp-pass" type="password" placeholder="Contraseña de aplicación Gmail">
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary" onclick="saveSmtpConfig()">💾 Guardar SMTP</button>
+          <button class="btn btn-outline" onclick="testSmtp()">🧪 Probar Conexión</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⚡ Límites de Envío</div>
+            <div class="card-subtitle">Control diario para evitar bloqueos</div>
+          </div>
+        </div>
+        <div class="grid-3">
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Máx WhatsApp/día</label>
+            <input class="input" id="cfg-wa-limit" type="number" value="40">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Máx Email/día</label>
+            <input class="input" id="cfg-email-limit" type="number" value="50">
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Delay entre msgs (seg)</label>
+            <input class="input" id="cfg-delay" type="number" value="180">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <!-- PANEL: DISTRIBUIDORES                                                  -->
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+    <div class="panel" id="panel-distribuidores">
+
+      <!-- Header: Motor Automático + País selector -->
+      <div class="card" style="border:1px solid var(--accent);background:var(--bg-elevated);">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <div class="card-title">🏢 Prospección Distribuidores / Partners</div>
+            <div class="card-subtitle" id="dist-subtitle">Motor automático: Hunter.io / Lusha / RocketReach → Semáforo automático → Pipeline continuo</div>
+          </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">País Target</label>
+            <select class="input" id="dist-pais-filter" style="width:auto;min-width:180px;" onchange="loadDistribuidores()">
+              <option value="">🌎 Todos (Vista Consolidada)</option>
+              <option value="COLOMBIA">🇨🇴 Colombia</option>
+              <option value="EL_SALVADOR">🇸🇻 El Salvador</option>
+              <option value="COSTA_RICA">🇨🇷 Costa Rica</option>
+              <option value="NICARAGUA">🇳🇮 Nicaragua</option>
+              <option value="HONDURAS">🇭🇳 Honduras</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:flex-end;">
+            <button class="btn btn-primary" id="dist-engine-btn" onclick="distToggleEngine()" style="white-space:nowrap;font-size:13px;">
+              🚀 Iniciar Prospección Automática
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="showDistForm()" title="Crear manualmente (excepción)">+ Manual</button>
+            <button class="btn btn-outline btn-sm" onclick="distRefreshAll()">↻ Refrescar</button>
+          </div>
+        </div>
+        <!-- Engine live status -->
+        <div id="dist-engine-status" style="display:none;margin-top:12px;padding:10px 14px;background:var(--bg-surface);border-radius:var(--radius-sm);font-size:12px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <div class="spinner" id="dist-engine-spinner" style="width:14px;height:14px;border-width:2px;"></div>
+            <span id="dist-engine-status-text" style="color:var(--accent);font-weight:600;">Idle</span>
+            <span id="dist-engine-pais" style="color:var(--text-muted);"></span>
+          </div>
+          <div style="display:flex;gap:16px;color:var(--text-muted);font-size:11px;">
+            <span>Ciclos: <strong id="dist-engine-ciclos" style="color:var(--text-primary);">0</strong></span>
+            <span>Encontrados: <strong id="dist-engine-encontrados" style="color:var(--text-primary);">0</strong></span>
+            <span>Ingeridos: <strong id="dist-engine-ingestados" style="color:var(--accent);">0</strong></span>
+            <span>Descartados: <strong id="dist-engine-descartados" style="color:var(--warning);">0</strong></span>
+          </div>
+          <div id="dist-engine-saved-badge" style="display:none;margin-top:6px;padding:4px 8px;background:var(--bg-card);border-radius:4px;font-size:10px;color:var(--accent);">
+            ✅ Estado guardado <span id="dist-engine-saved-at"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Cards: Metas Operativas -->
+      <div class="stat-row" id="dist-kpis">
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-investigados">0</div>
+          <div class="label">Investigados</div>
+          <div style="font-size:11px;color:var(--text-muted);" id="dist-kpi-inv-meta">Meta: 40</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-precalificados">0</div>
+          <div class="label">Precalificados</div>
+          <div style="font-size:11px;color:var(--text-muted);" id="dist-kpi-pre-meta">Meta: 20</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-contactados">0</div>
+          <div class="label">Contactados</div>
+          <div style="font-size:11px;color:var(--text-muted);" id="dist-kpi-con-meta">Meta: 20</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-reuniones">0</div>
+          <div class="label">Reuniones</div>
+          <div style="font-size:11px;color:var(--text-muted);" id="dist-kpi-reu-meta">Meta: 5</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-total">0</div>
+          <div class="label">Total Prospectos</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-semaforo-verde" style="color:var(--success)">0</div>
+          <div class="label">🟢 Verde</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-semaforo-amarillo" style="color:var(--warning)">0</div>
+          <div class="label">🟡 Amarillo</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="dist-kpi-semaforo-rojo" style="color:var(--danger)">0</div>
+          <div class="label">🔴 Rojo</div>
+        </div>
+      </div>
+
+      <!-- Filtros secundarios -->
+      <div class="card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);">Estado</label>
+          <select class="input" id="dist-estado-filter" style="width:auto;" onchange="loadDistribuidores()">
+            <option value="">Todos</option>
+            <option value="INVESTIGADO">Investigado</option>
+            <option value="PRECALIFICADO">Precalificado</option>
+            <option value="CONTACTADO">Contactado</option>
+            <option value="CONVERSACION">Conversación</option>
+            <option value="REUNION_AGENDADA">Reunión Agendada</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--text-muted);">Semáforo</label>
+          <select class="input" id="dist-semaforo-filter" style="width:auto;" onchange="loadDistribuidores()">
+            <option value="">Todos</option>
+            <option value="VERDE">🟢 Verde</option>
+            <option value="AMARILLO">🟡 Amarillo</option>
+            <option value="ROJO">🔴 Rojo</option>
+          </select>
+        </div>
+        <div style="flex:1;"></div>
+        <div style="font-size:12px;color:var(--text-muted);">
+          <span id="dist-count-label">0 distribuidores</span>
+        </div>
+      </div>
+
+      <!-- Tabla de distribuidores -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Prospectos</div>
+          <div class="btn-group">
+            <button class="btn btn-outline btn-sm" onclick="distSelectAll()">☑ Todos</button>
+            <button class="btn btn-outline btn-sm" onclick="distDeselectAll()">☐ Ninguno</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="tbl-dist">
+            <thead>
+              <tr>
+                <th style="width:30px;"><input type="checkbox" id="dist-check-all" onchange="distToggleAll(this)"></th>
+                <th>Empresa</th>
+                <th>Contacto</th>
+                <th>País</th>
+                <th>Ciudad</th>
+                <th>Rubro</th>
+                <th>Estado</th>
+                <th>Semáforo</th>
+                <th>Canal</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="dist-table-body">
+              <tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">Cargando distribuidores...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Acciones masivas — barra flotante -->
+      <div class="card" id="dist-bulk-actions" style="display:none;border:1px solid var(--accent);background:var(--bg-elevated);">
+        <div class="card-header">
+          <div class="card-title">⚡ Acciones Masivas (<span id="dist-selected-count">0</span> seleccionados)</div>
+          <button class="btn btn-outline btn-sm" onclick="distDeselectAll()">✕ Cerrar</button>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:8px;">
+          <div style="flex:1;min-width:180px;">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:3px;">Acción</label>
+            <select class="input" id="dist-bulk-accion" style="width:100%;" onchange="distOnBulkAccionChange()">
+              <option value="">-- Seleccionar --</option>
+              <option value="MARCAR_CONTACTADO">Marcar Contactado (Manual)</option>
+              <option value="ENCOLAR_PLANTILLA">Enviar / Encolar Plantilla</option>
+              <option value="CAMBIAR_SEMAFORO">Cambiar Semáforo</option>
+              <option value="EXPORTAR">Exportar Seleccionados</option>
+              <option value="ELIMINAR">Eliminar</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:160px;" id="dist-bulk-canal-wrap">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:3px;">Canal</label>
+            <select class="input" id="dist-bulk-canal" style="width:100%;">
+              <option value="">-- Canal --</option>
+              <option value="EMAIL_SMTP">📧 Email</option>
+              <option value="LINKEDIN">💼 LinkedIn</option>
+              <option value="WHATSAPP_DIRECTO">💬 WhatsApp</option>
+              <option value="LLAMADA">📞 Llamada</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:160px;" id="dist-bulk-semaforo-wrap" style="display:none;">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:3px;">Semáforo</label>
+            <select class="input" id="dist-bulk-semaforo" style="width:100%;">
+              <option value="VERDE">🟢 Verde</option>
+              <option value="AMARILLO">🟡 Amarillo</option>
+              <option value="ROJO">🔴 Rojo</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:160px;" id="dist-bulk-plantilla-wrap">
+            <label style="font-size:11px;color:var(--text-muted);display:block;margin-bottom:3px;">Plantilla</label>
+            <select class="input" id="dist-bulk-plantilla" style="width:100%;">
+              <option value="CTX_DISTRIBUIDOR_SOporte_TI">Soporte TI — Contexto + Encaje</option>
+              <option value="CTX_DISTRIBUIDOR_Firma_Contable">Firma Contable — Contexto + Encaje</option>
+              <option value="CTX_DISTRIBUIDOR_POS">Integradores POS — Contexto + Encaje</option>
+              <option value="CTX_DISTRIBUIDOR_ERP">Revendedores ERP — Contexto + Encaje</option>
+              <option value="CTX_DISTRIBUIDOR_Consultor">Consultores Fiscales — Contexto + Encaje</option>
+              <option value="GENERICA">Genérica — Oportunidad</option>
+            </select>
+          </div>
+          <div>
+            <button class="btn btn-primary" id="dist-bulk-execute" onclick="distExecuteBulk()" style="white-space:nowrap;">▶ Ejecutar Acción</button>
+          </div>
+        </div>
+        <div id="dist-bulk-status" style="margin-top:8px;font-size:12px;color:var(--text-muted);"></div>
+      </div>
+
+      <!-- Histórico Distribuidores -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 Histórico Distribuidores</div>
+          <button class="btn btn-outline btn-sm" onclick="loadDistActividad()">↻ Refrescar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Empresa</th>
+                <th>País</th>
+                <th>Acción</th>
+                <th>Detalle</th>
+                <th>Canal</th>
+                <th>Plantilla</th>
+              </tr>
+            </thead>
+            <tbody id="dist-actividad-body">
+              <tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text-muted);">Sin actividad reciente</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Motor Engine Log -->
+      <div class="card" id="dist-engine-log-card" style="display:none;">
+        <div class="card-header">
+          <div class="card-title">⚙️ Log del Motor Automático</div>
+          <button class="btn btn-outline btn-sm" onclick="loadDistEngineLog()">↻ Refrescar</button>
+        </div>
+        <div style="max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;padding:8px;background:var(--bg-surface);border-radius:var(--radius-sm);">
+          <div id="dist-engine-log-body" style="color:var(--text-secondary);">Sin actividad del motor.</div>
+        </div>
+      </div>
+
+    </div><!-- /panel-distribuidores -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ─── STATE ───
+const STATE = {
+  local: { paused: false },
+  ig: { paused: false },
+  email: { paused: false },
+  prospector: {},
+  queue_paused: false,
+};
+
+// ─── HELPERS ───
+function $(id) { return document.getElementById(id); }
+
+function toggleNavGroup(label) {
+  label.classList.toggle('open');
+  const items = label.nextElementSibling;
+  if (items && items.classList.contains('nav-group-items')) {
+    items.classList.toggle('open');
+  }
+}
+
+function toast(msg, type = 'info') {
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+function formatTime(ts) {
+  if (!ts) return '--';
+  const d = new Date(ts);
+  return d.toLocaleString('es-PA', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+}
+
+// ─── NAVIGATION ───
+document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    $(`panel-${tab}`).classList.add('active');
+    const titles = { local: '🏪 Prospección Local', instagram: '📸 Instagram', distribuidores: '🏢 Distribuidores', email: '📧 Email', search: '🔍 Búsqueda API', whatsapp: '💬 WhatsApp', historical: '📊 Histórico', assistant: '🤖 Asistente', analytics: '📈 Analíticas 365', settings: '⚙️ Configuración' };
+    $('page-title').textContent = titles[tab] || tab;
+    if (tab === 'historical') loadHistorical();
+    if (tab === 'analytics') loadAnalytics();
+    if (tab === 'settings') loadSettings();
+    if (tab === 'instagram') loadIgStatus();
+    if (tab === 'analytics') loadAnalytics();
+    if (tab === 'email') { loadEmailConfig(); loadEmailEnvios(); }
+    if (tab === 'search') loadApiKeys();
+    if (tab === 'distribuidores') { loadDistribuidores(); loadDistActividad(); distCheckEngine(); }
+  });
+});
+
+// ─── PAUSE / RESUME ───
+async function togglePause(channel) {
+  if (channel === 'local') {
+    await api('/api/prospector/pause', 'POST');
+    STATE.local.paused = true;
+    updateChannelUI('local');
+    toast('Prospección local pausada', 'warning');
+  } else if (channel === 'ig') {
+    await api('/api/prospector/pause', 'POST');
+    STATE.ig.paused = true;
+    updateChannelUI('ig');
+    toast('Prospección IG pausada', 'warning');
+  }
+}
+
+async function toggleResume(channel) {
+  if (channel === 'local') {
+    await api('/api/prospector/resume', 'POST');
+    STATE.local.paused = false;
+    updateChannelUI('local');
+    toast('Prospección local reanudada', 'success');
+  } else if (channel === 'ig') {
+    await api('/api/prospector/resume', 'POST');
+    STATE.ig.paused = false;
+    updateChannelUI('ig');
+    toast('Prospección IG reanudada', 'success');
+  }
+}
+
+function updateChannelUI(channel) {
+  const paused = STATE[channel]?.paused || false;
+  const prefix = channel === 'local' ? 'local' : channel === 'ig' ? 'ig' : 'email';
+
+  $(`btn-${prefix}-pause`).style.display = paused ? 'none' : '';
+  $(`btn-${prefix}-resume`).style.display = paused ? '' : 'none';
+  $(`${prefix}-channel-status`).textContent = paused ? '⏸ Paused' : '● Running';
+  $(`${prefix}-channel-status`).className = `channel-status ${paused ? 'paused' : 'running'}`;
+  $(`${prefix}-status-text`).textContent = paused ? 'Pausado' : 'Activo';
+
+  const dotId = `dot-${channel}`;
+  const dot = $(dotId);
+  if (dot) {
+    dot.className = `status-dot ${paused ? 'paused' : 'online'}`;
+  }
+}
+
+// ─── RUBRO ───
+async function setRubro(channel) {
+  const input = $(`${channel}-rubro-input`);
+  const rubros = input.value.split(',').map(s => s.trim()).filter(Boolean);
+  if (rubros.length === 0) return toast('Ingresa al menos un rubro', 'error');
+  await api('/api/prospector/rubro', 'POST', { rubros });
+  $(`${channel}-rubro-display`).textContent = rubros.join(', ');
+  toast(`Rubro actualizado: ${rubros.join(', ')}`, 'success');
+}
+
+async function setIgHashtags() {
+  const input = $('ig-hashtag-input');
+  const hashtags = input.value.split(',').map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+  if (hashtags.length === 0) return toast('Ingresa al menos un hashtag', 'error');
+  // Save to client store via API
+  const clients = await api('/api/clients', 'GET');
+  if (clients && clients.length > 0) {
+    const client = clients[0];
+    await api(`/api/clients/${client.id}/ig-hashtags`, 'PUT', { hashtags });
+  }
+  toast(`Hashtags actualizados: ${hashtags.join(', ')}`, 'success');
+}
+
+// ─── REPLAY ───
+async function replayCycle(channel) {
+  if (channel === 'local') {
+    await api('/api/prospector/resume', 'POST');
+    toast('Reanudando prospección local...', 'info');
+    STATE.local.paused = false;
+    updateChannelUI('local');
+  } else if (channel === 'ig') {
+    // Trigger immediate IG search
+    const clients = await api('/api/clients', 'GET');
+    if (clients && clients.length > 0) {
+      const client = clients[0];
+      const hashtags = client.instagram?.ig_hashtags || ['salondebelleza'];
+      await api('/api/ig/search-and-enqueue', 'POST', {
+        client_id: client.id,
+        hashtags,
+        limit: 3,
+      });
+      toast('Búsqueda IG ejecutada', 'success');
+    }
+  }
+  loadStatus();
+}
+
+// ─── API ───
+async function api(url, method = 'GET', body = null) {
+  try {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(url, opts);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return await r.json();
+  } catch (e) {
+    console.error(`API ${method} ${url}:`, e);
+    toast(`Error: ${e.message}`, 'error');
+    return null;
+  }
+}
+
+// ─── LOAD STATUS ───
+async function loadStatus() {
+  const status = await api('/api/prospector/status');
+  if (!status) return;
+
+  STATE.prospector = status;
+  STATE.local.paused = status.local_paused || status.paused;
+  STATE.ig.paused = status.ig_paused || false;
+
+  // Local panel
+  const rubroText = status.rubro_override
+    ? status.rubro_override.join(', ')
+    : (status.current_rubro ? status.current_rubro.join(', ') : '--');
+  $('local-rubro-display').textContent = rubroText;
+  $('local-status-text').textContent = status.paused ? 'Pausado' : (status.running ? 'Activo' : 'Dormido');
+  updateChannelUI('local');
+  updateChannelUI('ig');
+
+  // Sidebar dots
+  const localDot = $('dot-local');
+  if (localDot) localDot.className = `status-dot ${status.paused ? 'paused' : (status.running ? 'online' : 'offline')}`;
+  const igDot = $('dot-instagram');
+  if (igDot) igDot.className = 'status-dot offline';
+  const emailDot = $('dot-email');
+  if (emailDot) emailDot.className = 'status-dot offline';
+
+  // Global footer
+  $('global-last-cycle').textContent = `Último ciclo: ${formatTime(status.last_cycle)}`;
+}
+
+// ─── LOAD ACTIVITY ───
+async function loadActivity(filterKind = null) {
+  const entries = await api('/api/activity-log?limit=50');
+  if (!entries) return;
+
+  const byKind = {};
+  entries.forEach(e => {
+    const kind = e.kind || 'other';
+    if (!byKind[kind]) byKind[kind] = [];
+    byKind[kind].push(e);
+  });
+
+  ['local', 'ig', 'email'].forEach(channel => {
+    const list = $(`activity-${channel}`);
+    if (!list) return;
+    const relevant = channel === 'local'
+      ? entries.filter(e => !e.kind?.startsWith('ig_') && e.kind !== 'ig_day' && e.kind !== 'ig_search' && e.kind !== 'ig_found')
+      : channel === 'ig'
+        ? entries.filter(e => e.kind?.startsWith('ig_') || e.kind === 'ig_day' || e.kind === 'ig_search' || e.kind === 'ig_found')
+        : [];
+
+    if (relevant.length === 0) {
+      list.innerHTML = '<li style="color:var(--text-muted);padding:12px 0;text-align:center;">Sin actividad reciente</li>';
+      return;
+    }
+
+    list.innerHTML = relevant.slice(-30).reverse().map(e => {
+      const icons = {
+        search: '🔍', found: '📋', pause: '⏸', resume: '▶',
+        set_rubro: '🏷', ig_day: '📅', ig_search: '🔎', ig_found: '📸',
+        ig_send: '✉️', send: '📤', reply: '💬', error: '❌',
+      };
+      const icon = icons[e.kind] || '📝';
+      return `<li class="activity-item">
+        <span class="activity-time">${formatTime(e.ts)}</span>
+        <span class="activity-icon">${icon}</span>
+        <span class="activity-msg">${e.msg}${e.data ? ' ' + JSON.stringify(e.data) : ''}</span>
+      </li>`;
+    }).join('');
+  });
+}
+
+// ─── LOAD IG STATUS ───
+async function loadIgStatus() {
+  const ig = await api('/api/ig/status');
+  if (!ig) return;
+  $('ig-remaining').textContent = ig.remaining_today ?? '--';
+  $('ig-status-text').textContent = ig.senders_initialized > 0 ? 'Conectado' : 'Desconectado';
+  $('ig-channel-status').textContent = ig.senders_initialized > 0 ? '● Online' : '⏸ Offline';
+  $('ig-channel-status').className = `channel-status ${ig.senders_initialized > 0 ? 'running' : 'idle'}`;
+}
+
+// ─── LOAD HISTORICAL ───
+async function loadHistorical() {
+  const data = await api('/api/historical');
+  if (!data || !data.reports || data.reports.length === 0) {
+    $('hist-table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No hay datos históricos</td></tr>';
+    return;
+  }
+
+  const report = data.reports[0];
+  const ciclo = report.ciclo || [];
+
+  $('hist-total-cycles').textContent = data.reports.length;
+  $('hist-total-leads').textContent = report.total_found || 0;
+  $('hist-total-enqueued').textContent = report.total_enqueued || 0;
+  $('badge-historical').textContent = data.reports.length;
+
+  if (ciclo.length === 0) {
+    $('hist-table-body').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">No hay datos de ciclo</td></tr>';
+    return;
+  }
+
+  $('hist-table-body').innerHTML = ciclo.map(c => `<tr>
+    <td>${formatTime(c.timestamp)}</td>
+    <td>${c.cliente || '--'}</td>
+    <td>${c.rubro || '--'}</td>
+    <td>${c.ubicacion || '--'}</td>
+    <td>${c.encontrados ?? 0}</td>
+    <td>${c.con_telefono ?? 0}</td>
+    <td>${c.encolados ?? 0}</td>
+  </tr>`).join('');
+}
+
+// ─── LOAD QUEUE ───
+async function loadQueue() {
+  const q = await api('/api/queue/detail');
+  if (!q) return;
+  const queueStatus = q.queue || {};
+  const pending = queueStatus.pending || 0;
+  const sentToday = queueStatus.sent_today || 0;
+  const maxDaily = queueStatus.max_daily || 10;
+  const queuePaused = queueStatus.queue_paused || false;
+
+  $('global-queue').textContent = `Queue: ${pending} pendientes`;
+  $('topbar-queue').textContent = pending;
+  $('topbar-today').textContent = sentToday;
+
+  // WhatsApp panel
+  $('wa-pending').textContent = pending;
+  $('wa-sent-today').textContent = sentToday;
+  $('wa-remaining').textContent = Math.max(0, maxDaily - sentToday);
+
+  // Queue pause state
+  STATE.queue_paused = queuePaused;
+  updateQueueUI();
+}
+
+function updateQueueUI() {
+  const paused = STATE.queue_paused;
+  const banner = $('wa-status-banner');
+  const playBtn = $('btn-wa-play');
+  const stopBtn = $('btn-wa-stop');
+  const waStatus = $('wa-channel-status');
+
+  if (paused) {
+    banner.innerHTML = '<span style="color:#ef4444;font-weight:600;">⏹ DETENIDO</span> — Los envíos están pausados';
+    banner.style.borderColor = '#ef4444';
+    banner.style.background = 'rgba(239,68,68,.12)';
+    playBtn.style.display = '';
+    stopBtn.style.display = 'none';
+    waStatus.textContent = '⏹ Detenido';
+    waStatus.className = 'channel-status paused';
+  } else {
+    banner.innerHTML = '<span style="color:#22c55e;font-weight:600;">▶ ENVIANDO</span> — Cola en proceso activo';
+    banner.style.borderColor = '#22c55e';
+    banner.style.background = 'rgba(34,197,94,.12)';
+    playBtn.style.display = 'none';
+    stopBtn.style.display = '';
+    waStatus.textContent = '● Enviando';
+    waStatus.className = 'channel-status running';
+  }
+}
+
+// ─── QUEUE PLAY / STOP / REPLAY ───
+async function queuePlay() {
+  const r = await api('/api/queue/play', 'POST');
+  if (r) {
+    STATE.queue_paused = false;
+    updateQueueUI();
+    toast('Cola reanudada — envíos activos', 'success');
+  }
+}
+
+async function queueStop() {
+  const r = await api('/api/queue/stop', 'POST');
+  if (r) {
+    STATE.queue_paused = true;
+    updateQueueUI();
+    toast('Cola detenida — envíos pausados', 'warning');
+  }
+}
+
+async function queueReplay() {
+  const r = await api('/api/queue/replay', 'POST');
+  if (r) {
+    STATE.queue_paused = false;
+    updateQueueUI();
+    loadQueue();
+    toast(`Cola recargada: ${r.leads_loaded || 0} leads`, 'success');
+  }
+}
+
+// ─── CLIENTS API (for IG hashtags) ───
+// Add a fallback client listing
+async function ensureClientsAPI() {
+  // Check if /api/clients exists
+  try {
+    const r = await fetch('/api/clients');
+    if (!r.ok) {
+      // Add minimal endpoint if it doesn't exist
+      console.warn('/api/clients not available');
+    }
+  } catch(e) {
+    console.warn('/api/clients not available');
+  }
+}
+
+// ─── ASSISTANT (chat operador) ───
+const assistantChatEl = () => $('chat');
+const assistantInput = () => $('assistant-input');
+const assistantSendBtn = () => $('assistant-send');
+
+function aAddMsg(text, who) {
+  const div = document.createElement('div');
+  div.className = `a-msg ${who}`;
+  div.textContent = text;
+  assistantChatEl().appendChild(div);
+  assistantChatEl().scrollTop = assistantChatEl().scrollHeight;
+  return div;
+}
+
+function aRenderActions(actions) {
+  if (!actions || actions.length === 0) return;
+  const parts = actions.map(a => {
+    const isErr = a.result && a.result.error;
+    const cls = isErr ? 'err' : 'ok';
+    const data = a.result ? JSON.stringify(a.result) : '';
+    return `<code>⚙ ${a.name}</code> <span class="${cls}">${isErr ? 'ERROR' : 'OK'}</span> ${data}`;
+  });
+  const div = document.createElement('div');
+  div.className = 'a-msg system';
+  div.innerHTML = parts.join('<br>');
+  assistantChatEl().appendChild(div);
+  assistantChatEl().scrollTop = assistantChatEl().scrollHeight;
+}
+
+async function ask(text) {
+  if (!text.trim()) return;
+  if (assistantInput()) assistantInput().value = '';
+  aAddMsg(text, 'user');
+  if (assistantSendBtn()) assistantSendBtn().disabled = true;
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.textContent = 'El asistente está pensando…';
+  assistantChatEl().appendChild(typing);
+  assistantChatEl().scrollTop = assistantChatEl().scrollHeight;
+  try {
+    const r = await fetch('/api/assistant/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, session_id: 'default' }),
+    });
+    typing.remove();
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      aAddMsg('Error: ' + (e.error || r.status), 'system');
+      return;
+    }
+    const data = await r.json();
+    aAddMsg(data.reply || 'Listo.', 'bot');
+    aRenderActions(data.actions);
+  } catch (e) {
+    typing.remove();
+    aAddMsg('Error de conexión: ' + e.message, 'system');
+  } finally {
+    if (assistantSendBtn()) assistantSendBtn().disabled = false;
+    if (assistantInput()) assistantInput().focus();
+  }
+}
+
+async function assistantSend() {
+  const text = assistantInput().value.trim();
+  if (text) await ask(text);
+}
+
+if (assistantInput()) {
+  assistantInput().addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); assistantSend(); }
+  });
+}
+
+// ─── ANALÍTICAS 365 ───
+function initColToggles(toggleId, tableId, onApply) {
+  const container = $(toggleId);
+  const table = $(tableId);
+  if (!container || !table) return;
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent);
+  const savedKey = 'colvis:' + tableId;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(savedKey) || '{}'); } catch (e) {}
+  headers.forEach((name, i) => {
+    const lbl = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = saved[i] !== false;
+    cb.onchange = () => {
+      saved[i] = cb.checked;
+      localStorage.setItem(savedKey, JSON.stringify(saved));
+      applyColVisibility(tableId, saved);
+      if (onApply) onApply();
+    };
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(' ' + name));
+    container.appendChild(lbl);
+  });
+  applyColVisibility(tableId, saved);
+}
+
+function applyColVisibility(tableId, saved) {
+  const table = $(tableId);
+  if (!table) return;
+  const rows = Array.from(table.querySelectorAll('tr'));
+  rows.forEach(tr => {
+    const cells = Array.from(tr.children);
+    cells.forEach((cell, i) => {
+      cell.style.display = (saved[i] === false) ? 'none' : '';
+    });
+  });
+}
+
+function reapplyColVisibility(tableId) {
+  const savedKey = 'colvis:' + tableId;
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(savedKey) || '{}'); } catch (e) {}
+  applyColVisibility(tableId, saved);
+}
+
+async function loadAnalytics() {
+  const data = await api('/api/analytics');
+  if (!data) return;
+
+  const t = data.totals || {};
+  const kpis = [
+    { v: t.encontrados || 0, l: 'Encontrados' },
+    { v: t.encolados || 0, l: 'Encolados' },
+    { v: t.enviados || 0, l: 'Enviados' },
+    { v: t.conversaciones || 0, l: 'Conversaciones' },
+    { v: t.respondieron || 0, l: 'Respondieron' },
+    { v: (t.tasa_respuesta ?? 0) + '%', l: 'Tasa respuesta' },
+    { v: t.followups || 0, l: 'Followups' },
+    { v: t.dias_activos || 0, l: 'Días activos' },
+    { v: t.pool_prospectos || 0, l: 'Pool prospectos' },
+  ];
+  $('an-kpis').innerHTML = kpis.map(k => `
+    <div class="stat-block"><div class="value">${k.v}</div><div class="label">${k.l}</div></div>`).join('');
+
+  // Hourly bars
+  const hourly = data.hourly || [];
+  const maxH = Math.max(1, ...hourly.map(h => h.count));
+  $('an-hourly').innerHTML = hourly.map(h => `
+    <div class="an-bar" title="${String(h.hour).padStart(2, '0')}:00 — ${h.count} envíos">
+      <span class="val">${h.count || ''}</span>
+      <div class="fill" style="height:${Math.round(h.count * 100 / maxH)}%"></div>
+      <span class="lbl">${String(h.hour).padStart(2, '0')}</span>
+    </div>`).join('');
+
+  // Daily bars (enviados por día, últimas 14)
+  const daily = (data.daily || []).slice(-14);
+  const maxSent = Math.max(1, ...daily.map(d => d.sent || 0));
+  $('an-daily-bars').innerHTML = daily.map(d => `
+    <div class="an-bar" title="${d.date} — ${d.sent} enviados">
+      <span class="val">${d.sent || ''}</span>
+      <div class="fill fill-sent" style="height:${Math.round((d.sent || 0) * 100 / maxSent)}%"></div>
+      <span class="lbl">${(d.date || '').slice(5)}</span>
+    </div>`).join('');
+
+  // Daily series (last 14)
+  $('an-daily-body').innerHTML = daily.map(d => `<tr>
+    <td>${d.date}</td><td>${d.found}</td><td>${d.enqueued}</td><td>${d.sent}</td><td>${d.followups}</td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+
+  // By country
+  const countries = (data.by_country || []).sort((a, b) => b.enviados - a.enviados);
+  $('an-country-body').innerHTML = countries.map(c => `<tr>
+    <td>${c.pais}</td><td>${c.enviados}</td><td>${c.conversaciones}</td><td>${c.respondieron}</td>
+    <td>${c.conversaciones ? Math.round(c.respondieron * 100 / c.conversaciones) + '%' : '--'}</td>
+    <td>${c.pool}</td>
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+
+  // By rubro
+  const rubros = (data.by_rubro || []).sort((a, b) => b.enviados - a.enviados);
+  $('an-rubro-body').innerHTML = rubros.map(r => `<tr>
+    <td>${r.rubro}</td><td>${r.enviados}</td><td>${r.pool}</td>
+  </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+
+  // Top cities
+  const cities = (data.by_city || []).slice(0, 30);
+  $('an-city-body').innerHTML = cities.map(c => `<tr>
+    <td>${c.ciudad}</td><td>${c.pais}</td><td>${c.pool}</td>
+  </tr>`).join('') || '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+
+  reapplyColVisibility('tbl-country');
+  reapplyColVisibility('tbl-rubro');
+  reapplyColVisibility('tbl-city');
+  reapplyColVisibility('tbl-conv');
+
+  // Conversations
+  const convs = ((data.conversaciones || {}).rows || []).slice().sort((a, b) => (b.started_at || '').localeCompare(a.started_at || '')).slice(0, 50);
+  $('an-conv-body').innerHTML = convs.map(c => `<tr>
+    <td>${c.nombre || c.phone || '--'}</td><td>${c.pais || '--'}</td><td>${c.rubro || '--'}</td>
+    <td>${c.status || '--'}</td><td>${c.step ?? '--'}</td><td>${c.clasificacion || '--'}</td>
+    <td>${formatTime(c.started_at)}</td><td>${formatTime(c.last_reply_at)}</td>
+  </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);">Sin datos</td></tr>';
+
+  renderVisualToggles();
+}
+
+const AN_VISUALS = [
+  { id: 'hourly', label: 'Barras horarias de envío' },
+  { id: 'daily', label: 'Barras diarias de envío' },
+  { id: 'country', label: 'Tabla por país' },
+  { id: 'rubro', label: 'Tabla por rubro' },
+  { id: 'conv', label: 'Conversaciones en curso' },
+];
+
+function renderVisualToggles() {
+  const container = $('an-visual-toggles');
+  if (!container) return;
+  const savedKey = 'vis-visible';
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(savedKey) || '{}'); } catch (e) {}
+  container.innerHTML = '';
+  AN_VISUALS.forEach(v => {
+    const on = saved[v.id] !== false;
+    applyVisualVisible(v.id, on);
+    const lbl = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = on;
+    cb.onchange = () => {
+      saved[v.id] = cb.checked;
+      localStorage.setItem(savedKey, JSON.stringify(saved));
+      applyVisualVisible(v.id, cb.checked);
+    };
+    lbl.appendChild(cb);
+    lbl.appendChild(document.createTextNode(' ' + v.label));
+    container.appendChild(lbl);
+  });
+}
+
+function applyVisualVisible(id, on) {
+  const el = document.querySelector('.an-visual[data-v="' + id + '"]');
+  if (el) el.classList.toggle('hidden', !on);
+}
+
+// ─── EMAIL CAMPAIGN ───
+async function loadEmailConfig() {
+  try {
+    const cfg = await api('/api/email/config');
+    if (!cfg) return;
+    if (cfg.host) $('smtp-host').value = cfg.host;
+    if (cfg.port) $('smtp-port').value = cfg.port;
+    if (cfg.from_email) $('smtp-from').value = cfg.from_email;
+    if (cfg.user || cfg.smtp_user) $('smtp-user').value = cfg.user || cfg.smtp_user;
+    $('email-smtp-state').textContent = cfg.host ? '✅ Configurado' : '⚠️ Sin configurar';
+  } catch (e) {}
+  try {
+    const pl = await api('/api/email/plantilla');
+    if (pl && pl.asunto) $('tpl-asunto').value = pl.asunto;
+    if (pl && pl.cuerpo) $('tpl-cuerpo').value = pl.cuerpo;
+  } catch (e) {}
+}
+
+async function loadEmailEnvios() {
+  const d = await api('/api/email/envios?dias=30');
+  if (!d) return;
+  $('email-sent-today').textContent = d.hoy || 0;
+  $('email-total').textContent = d.total || 0;
+  $('email-exitosos').textContent = d.exitosos || 0;
+  const rows = (d.ultimos || []).map(e => `<tr>
+    <td>${formatTime(e.ts * 1000)}</td>
+    <td>${e.email || '--'}</td>
+    <td>${e.empresa || '--'}</td>
+    <td>${e.status === 'ok' ? '<span style="color:#4ade80">✅ OK</span>' : '<span style="color:#f87171">❌ Error</span>'}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${e.mensaje || ''}</td>
+  </tr>`).join('');
+  $('envios-body').innerHTML = rows || '<tr><td colspan="5" style="text-align:center;color:var(--text-muted);">Sin envíos</td></tr>';
+}
+
+async function saveSmtp() {
+  const cfg = {
+    host: $('smtp-host').value.trim(),
+    port: parseInt($('smtp-port').value || '587'),
+    from_email: $('smtp-from').value.trim(),
+    user: $('smtp-user').value.trim(),
+    password: $('smtp-password').value,
+  };
+  if (!cfg.host || !cfg.user || !cfg.password) return toast('Completa host, usuario y contraseña', 'warning');
+  await api('/api/email/config', 'POST', cfg);
+  $('smtp-msg').innerHTML = '<span style="color:#4ade80">✅ Configuración guardada</span>';
+  loadEmailConfig();
+}
+
+async function testSmtp() {
+  const cfg = {
+    host: $('smtp-host').value.trim(),
+    port: parseInt($('smtp-port').value || '587'),
+    from_email: $('smtp-from').value.trim(),
+    user: $('smtp-user').value.trim(),
+    password: $('smtp-password').value,
+  };
+  $('smtp-msg').innerHTML = '<span style="color:var(--text-muted)">Probando conexión...</span>';
+  const r = await api('/api/email/test', 'POST', cfg);
+  $('smtp-msg').innerHTML = r.ok
+    ? '<span style="color:#4ade80">✅ Conexión exitosa</span>'
+    : '<span style="color:#f87171">❌ ' + (r.error || 'Error') + '</span>';
+}
+
+async function savePlantilla() {
+  const asunto = $('tpl-asunto').value;
+  const cuerpo = $('tpl-cuerpo').value;
+  if (!asunto.trim() || !cuerpo.trim()) return toast('Completa asunto y cuerpo', 'warning');
+  await api('/api/email/plantilla', 'POST', { asunto, cuerpo });
+  $('tpl-msg').innerHTML = '<span style="color:#4ade80">✅ Plantilla guardada</span>';
+}
+
+async function enviarUnCorreo() {
+  const payload = {
+    email: $('mail-to').value.trim(),
+    nombre: $('mail-nombre').value.trim(),
+    empresa: $('mail-empresa').value.trim(),
+    pais: $('mail-pais').value.trim(),
+  };
+  if (!payload.email) return toast('Indica el email destino', 'warning');
+  $('envio-msg').innerHTML = '<span style="color:var(--text-muted)">Enviando...</span>';
+  const r = await api('/api/email/enviar', 'POST', payload);
+  $('envio-msg').innerHTML = r.ok
+    ? '<span style="color:#4ade80">✅ ' + (r.mensaje || 'Enviado') + '</span>'
+    : '<span style="color:#f87171">❌ ' + (r.mensaje || 'Error') + '</span>';
+  loadEmailEnvios();
+}
+
+// ─── API SEARCH ───
+let SEARCH_RESULTS = [];
+
+async function loadApiKeys() {
+  try {
+    const k = await api('/api/search/keys');
+    if (!k) return;
+    if (k.hunter && k.hunter !== '***') $('key-hunter').value = k.hunter;
+    if (k.lusha && k.lusha !== '***') $('key-lusha').value = k.lusha;
+    if (k.rocketreach && k.rocketreach !== '***') $('key-rocketreach').value = k.rocketreach;
+    if (k.cufinder && k.cufinder !== '***') $('key-cufinder').value = k.cufinder;
+  } catch (e) {}
+}
+
+async function saveApiKeys() {
+  const keys = {
+    hunter: $('key-hunter').value.trim(),
+    lusha: $('key-lusha').value.trim(),
+    rocketreach: $('key-rocketreach').value.trim(),
+    cufinder: $('key-cufinder').value.trim(),
+  };
+  await api('/api/search/keys', 'POST', keys);
+  $('keys-msg').innerHTML = '<span style="color:#4ade80">✅ Keys guardadas</span>';
+}
+
+async function buscarEmpresa() {
+  const empresa = $('sch-empresa').value.trim();
+  if (!empresa) return toast('Indica la empresa', 'warning');
+  $('search-msg').innerHTML = '<span style="color:var(--text-muted)">Buscando...</span>';
+  const payload = {
+    empresa,
+    pais: $('sch-pais').value.trim(),
+    cargo: $('sch-cargo').value.trim(),
+    limite: parseInt($('sch-limite').value || '10'),
+  };
+  const r = await api('/api/search/empresa', 'POST', payload);
+  if (!r) { $('search-msg').innerHTML = '<span style="color:#f87171">Sin respuesta</span>'; return; }
+  SEARCH_RESULTS = r.leads || [];
+  $('search-msg').innerHTML = r.errores && r.errores.length
+    ? '<span style="color:#fbbf24">⚠️ ' + r.errores.join(' | ') + '</span>'
+    : '<span style="color:#4ade80">✅ ' + SEARCH_RESULTS.length + ' resultados</span>';
+  renderSearchResults();
+}
+
+function renderSearchResults() {
+  const rows = SEARCH_RESULTS.map((l, i) => `<tr>
+    <td><input type="checkbox" class="sch-sel" data-i="${i}"></td>
+    <td>${l['Contacto Clabe'] || l.nombre || '--'}</td>
+    <td>${l.Cargo || l.cargo || '--'}</td>
+    <td>${l.Empresa || l.empresa || '--'}</td>
+    <td>${l['País'] || l.pais || '--'}</td>
+    <td>${l.Correo || l.Teléfono || l.telefono || '--'}</td>
+    <td>${l.Fuente || '--'}</td>
+  </tr>`).join('');
+  $('search-body').innerHTML = rows || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);">Sin resultados</td></tr>';
+}
+
+function toggleAllResults(checkbox) {
+  document.querySelectorAll('.sch-sel').forEach(cb => cb.checked = checkbox.checked);
+}
+
+function getSelectedResults() {
+  const sel = [];
+  document.querySelectorAll('.sch-sel:checked').forEach(cb => {
+    sel.push(SEARCH_RESULTS[parseInt(cb.dataset.i)]);
+  });
+  return sel;
+}
+
+async function guardarResultadosSel() {
+  const sel = getSelectedResults();
+  if (!sel.length) return toast('Selecciona al menos uno', 'warning');
+  const r = await api('/api/search/guardar', 'POST', { leads: sel });
+  toast('Guardados: ' + (r.guardados || 0), 'success');
+}
+
+async function enviarResultadosSel() {
+  const sel = getSelectedResults();
+  if (!sel.length) return toast('Selecciona al menos uno', 'warning');
+  const n = sel[0]['Contacto Clabe'] || sel[0].nombre || '';
+  $('mail-to').value = sel[0].Correo || sel[0].email || '';
+  $('mail-nombre').value = n;
+  $('mail-empresa').value = sel[0].Empresa || sel[0].empresa || '';
+  $('mail-pais').value = sel[0]['País'] || sel[0].pais || '';
+  toast('Datos del 1er seleccionado cargados en Envío de correo', 'info');
+  document.querySelector('.nav-item[data-tab="email"]').click();
+}
+
+// ─── SETTINGS ───
+async function saveApiKeys() {
+  const keys = {
+    hunter: $('cfg-hunter-key').value.trim(),
+    lusha: $('cfg-lusha-key').value.trim(),
+    rocketreach: $('cfg-rocketreach-key').value.trim(),
+    cufinder: $('cfg-cufinder-key').value.trim(),
+  };
+  await api('/api/search/keys', 'POST', keys);
+  toast('API keys guardadas', 'success');
+}
+
+async function saveSmtpConfig() {
+  const cfg = {
+    server: $('cfg-smtp-server').value.trim(),
+    port: parseInt($('cfg-smtp-port').value) || 587,
+    from_email: $('cfg-smtp-from').value.trim(),
+    password: $('cfg-smtp-pass').value,
+  };
+  await api('/api/email/config', 'POST', cfg);
+  toast('Configuración SMTP guardada', 'success');
+}
+
+async function testSmtp() {
+  const cfg = {
+    server: $('cfg-smtp-server').value.trim(),
+    port: parseInt($('cfg-smtp-port').value) || 587,
+    from_email: $('cfg-smtp-from').value.trim(),
+    password: $('cfg-smtp-pass').value,
+  };
+  const r = await api('/api/email/test', 'POST', cfg);
+  if (r && r.ok) toast('SMTP: conexión exitosa ✓', 'success');
+  else toast('SMTP: ' + (r?.error || 'Error de conexión'), 'error');
+}
+
+async function loadSettings() {
+  const keys = await api('/api/search/keys', 'GET');
+  if (keys) {
+    if ($('cfg-hunter-key')) $('cfg-hunter-key').value = keys.hunter || '';
+    if ($('cfg-lusha-key')) $('cfg-lusha-key').value = keys.lusha || '';
+    if ($('cfg-rocketreach-key')) $('cfg-rocketreach-key').value = keys.rocketreach || '';
+    if ($('cfg-cufinder-key')) $('cfg-cufinder-key').value = keys.cufinder || '';
+  }
+  const smtp = await api('/api/email/config', 'GET');
+  if (smtp) {
+    if ($('cfg-smtp-server')) $('cfg-smtp-server').value = smtp.server || 'smtp.gmail.com';
+    if ($('cfg-smtp-port')) $('cfg-smtp-port').value = smtp.port || 587;
+    if ($('cfg-smtp-from')) $('cfg-smtp-from').value = smtp.from_email || 'pskloud.fpabon@gmail.com';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DISTRIBUIDORES MODULE
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DIST = { selected: new Set(), cuotas: {}, rows: [] };
+
+// ─── Refresh all distribuidores views ───
+async function distRefreshAll() {
+  await loadDistribuidores();
+  await loadDistActividad();
+}
+
+// ─── Check engine on tab open ───
+async function distCheckEngine() {
+  const s = await api('/api/dist/engine/status');
+  if (!s) return;
+  // Show saved state badge if there's persisted state
+  const badge = $('dist-engine-saved-badge');
+  const savedAt = $('dist-engine-saved-at');
+  if (s.has_saved_state && !s.running) {
+    badge.style.display = 'block';
+    savedAt.textContent = `(${new Date(s.saved_at).toLocaleString()})`;
+  } else {
+    badge.style.display = 'none';
+  }
+  if (s.running) {
+    $('dist-engine-btn').innerHTML = '⏹ Detener Motor';
+    $('dist-engine-btn').className = 'btn btn-danger';
+    $('dist-engine-status').style.display = 'block';
+    $('dist-engine-log-card').style.display = 'block';
+    distStartEnginePolling();
+    await loadDistEngineStatus();
+    await loadDistEngineLog();
+  }
+}
+
+// ─── Load + render ───
+async function loadDistribuidores() {
+  const pais = $('dist-pais-filter')?.value || '';
+  const estado = $('dist-estado-filter')?.value || '';
+  const semaforo = $('dist-semaforo-filter')?.value || '';
+  const params = new URLSearchParams();
+  if (pais) params.set('pais', pais);
+  if (estado) params.set('estado', estado);
+  if (semaforo) params.set('semaforo', semaforo);
+  const data = await api(`/api/dist/list?${params}`);
+  if (!data) return;
+  DIST.rows = data.distribuidores || [];
+  DIST.selected.clear();
+  renderDistTable(DIST.rows);
+  renderDistKpis(DIST.rows, pais);
+  $('dist-count-label').textContent = `${data.count || 0} distribuidores`;
+  $('badge-dist').textContent = data.count || 0;
+  $('dist-check-all').checked = false;
+  updateDistBulkActions();
+}
+
+function renderDistTable(rows) {
+  if (!rows.length) {
+    $('dist-table-body').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text-muted);">Sin distribuidores registrados</td></tr>';
+    return;
+  }
+  const estadoColors = { INVESTIGADO: 'var(--text-muted)', PRECALIFICADO: 'var(--accent)', CONTACTADO: 'var(--success)', CONVERSACION: 'var(--warning)', REUNION_AGENDADA: '#8b5cf6' };
+  const semaforoIcons = { VERDE: '🟢', AMARILLO: '🟡', ROJO: '🔴' };
+  const canalIcons = { EMAIL_SMTP: '📧', LINKEDIN: '💼', WHATSAPP_DIRECTO: '💬', LLAMADA: '📞' };
+
+  $('dist-table-body').innerHTML = rows.map(r => `<tr data-id="${r.id}">
+    <td><input type="checkbox" class="dist-sel" value="${r.id}" onchange="distToggleSelect(${r.id}, this.checked)"></td>
+    <td><strong>${r.empresa || '--'}</strong>${r.contacto_nombre ? '<br><span style="font-size:11px;color:var(--text-muted);">' + r.contacto_nombre + '</span>' : ''}</td>
+    <td>${r.contacto_email ? '<span style="font-size:11px;">📧 ' + r.contacto_email + '</span>' : ''}${r.contacto_telefono ? '<br><span style="font-size:11px;">📞 ' + r.contacto_telefono + '</span>' : ''}${!r.contacto_email && !r.contacto_telefono ? '<span style="color:var(--danger);font-size:11px;">Sin contacto</span>' : ''}</td>
+    <td><span style="font-size:12px;">${r.pais_target || '--'}</span></td>
+    <td>${r.ciudad || '--'}</td>
+    <td><span style="font-size:11px;">${r.rubro || '--'}</span></td>
+    <td><span style="color:${estadoColors[r.estado_conversion] || 'var(--text-secondary)'};font-size:11px;font-weight:600;">${r.estado_conversion || '--'}</span></td>
+    <td style="text-align:center;">${semaforoIcons[r.clasificacion_semaforo] || '⚪'}</td>
+    <td style="text-align:center;">${canalIcons[r.canal_contacto] || '--'}</td>
+    <td>
+      <div class="btn-group" style="gap:4px;">
+        <button class="btn btn-outline btn-sm" onclick="distAdvanceState(${r.id}, '${r.estado_conversion}')" title="Avanzar estado →" style="font-size:14px;">➡️</button>
+        <button class="btn btn-outline btn-sm" onclick="showDistEdit(${r.id})" title="Editar">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="distDelete(${r.id})" title="Eliminar">🗑</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function renderDistKpis(rows, pais) {
+  const byEstado = { INVESTIGADO: 0, PRECALIFICADO: 0, CONTACTADO: 0, CONVERSACION: 0, REUNION_AGENDADA: 0 };
+  const bySemaforo = { VERDE: 0, AMARILLO: 0, ROJO: 0 };
+  rows.forEach(r => {
+    if (byEstado[r.estado_conversion] !== undefined) byEstado[r.estado_conversion]++;
+    if (bySemaforo[r.clasificacion_semaforo] !== undefined) bySemaforo[r.clasificacion_semaforo]++;
+  });
+
+  $('dist-kpi-investigados').textContent = byEstado.INVESTIGADO;
+  $('dist-kpi-precalificados').textContent = byEstado.PRECALIFICADO;
+  $('dist-kpi-contactados').textContent = byEstado.CONTACTADO + byEstado.CONVERSACION;
+  $('dist-kpi-reuniones').textContent = byEstado.REUNION_AGENDADA;
+  $('dist-kpi-total').textContent = rows.length;
+  $('dist-kpi-semaforo-verde').textContent = bySemaforo.VERDE;
+  $('dist-kpi-semaforo-amarillo').textContent = bySemaforo.AMARILLO;
+  $('dist-kpi-semaforo-rojo').textContent = bySemaforo.ROJO;
+  loadDistCuotas(pais);
+}
+
+async function loadDistCuotas(pais) {
+  const data = await api(`/api/dist/cuotas${pais ? '?pais=' + pais : ''}`);
+  if (!data || !data.cuotas) return;
+  DIST.cuotas = data.cuotas;
+  const metas = { investigados: 40, precalificados: 20, contactados: 20, reuniones: 5 };
+  if (pais && data.cuotas[pais]) {
+    const c = data.cuotas[pais];
+    $('dist-kpi-inv-meta').textContent = `Meta: ${c.investigados?.meta || metas.investigados} (${c.investigados?.actual || 0} esta semana)`;
+    $('dist-kpi-pre-meta').textContent = `Meta: ${c.precalificados?.meta || metas.precalificados} (${c.precalificados?.actual || 0} esta semana)`;
+    $('dist-kpi-con-meta').textContent = `Meta: ${c.contactados?.meta || metas.contactados} (${c.contactados?.actual || 0} esta semana)`;
+    $('dist-kpi-reu-meta').textContent = `Meta: ${c.reuniones?.meta || metas.reuniones} (${c.reuniones?.actual || 0} esta semana)`;
+  } else {
+    $('dist-kpi-inv-meta').textContent = `Meta semanal: ${metas.investigados}`;
+    $('dist-kpi-pre-meta').textContent = `Meta semanal: ${metas.precalificados}`;
+    $('dist-kpi-con-meta').textContent = `Meta semanal: ${metas.contactados}`;
+    $('dist-kpi-reu-meta').textContent = `Meta semanal: ${metas.reuniones}`;
+  }
+}
+
+// ─── Selection ───
+function distToggleSelect(id, checked) {
+  if (checked) DIST.selected.add(id); else DIST.selected.delete(id);
+  updateDistBulkActions();
+}
+function distSelectAll() {
+  document.querySelectorAll('.dist-sel').forEach(cb => { cb.checked = true; DIST.selected.add(Number(cb.value)); });
+  $('dist-check-all').checked = true;
+  updateDistBulkActions();
+}
+function distDeselectAll() {
+  document.querySelectorAll('.dist-sel').forEach(cb => cb.checked = false);
+  DIST.selected.clear();
+  $('dist-check-all').checked = false;
+  $('dist-bulk-accion').value = '';
+  distOnBulkAccionChange();
+  updateDistBulkActions();
+}
+function distToggleAll(el) {
+  el.checked ? distSelectAll() : distDeselectAll();
+}
+function updateDistBulkActions() {
+  const n = DIST.selected.size;
+  $('dist-selected-count').textContent = n;
+  $('dist-bulk-actions').style.display = n > 0 ? 'block' : 'none';
+  if (n === 0) {
+    $('dist-bulk-accion').value = '';
+    distOnBulkAccionChange();
+  }
+}
+
+// ─── Bulk action dropdown logic ───
+function distOnBulkAccionChange() {
+  const accion = $('dist-bulk-accion').value;
+  const showCanal = ['ENCOLAR_PLANTILLA', 'MARCAR_CONTACTADO'].includes(accion);
+  const showSemaforo = accion === 'CAMBIAR_SEMAFORO';
+  const showPlantilla = accion === 'ENCOLAR_PLANTILLA';
+  $('dist-bulk-canal-wrap').style.display = showCanal ? 'block' : 'none';
+  $('dist-bulk-semaforo-wrap').style.display = showSemaforo ? 'block' : 'none';
+  $('dist-bulk-plantilla-wrap').style.display = showPlantilla ? 'block' : 'none';
+}
+
+// ─── Execute bulk action ───
+async function distExecuteBulk() {
+  if (!DIST.selected.size) { toast('Selecciona al menos un distribuidor', 'error'); return; }
+  const accion = $('dist-bulk-accion').value;
+  if (!accion) { toast('Selecciona una acción', 'error'); return; }
+  const canal = $('dist-bulk-canal').value;
+  const semaforo = $('dist-bulk-semaforo').value;
+  const plantilla = $('dist-bulk-plantilla').value;
+  const statusEl = $('dist-bulk-status');
+  const ids = [...DIST.selected];
+
+  if (accion === 'MARCAR_CONTACTADO') {
+    if (!canal) { toast('Selecciona un canal de contacto', 'error'); return; }
+    statusEl.textContent = `Contactando ${ids.length} distribuidores...`;
+    for (const id of ids) {
+      await api(`/api/dist/${id}`, 'PUT', { estado_conversion: 'CONTACTADO', canal_contacto: canal });
+    }
+    toast(`${ids.length} distribuidores marcados como CONTACTADO (${canal})`, 'success');
+    await distRefreshAll();
+
+  } else if (accion === 'ENCOLAR_PLANTILLA') {
+    if (!canal) { toast('Selecciona un canal', 'error'); return; }
+    // Check cuota for each country involved
+    const paisesEnSeleccion = new Set();
+    ids.forEach(id => {
+      const row = DIST.rows.find(r => r.id === id);
+      if (row) paisesEnSeleccion.add(row.pais_target);
+    });
+    let blocked = [];
+    for (const p of paisesEnSeleccion) {
+      const check = await api(`/api/dist/cuotas/check?pais=${p}&tipo=contactados`);
+      if (check && !check.puede) blocked.push(`${p} (restantes: ${check.restantes})`);
+    }
+    if (blocked.length) {
+      toast(`Cuota alcanzada: ${blocked.join(', ')}`, 'error');
+      statusEl.innerHTML = `<span style="color:var(--danger);">⛔ Bloqueado por cuota: ${blocked.join(', ')}</span>`;
+      return;
+    }
+    statusEl.textContent = `Encolando ${ids.length} distribuidores...`;
+    for (const id of ids) {
+      await api(`/api/dist/${id}`, 'PUT', { estado_conversion: 'CONTACTADO', canal_contacto: canal });
+      // Register activity with template
+      await api(`/api/dist/${id}/actividad`, 'POST', {
+        accion: 'ENCOLADO',
+        detalle: `Plantilla: ${plantilla}`,
+        canal: canal,
+        plantilla: plantilla,
+      });
+    }
+    toast(`${ids.length} distribuidores encolados con ${plantilla} (${canal})`, 'success');
+    await distRefreshAll();
+
+  } else if (accion === 'CAMBIAR_SEMAFORO') {
+    statusEl.textContent = `Cambiando semáforo de ${ids.length} distribuidores...`;
+    for (const id of ids) {
+      await api(`/api/dist/${id}`, 'PUT', { clasificacion_semaforo: semaforo });
+    }
+    toast(`${ids.length} distribuidores → ${semaforo}`, 'success');
+    await distRefreshAll();
+
+  } else if (accion === 'EXPORTAR') {
+    distBulkExport();
+    return;
+
+  } else if (accion === 'ELIMINAR') {
+    if (!confirm(`¿Eliminar ${ids.length} distribuidores? Esta acción no se puede deshacer.`)) return;
+    statusEl.textContent = `Eliminando ${ids.length} distribuidores...`;
+    for (const id of ids) {
+      await api(`/api/dist/${id}`, 'DELETE');
+    }
+    toast(`${ids.length} distribuidores eliminados`, 'success');
+    await distRefreshAll();
+
+  } else {
+    toast('Acción no reconocida', 'error');
+    return;
+  }
+  statusEl.textContent = '';
+  $('dist-bulk-accion').value = '';
+  distOnBulkAccionChange();
+}
+
+// ─── Single row: advance state ───
+async function distAdvanceState(id, current) {
+  const order = ['INVESTIGADO', 'PRECALIFICADO', 'CONTACTADO', 'CONVERSACION', 'REUNION_AGENDADA'];
+  const idx = order.indexOf(current);
+  if (idx >= order.length - 1) { toast('Ya en estado máximo', 'info'); return; }
+  const next = order[idx + 1];
+
+  // If advancing TO CONTACTADO, prompt for channel
+  if (next === 'CONTACTADO') {
+    showDistAdvanceModal(id, current, next);
+    return;
+  }
+  await api(`/api/dist/${id}`, 'PUT', { estado_conversion: next });
+  toast(`${current} → ${next}`, 'success');
+  await distRefreshAll();
+}
+
+function showDistAdvanceModal(id, from, to) {
+  let overlay = document.getElementById('dist-advance-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'dist-advance-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:10000;display:flex;align-items:center;justify-content:center;';
+  const canales = [
+    { v: 'EMAIL_SMTP', l: '📧 Email' },
+    { v: 'LINKEDIN', l: '💼 LinkedIn' },
+    { v: 'WHATSAPP_DIRECTO', l: '💬 WhatsApp' },
+    { v: 'LLAMADA', l: '📞 Llamada' },
+  ];
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:340px;">
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">${from} → ${to}</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Selecciona el canal de contacto utilizado:</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${canales.map(c => `<button class="btn btn-outline" onclick="distConfirmAdvance(${id}, '${to}', '${c.v}')" style="justify-content:flex-start;">${c.l}</button>`).join('')}
+      </div>
+      <div style="margin-top:12px;text-align:right;">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('dist-advance-overlay').remove()">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+}
+
+async function distConfirmAdvance(id, to, canal) {
+  document.getElementById('dist-advance-overlay')?.remove();
+  await api(`/api/dist/${id}`, 'PUT', { estado_conversion: to, canal_contacto: canal });
+  toast(`Estado → ${to} (canal: ${canal})`, 'success');
+  await distRefreshAll();
+}
+
+// ─── Single row: delete ───
+async function distDelete(id) {
+  if (!confirm('¿Eliminar este distribuidor?')) return;
+  await api(`/api/dist/${id}`, 'DELETE');
+  toast('Distribuidor eliminado', 'success');
+  await distRefreshAll();
+}
+
+// ─── Bulk export ───
+function distBulkExport() {
+  const rows = [];
+  DIST.rows.forEach(r => {
+    if (DIST.selected.has(r.id)) {
+      rows.push({
+        empresa: r.empresa, contacto_nombre: r.contacto_nombre,
+        contacto_email: r.contacto_email, contacto_telefono: r.contacto_telefono,
+        pais_target: r.pais_target, ciudad: r.ciudad, rubro: r.rubro,
+        estado_conversion: r.estado_conversion, clasificacion_semaforo: r.clasificacion_semaforo,
+        canal_contacto: r.canal_contacto, website: r.website, notas: r.notas,
+      });
+    }
+  });
+  const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `distribuidores_export_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast(`${rows.length} distribuidores exportados`, 'success');
+}
+
+// ─── Create / Edit form ───
+function showDistForm() {
+  showDistModal('Crear Distribuidor', {}, async (data) => {
+    const res = await api('/api/dist/create', 'POST', data);
+    if (res?.status === 'created') { toast('Distribuidor creado', 'success'); await distRefreshAll(); }
+    else if (res?.status === 'validation_error') { toast(res.errors.join('; '), 'error'); }
+    else { toast('Ya existe un distribuidor con esa empresa en ese país', 'error'); }
+  });
+}
+
+async function showDistEdit(id) {
+  const dist = DIST.rows.find(d => d.id === id);
+  if (!dist) return;
+  showDistModal('Editar Distribuidor', dist, async (form) => {
+    await api(`/api/dist/${id}`, 'PUT', form);
+    toast('Distribuidor actualizado', 'success');
+    await distRefreshAll();
+  });
+}
+
+function showDistModal(title, preset, onSubmit) {
+  let overlay = document.getElementById('dist-modal-overlay');
+  if (overlay) overlay.remove();
+  overlay = document.createElement('div');
+  overlay.id = 'dist-modal-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+  const paises = ['COLOMBIA', 'EL_SALVADOR', 'COSTA_RICA', 'NICARAGUA', 'HONDURAS'];
+  const rubros = ['Firmas Contables', 'Soporte TI', 'Integradores POS', 'Consultores Fiscales', 'Revendedores ERP'];
+  const canales = ['EMAIL_SMTP', 'LINKEDIN', 'WHATSAPP_DIRECTO', 'LLAMADA'];
+  overlay.innerHTML = `
+    <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto;">
+      <div class="card-title" style="margin-bottom:16px;">${title}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div><label style="font-size:11px;color:var(--text-muted);">Empresa *</label>
+          <input class="input" id="dm-empresa" value="${preset.empresa || ''}"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">País Target *</label>
+          <select class="input" id="dm-pais">${paises.map(p => `<option value="${p}" ${preset.pais_target===p?'selected':''}>${p.replace('_',' ')}</option>`).join('')}</select></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Ciudad</label>
+          <input class="input" id="dm-ciudad" value="${preset.ciudad || ''}"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Rubro</label>
+          <select class="input" id="dm-rubro"><option value="">--</option>${rubros.map(r => `<option value="${r}" ${preset.rubro===r?'selected':''}>${r}</option>`).join('')}</select></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Contacto Nombre</label>
+          <input class="input" id="dm-nombre" value="${preset.contacto_nombre || ''}"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Email</label>
+          <input class="input" id="dm-email" type="email" value="${preset.contacto_email || ''}"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Teléfono</label>
+          <input class="input" id="dm-telefono" value="${preset.contacto_telefono || ''}"></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Canal Contacto</label>
+          <select class="input" id="dm-canal"><option value="">--</option>${canales.map(c => `<option value="${c}" ${preset.canal_contacto===c?'selected':''}>${c.replace('_',' ')}</option>`).join('')}</select></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Semáforo</label>
+          <select class="input" id="dm-semaforo"><option value="AMARILLO" ${preset.clasificacion_semaforo==='AMARILLO'?'selected':''}>🟡 Amarillo</option><option value="VERDE" ${preset.clasificacion_semaforo==='VERDE'?'selected':''}>🟢 Verde</option><option value="ROJO" ${preset.clasificacion_semaforo==='ROJO'?'selected':''}>🔴 Rojo</option></select></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Estado</label>
+          <select class="input" id="dm-estado"><option value="INVESTIGADO" ${preset.estado_conversion==='INVESTIGADO'?'selected':''}>Investigado</option><option value="PRECALIFICADO" ${preset.estado_conversion==='PRECALIFICADO'?'selected':''}>Precalificado</option><option value="CONTACTADO" ${preset.estado_conversion==='CONTACTADO'?'selected':''}>Contactado</option><option value="CONVERSACION" ${preset.estado_conversion==='CONVERSACION'?'selected':''}>Conversación</option><option value="REUNION_AGENDADA" ${preset.estado_conversion==='REUNION_AGENDADA'?'selected':''}>Reunión Agendada</option></select></div>
+        <div><label style="font-size:11px;color:var(--text-muted);">Website</label>
+          <input class="input" id="dm-website" value="${preset.website || ''}"></div>
+      </div>
+      <div style="margin-top:12px;"><label style="font-size:11px;color:var(--text-muted);">Notas</label>
+        <textarea class="input" id="dm-notas" rows="2" style="resize:vertical;">${preset.notas || ''}</textarea></div>
+      <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('dist-modal-overlay').remove()">Cancelar</button>
+        <button class="btn btn-primary btn-sm" id="dm-submit">Guardar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('dm-submit').onclick = () => {
+    const data = {
+      empresa: $('dm-empresa').value.trim(),
+      pais_target: $('dm-pais').value,
+      ciudad: $('dm-ciudad').value.trim(),
+      rubro: $('dm-rubro').value,
+      contacto_nombre: $('dm-nombre').value.trim(),
+      contacto_email: $('dm-email').value.trim(),
+      contacto_telefono: $('dm-telefono').value.trim(),
+      canal_contacto: $('dm-canal').value,
+      clasificacion_semaforo: $('dm-semaforo').value,
+      estado_conversion: $('dm-estado').value,
+      website: $('dm-website').value.trim(),
+      notas: $('dm-notas').value.trim(),
+    };
+    if (!data.empresa) { toast('La empresa es obligatoria', 'error'); return; }
+    onSubmit(data);
+    overlay.remove();
+  };
+}
+
+// ─── Engine: Auto-Prospecting ───
+let _distEnginePolling = null;
+
+async function distToggleEngine() {
+  const status = await api('/api/dist/engine/status');
+  if (status.running) {
+    await api('/api/dist/engine/stop', 'POST');
+    toast('Motor detenido', 'info');
+    distStopEnginePolling();
+    $('dist-engine-btn').innerHTML = '🚀 Iniciar Prospección Automática';
+    $('dist-engine-btn').className = 'btn btn-primary';
+  } else {
+    const pais = $('dist-pais-filter')?.value;
+    if (!pais) { toast('Selecciona un País Target primero', 'error'); return; }
+    const res = await api('/api/dist/engine/start', 'POST', { pais: pais });
+    if (res.status === 'already_running') {
+      toast('Motor ya ejecutándose en ' + res.pais, 'info');
+    } else {
+      toast(`Motor iniciado: ${pais}`, 'success');
+    }
+    distStartEnginePolling();
+    $('dist-engine-btn').innerHTML = '⏹ Detener Motor';
+    $('dist-engine-btn').className = 'btn btn-danger';
+  }
+  $('dist-engine-status').style.display = 'block';
+  $('dist-engine-log-card').style.display = 'block';
+  loadDistEngineStatus();
+}
+
+function distStartEnginePolling() {
+  if (_distEnginePolling) return;
+  _distEnginePolling = setInterval(async () => {
+    await loadDistEngineStatus();
+    await loadDistEngineLog();
+    // Also refresh the main data
+    await loadDistribuidores();
+  }, 5000);
+}
+
+function distStopEnginePolling() {
+  if (_distEnginePolling) { clearInterval(_distEnginePolling); _distEnginePolling = null; }
+}
+
+async function loadDistEngineStatus() {
+  const s = await api('/api/dist/engine/status');
+  if (!s) return;
+  $('dist-engine-status').style.display = 'block';
+  $('dist-engine-status-text').textContent = s.status_text || 'Idle';
+  $('dist-engine-pais').textContent = s.pais_target ? `| ${s.pais_target}` : '';
+  $('dist-engine-ciclos').textContent = s.ciclos_completados || 0;
+  $('dist-engine-encontrados').textContent = s.total_encontrados || 0;
+  $('dist-engine-ingestados').textContent = s.total_ingestados || 0;
+  $('dist-engine-descartados').textContent = s.total_descartados || 0;
+  // Update saved badge
+  const badge = $('dist-engine-saved-badge');
+  const savedAt = $('dist-engine-saved-at');
+  if (s.has_saved_state) {
+    badge.style.display = 'block';
+    savedAt.textContent = s.running ? `(guardado ${new Date(s.saved_at).toLocaleTimeString()})` : `(${new Date(s.saved_at).toLocaleString()})`;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Update spinner
+  const spinner = $('dist-engine-spinner');
+  if (spinner) spinner.style.display = s.running ? 'inline-block' : 'none';
+
+  // Update button state
+  if (!s.running && $('dist-engine-btn').textContent.includes('Detener')) {
+    $('dist-engine-btn').innerHTML = '🚀 Iniciar Prospección Automática';
+    $('dist-engine-btn').className = 'btn btn-primary';
+    distStopEnginePolling();
+  }
+}
+
+async function loadDistEngineLog() {
+  const data = await api('/api/dist/engine/log?limit=30');
+  if (!data || !data.log?.length) return;
+  const colors = { info: 'var(--text-secondary)', warning: 'var(--warning)', error: 'var(--danger)' };
+  $('dist-engine-log-body').innerHTML = data.log.map(e => {
+    const time = e.ts ? e.ts.slice(11, 19) : '';
+    return `<div style="color:${colors[e.level] || 'var(--text-secondary)'};margin-bottom:2px;">[${time}] ${e.msg}</div>`;
+  }).join('');
+  $('dist-engine-log-card').style.display = 'block';
+}
+
+// ─── Activity log ───
+async function loadDistActividad() {
+  const pais = $('dist-pais-filter')?.value || '';
+  const data = await api(`/api/dist/actividad${pais ? '?pais=' + pais : ''}`);
+  if (!data || !data.actividad?.length) {
+    $('dist-actividad-body').innerHTML = '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--text-muted);">Sin actividad reciente</td></tr>';
+    return;
+  }
+  const accionColors = {
+    INVESTIGADO: 'var(--text-muted)', PRECALIFICADO: 'var(--accent)', CONTACTADO: 'var(--success)',
+    CONVERSACION: 'var(--warning)', REUNION_AGENDADA: '#8b5cf6',
+    ENCOLADO: '#5b8def', ELIMINADO: 'var(--danger)',
+  };
+  $('dist-actividad-body').innerHTML = data.actividad.map(a => `<tr>
+    <td>${formatTime(a.created_at)}</td>
+    <td>${a.empresa || '--'}</td>
+    <td>${a.pais_target || '--'}</td>
+    <td><span style="font-weight:600;font-size:11px;color:${accionColors[a.accion] || 'var(--text-secondary)'};">${a.accion}</span></td>
+    <td style="font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${a.detalle || '--'}</td>
+    <td>${a.canal || '--'}</td>
+    <td>${a.plantilla || '--'}</td>
+  </tr>`).join('');
+}
+
+// ─── POLLING ───
+function startPolling() {
+  loadStatus();
+  loadActivity();
+  loadQueue();
+  loadIgStatus();
+  // Get active tab
+  const active = document.querySelector('.nav-item.active');
+  if (active && active.dataset.tab === 'historical') loadHistorical();
+
+  setInterval(() => {
+    loadStatus();
+    loadQueue();
+  }, 5000);
+
+  setInterval(() => {
+    loadActivity();
+  }, 15000);
+
+  setInterval(() => {
+    loadIgStatus();
+    const active = document.querySelector('.nav-item.active');
+    if (active && active.dataset.tab === 'historical') loadHistorical();
+    if (active && active.dataset.tab === 'distribuidores') loadDistribuidores();
+  }, 30000);
+}
+
+// ─── INIT ───
+document.addEventListener('DOMContentLoaded', () => {
+  ensureClientsAPI();
+  startPolling();
+  initColToggles('cols-country', 'tbl-country');
+  initColToggles('cols-rubro', 'tbl-rubro');
+  initColToggles('cols-city', 'tbl-city');
+  initColToggles('cols-conv', 'tbl-conv');
+});
+</script>
+</body>
+</html>

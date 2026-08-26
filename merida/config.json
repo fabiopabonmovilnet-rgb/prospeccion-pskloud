@@ -1,0 +1,17 @@
+{
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 587,
+  "smtp_email": "pskloud.fpabon@gmail.com",
+  "smtp_password": "bdrfipiu vobtgwjz",
+  "hunter_api_key": "f41f5e017f72032cdb59f1f1591dbb24e0600c9a",
+  "daily_send_limit": 100,
+  "default_country": "Venezuela",
+  "delay_seconds": 60,
+  "apollo_api_key": "Y3N06NmZTv1e3RXeHFEikw",
+  "lusha_api_key": "72bf56b6-e457-4ba6-ac2d-c747d0e97a67",
+  "smtp_user": "pskloud.fpabon@gmail.com",
+  "evo_api_url": "http://localhost:8080",
+  "evo_api_key": "psk-evo-a7f3k9m2x5p8q1w4",
+  "evo_instance": "pskloud-merida",
+  "blocked_phones": ["+50376798705", "50376798705", "76798705"]
+}
