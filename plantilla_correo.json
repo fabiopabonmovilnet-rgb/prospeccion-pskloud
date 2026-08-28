@@ -1,4 +1,9 @@
 {
-  "asunto": "Propuesta de alianza comercial - {empresa}",
-  "cuerpo": "Estimado/a {nombre},\n\nSomos PSKloud, especialistas en soluciones digitales para empresas como {empresa} en {pais}.\n\nNos gustaria explorar una alianza comercial para impulsar su presencia digital.\n\nSaludos cordiales,\nPSKloud Team"
+  "campaign": "clinicas_dentales_piloto",
+  "paises_objetivo": ["Panamá", "Honduras"],
+  "meta_diaria_total": 40,
+  "meta_diaria_por_pais": {"Panamá": 20, "Honduras": 20},
+  "rubro": "clinicas dentales",
+  "asunto": "Software administrativo y contable para clínicas dentales - {empresa}",
+  "cuerpo": "Estimado/a {nombre},\n\nSomos Premium Soft Internacional / PSKloud Internacional, especialistas en software administrativo, contable y de control de inventario/POS para clínicas y consultorios odontológicos en {pais}.\n\nLes traemos una nueva plataforma que acaba de salir al mercado para facilitar la gestión de su clínica dental: facturación electrónica, inventario de insumos odontológicos, contabilidad y POS integrados. El sistema irá creciendo y evolucionando junto con su consultorio.\n\nNos gustaría explorar cómo nuestra solución puede optimizar la operación administrativa de {empresa}.\n\n¿Disponibles para una breve videollamada esta semana para ver la demo en vivo?\n\nSaludos cordiales,\nEquipo Premium Soft Internacional / PSKloud Internacional"
 }

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel de Campañas · PSKloud</title>
+<style>
+  :root { --bg:#0f1220; --card:#171c2e; --border:#2a3150; --txt:#e8ecf7; --muted:#93a0c0; --acc:#4c8dff; --ok:#34d399; --warn:#fbbf24; --bad:#f87171; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:system-ui,Segoe UI,Roboto,sans-serif; font-size:14px; }
+  header { display:flex; align-items:center; gap:16px; padding:14px 22px; background:#11151f; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:18px; margin:0; }
+  header a { color:var(--acc); text-decoration:none; margin-left:auto; }
+  main { padding:20px 22px; max-width:1180px; margin:0 auto; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin:0 0 18px; }
+  .row { display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+  .grow { flex:1; min-width:280px; }
+  h2 { font-size:16px; margin:0 0 6px; }
+  h3 { font-size:14px; margin:14px 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px; }
+  .muted { color:var(--muted); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+  .pill.on { background:rgba(52,211,153,.15); color:var(--ok); border:1px solid rgba(52,211,153,.4); }
+  .pill.off { background:rgba(248,113,113,.12); color:var(--bad); border:1px solid rgba(248,113,113,.4); }
+  label { display:flex; align-items:center; gap:6px; margin:5px 0; cursor:pointer; }
+  input[type=number], input[type=text], select, textarea {
+    background:#0c101d; color:var(--txt); border:1px solid var(--border); border-radius:8px; padding:7px 9px; font-size:13px; font-family:inherit;
+  }
+  textarea { width:100%; min-height:74px; resize:vertical; margin-top:6px; }
+  .cols { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:4px 12px; }
+  button { background:var(--acc); color:#fff; border:0; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; font-size:13px; }
+  button:hover { filter:brightness(1.1); }
+  button.ghost { background:transparent; border:1px solid var(--border); color:var(--txt); }
+  button.danger { background:transparent; border:1px solid rgba(248,113,113,.4); color:var(--bad); }
+  table { width:100%; border-collapse:collapse; margin-top:8px; }
+  th, td { text-align:left; padding:7px 9px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:top; }
+  th { color:var(--muted); font-weight:600; }
+  .bar { background:#0c101d; border:1px solid var(--border); border-radius:6px; height:8px; overflow:hidden; min-width:90px; }
+  .bar > div { height:100%; background:var(--acc); }
+  .chips span { display:inline-block; margin:3px 6px 3px 0; padding:2px 9px; background:#0c101d; border:1px solid var(--border); border-radius:16px; font-size:12px; color:var(--muted); }
+  #liveMsgs > div { padding:7px 0; border-bottom:1px solid var(--border); }
+  #liveMsgs > div:last-child { border-bottom:0; }
+  .msg-preview { margin:4px 0 0 0; color:var(--txt); font-size:13px; white-space:pre-wrap; line-height:1.45; }
+  .err { color:var(--bad); }
+  .ok  { color:var(--ok); }
+  .tags { margin-top:8px; }
+  img.media { max-width:180px; max-height:120px; border-radius:8px; border:1px solid var(--border); margin-top:6px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:800px){ .grid2 { grid-template-columns:1fr; } }
+  .tab-btn { background:transparent; border:1px solid var(--border); color:var(--muted); margin-right:6px; }
+  .tab-btn.active { background:var(--acc); color:#fff; border-color:var(--acc); }
+  .hidden { display:none; }
+  .stat { display:flex; gap:18px; margin:6px 0; flex-wrap:wrap; }
+  .stat b { font-size:18px; }
+  .small { font-size:12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🗂 Panel de Campañas</h1>
+  <span class="pill" id="waPill">WhatsApp —</span>
+  <a href="/dashboard">← Dashboard principal</a>
+</header>
+<main>
+  <div class="row">
+    <button class="tab-btn active" data-tab="campaigns">Campañas</button>
+    <button class="tab-btn" data-tab="data">Datos (Prospectos + Distribuidores)</button>
+    <button class="tab-btn" data-tab="email">Correo Distribuidores</button>
+  </div>
+
+  <section id="tab-campaigns">
+    <div class="card">
+      <h2>Mensajes que se están enviando <span class="muted small">(últimos WhatsApp enviados, se actualiza solo cada 30 s)</span></h2>
+      <div id="liveMsgs" class="chips muted small">…</div>
+    </div>
+    <div class="card">
+      <h2>Contactos incorrectos <span class="muted small">(el bot se disculpa, excluye y corrige en BD automáticamente; aquí puedes corregir el nombre/empresa)</span></h2>
+      <div id="wrongContacts" class="muted small">…</div>
+      <div class="row" style="margin-top:10px">
+        <input id="wrongPhone" placeholder="+504… marcar manualmente como incorrecto" style="flex:1">
+        <button id="btnMarkWrong">Marcar incorrecto</button>
+      </div>
+    </div>
+    <div id="campaignList"></div>
+  </section>
+
+  <section id="tab-data" class="hidden">
+    <div class="card">
+      <h2>Datos unificados</h2>
+      <p class="muted small">Prospectos locales (WhatsApp/IG) y distribuidores en una sola vista. Búsqueda y exportación (JSON o CSV).</p>
+      <div class="row">
+        <input type="text" id="dataSearch" placeholder="Buscar nombre, empresa, país, ciudad, rubro, teléfono, email…" style="flex:1">
+        <button id="btnExportJson">Exportar JSON</button>
+        <button id="btnExportCsv" class="ghost">Exportar CSV</button>
+      </div>
+      <p id="dataCount" class="muted small"></p>
+      <table id="dataTable">
+        <thead><tr><th>Origen</th><th>Nombre</th><th>Empresa</th><th>País</th><th>Ciudad</th><th>Rubro</th><th>Contacto</th><th>Estado</th><th>Enviado</th><th>Respondió</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="tab-email" class="hidden">
+    <div class="card">
+      <h2>Configuración de correo (SMTP)</h2>
+      <p class="muted small">Esta configuración debe ser <b>distinta</b> a la del prospector local: usa un remitente/dominio SMTP dedicado para la prospección a distribuidores.</p>
+      <div class="grid2">
+        <div>
+          <label>Host SMTP <input type="text" id="smtp_host" style="width:100%"></label>
+          <label>Puerto <input type="number" id="smtp_port" style="width:120px"></label>
+          <label>Usuario <input type="text" id="smtp_user" style="width:100%"></label>
+          <label>Contraseña / App Password <input type="password" id="smtp_password" style="width:100%"></label>
+          <label>Remitente (nombre y correo) <input type="text" id="smtp_from_name" placeholder="Juan Pérez" style="width:100%"> <input type="text" id="smtp_from_email" placeholder="juan@dominio.com" style="width:100%"></label>
+          <div class="row" style="margin-top:10px">
+            <button id="btnSaveSmtp">Guardar</button>
+            <button id="btnTestSmtp" class="ghost">Enviar correo de prueba</button>
+          </div>
+          <span id="smtpMsg" class="muted small"></span>
+        </div>
+        <div>
+          <h3>Plantilla de correo (distribuidores)</h3>
+          <textarea id="plantilla_asunto" placeholder="Asunto ..."></textarea>
+          <textarea id="plantilla_cuerpo" style="min-height:160px" placeholder="Cuerpo... (puedes usar {nombre} {empresa} {pais} {cargo})"></textarea>
+          <button id="btnSavePlantilla">Guardar plantilla</button>
+        </div>
+      </div>
+    </div>
+  <div class="card">
+      <h2>Países activos para la prospección de distribuidores</h2>
+      <p class="muted small">Desactiva un país y el motor de distribuidores (scraping) y el envío masivo de correo lo saltarán.</p>
+      <div class="cols" id="distCountries"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnSaveDistPaises">Guardar países</button>
+        <span id="distPaisesMsg" class="muted small"></span>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+const api = async (u, opts={}) => {
+  const r = await fetch(u, opts);
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || JSON.stringify(j) || ("HTTP " + r.status));
+  return j;
+};
+
+// ─── Tabs ───
+document.querySelectorAll(".tab-btn").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tab-btn").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  document.querySelectorAll("main > section").forEach(s => s.classList.add("hidden"));
+  document.getElementById("tab-" + b.dataset.tab).classList.remove("hidden");
+}));
+
+// ─── WhatsApp estado pill ───
+async function refreshWaPill() {
+  try {
+    const j = await api("/health");
+    document.getElementById("waPill").textContent = "WhatsApp — " + (j.whatsapp_connected ? "CONECTADO" : "desconectado");
+    document.getElementById("waPill").className = "pill " + (j.whatsapp_connected ? "on" : "off");
+    if (!j.whatsapp_connected) document.getElementById("waPill").title = "Re-vincula el QR desde el contenedor evolution-api";
+  } catch (e) { document.getElementById("waPill").textContent = "WhatsApp — ?"; }
+}
+
+// ─── Campaign list ───
+let CAMPS = [];
+async function loadCampaigns() {
+  CAMPS = await api("/api/campaigns");
+  document.getElementById("campaignList").innerHTML = "";
+  if (!CAMPS.length) { document.getElementById("campaignList").innerHTML = '<div class="card"><p class="muted">No hay campañas WhatsApp configuradas en plantillas.json.</p></div>'; return; }
+  for (const c of CAMPS) document.getElementById("campaignList").appendChild(campaignCard(c));
+}
+
+function campaignCard(c) {
+  const d = document.createElement("div");
+  d.className = "card";
+  d.innerHTML = `
+    <div class="row">
+      <div class="grow">
+        <h2>${esc(c.key)} <span class="pill ${c.active ? "on" : "off"}">${c.active ? "ACTIVA" : "EN PAUSA"}</span>
+          <span class="muted small">${esc(c.rubro)} · cliente ${esc(c.client_id)}</span></h2>
+      </div>
+      <button id="toggle_${escId(c.key)}" class="ghost">${c.active ? "Pausar campaña" : "Activar campaña"}</button>
+      <button id="reload_${escId(c.key)}" class="ghost">↻</button>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <div class="stat">
+          <div>Pendientes <b id="pend_${escId(c.key)}">…</b></div>
+          <div>Cola total <b id="qtotal_${escId(c.key)}">…</b></div>
+          <div>Envíos hoy <b id="sent_${escId(c.key)}">…</b></div>
+          <div id="run_${escId(c.key)}" class="muted small">—</div>
+          <div id="cycle_${escId(c.key)}" class="muted small"></div>
+        </div>
+        <h3>Países activos (prospector + envíos)</h3>
+        <div class="cols" id="countries_${escId(c.key)}"></div>
+        <h3>Meta diaria por país</h3>
+        <div id="metas_${escId(c.key)}"></div>
+        <h3>Ciudades principales (top-N por país)</h3>
+        <p class="muted small" id="ncity_${escId(c.key)}"></p>
+        <div id="cities_${escId(c.key)}"></div>
+        <button id="saveCfg_${escId(c.key)}" style="margin-top:10px">Guardar configuración</button>
+      </div>
+      <div>
+        <h3>Mensajes base (pasos 1 / 2 / 3)</h3>
+        <p class="muted small">Usa variaciones <b>{{opción A|opción B}}</b> y placeholders <b>{nombre_empresa}</b>, <b>{saludo}</b>.</p>
+        <div id="msgs_${escId(c.key)}"></div>
+        <h3>Imagen del mensaje 3</h3>
+        <div class="row">
+          <div id="mediaBox_${escId(c.key)}"></div>
+          <div>
+            <input type="file" id="file_${escId(c.key)}" accept="image/*" style="margin-right:8px">
+            <button id="upload_${escId(c.key)}">Subir imagen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Cola por país (pendiente / meta del día)</h3>
+    <table id="qtable_${escId(c.key)}"><thead><tr><th>País</th><th>Ciudades (top)</th><th>Pendiente</th><th>Enviados hoy</th><th>Meta</th><th class="small">Progreso</th></tr></thead><tbody><tr><td colspan="6" class="muted">…</td></tr></tbody></table>
+    <h3>Actividad reciente (qué se está prospectando)</h3>
+    <div id="act_${escId(c.key)}" class="chips muted small">…</div>
+  `;
+
+  document.getElementById("toggle_" + escId(c.key)).onclick = async () => {
+    await api("/api/campaigns/" + encodeURIComponent(c.key), { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ active: !c.active }) });
+    refreshWaPill(); await Promise.all([loadCampaigns(), reloadOne(c.key)]);
+  };
+  document.getElementById("reload_" + escId(c.key)).onclick = () => reloadOne(c.key);
+  document.getElementById("saveCfg_" + escId(c.key)).onclick = () => saveConfig(c);
+  document.getElementById("file_" + escId(c.key)).onchange = () => uploadMedia(c);
+  renderCountries(c); renderMetas(c); renderCities(c); renderMsgs(c); renderMedia(c);
+  reloadOne(c.key);
+  return d;
+}
+
+async function reloadOne(key) {
+  try {
+    const [q, act] = await Promise.all([
+      api("/api/campaigns/" + encodeURIComponent(key) + "/queue"),
+      api("/api/campaigns/" + encodeURIComponent(key) + "/activity?limit=25"),
+    ]);
+    const id = escId(key);
+    document.getElementById("pend_" + id).textContent = q.total_pendiente;
+    document.getElementById("qtotal_" + id).textContent = q.queue_total;
+    document.getElementById("sent_" + id).textContent = q.rows.reduce((a,r)=>a+r.enviados_hoy,0);
+    document.getElementById("run_" + id).textContent = q.running ? "● enviando" : (q.queue_paused ? "⏸ en pausa" : "○ en espera");
+    document.getElementById("cycle_" + id).textContent = q.last_cycle ? "Último ciclo: " + q.last_cycle.slice(0,16) : "";
+    const tbody = document.querySelector("#qtable_" + id + " tbody");
+    tbody.innerHTML = "";
+    for (const r of q.rows) {
+      const meta = r.meta || 1;
+      const pct = Math.min(100, Math.round((r.enviados_hoy / meta) * 100));
+      const tr = document.createElement("tr");
+      tr.innerHTML = `<td>${esc(r.pais)}</td><td class="muted small">${(r.ciudades||[]).map(esc).join(", ")}</td><td>${r.pendiente}</td><td>${r.enviados_hoy}</td><td>${r.meta}</td><td><div class="bar"><div style="width:${pct}%"></div></div></td>`;
+      tbody.appendChild(tr);
+    }
+    if (!q.rows.length) tbody.innerHTML = '<tr><td colspan="6" class="muted">Sin países activos</td></tr>';
+    const acts = document.getElementById("act_" + id);
+    acts.innerHTML = "";
+    (act.activity||[]).filter(a => ["search","found","ig_search","ig_found","enqueue"].includes(a.kind)).slice(-8).reverse().forEach(a => {
+      const s = document.createElement("span"); s.textContent = (a.ts||"").slice(11,16) + " · " + a.msg; acts.appendChild(s);
+    });
+  } catch (e) { console.error("reload", e); }
+}
+
+function renderCountries(c) {
+  const box = document.getElementById("countries_" + escId(c.key));
+  box.innerHTML = "";
+  for (const p of c.paises_disponibles) {
+    const lbl = document.createElement("label");
+    const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = p;
+    cb.checked = c.paises_objetivo.includes(p);
+    lbl.appendChild(cb); lbl.appendChild(document.createTextNode(p));
+    box.appendChild(lbl);
+  }
+}
+function renderMetas(c) {
+  const box = document.getElementById("metas_" + escId(c.key));
+  box.innerHTML = "";
+  for (const p of c.paises_disponibles) {
+    const lbl = document.createElement("label");
+    lbl.appendChild(document.createTextNode(p + " "));
+    const n = document.createElement("input"); n.type="number"; n.min=0; n.value = c.meta_diaria_por_pais[p] || 0; n.style.width="80px"; n.dataset.country = p;
+    lbl.appendChild(n); box.appendChild(lbl);
+  }
+}
+function renderCities(c) {
+  document.getElementById("ncity_" + escId(c.key)).textContent = "Top " + c.cities_per_country + " ciudades por país activo.";
+  const box = document.getElementById("cities_" + escId(c.key));
+  box.innerHTML = "";
+  for (const p of (c.paises_objetivo || [])) {
+    const cities = (c.ciudades_por_pais[p] || []);
+    const top = cities.slice(0, c.cities_per_country);
+    const div = document.createElement("div");
+    div.innerHTML = `<b class="small">${esc(p)}:</b> <span class="muted small">${top.map(esc).join(", ") || "—"}</span>`;
+    box.appendChild(div);
+  }
+}
+function renderMsgs(c) {
+  const box = document.getElementById("msgs_" + escId(c.key));
+  box.innerHTML = "";
+  for (const m of c.messages) {
+    const stepBox = document.createElement("div");
+    stepBox.style.margin = "10px 0 14px 0";
+    const lbl = document.createElement("label");
+    const cb = document.createElement("input"); cb.type="checkbox"; cb.checked = m.enabled;
+    lbl.appendChild(cb);
+    const strong = document.createElement("b");
+    strong.textContent = " Paso " + m.step + (m.media_url ? " (+imagen)" : "");
+    lbl.appendChild(strong);
+    stepBox.appendChild(lbl);
+    const ta = document.createElement("textarea"); ta.value = m.text; ta.dataset.step = m.step;
+    stepBox.appendChild(ta);
+    box.appendChild(stepBox);
+  }
+  const hint = document.createElement("p");
+  hint.className = "muted small";
+  hint.innerHTML = c.messages.some(m => m.media_url)
+    ? "El paso 3 se envía con la imagen de campaña (úsala arriba: subir / eliminar imagen)."
+    : "El paso 3 se envía <b>solo texto</b> (sin imagen). Sube una imagen arriba para adjuntarla.";
+  box.appendChild(hint);
+  const btn = document.createElement("button");
+  btn.textContent = "Guardar mensajes";
+  btn.onclick = async () => {
+    const messages = Array.from(box.querySelectorAll("textarea")).map((ta) => {
+      const step = parseInt(ta.dataset.step);
+      const prev = c.messages.find(m => m.step === step) || {};
+      const cb = box.querySelectorAll("input[type=checkbox]");
+      const stepIndex = Array.from(box.querySelectorAll("textarea")).indexOf(ta);
+      return { step, text: ta.value, enabled: cb[stepIndex].checked,
+               media: (prev.media_url) ? { url: prev.media_url, type: prev.media_type || "image", enabled: true, caption: prev.caption || "" } : null };
+    });
+    await api("/api/campaigns/" + encodeURIComponent(c.key) + "/messages", { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ messages }) });
+    await loadCampaigns();
+  };
+  box.appendChild(btn);
+}
+function renderMedia(c) {
+  const box = document.getElementById("mediaBox_" + escId(c.key));
+  box.innerHTML = "";
+  if (c.media && c.media.url) {
+    box.innerHTML = `<img class="media" src="${esc(c.media.url)}?ts=${Date.now()}" alt="imagen campaña"><p class="muted small">${esc(c.media.url)}</p>`;
+    const del = document.createElement("button");
+    del.className = "ghost danger";
+    del.textContent = "🗑 Eliminar imagen actual";
+    del.onclick = async () => {
+      if (!confirm("¿Quitar la imagen de esta campaña? El paso 3 se enviará solo como texto.")) return;
+      await api("/api/campaigns/" + encodeURIComponent(c.key) + "/media", { method: "DELETE" });
+      await loadCampaigns();
+    };
+    box.appendChild(del);
+  } else box.innerHTML = '<p class="muted small">Sin imagen (paso 3 = solo texto). Sube una para adjuntarla.</p>';
+}
+async function uploadMedia(c) {
+  const f = document.getElementById("file_" + escId(c.key)).files[0];
+  if (!f) return alert("Elige primero un archivo de imagen");
+  const fd = new FormData(); fd.append("file", f);
+  const r = await fetch("/api/campaigns/" + encodeURIComponent(c.key) + "/media", { method: "POST", body: fd });
+  const j = await r.json();
+  if (!r.ok) { alert("Error: " + (j.error || r.status)); return; }
+  alert("Imagen subida: " + j.url);
+  await loadCampaigns();
+}
+function saveConfig(c) {
+  const checkboxes = Array.from(document.getElementById("countries_" + escId(c.key)).querySelectorAll("input[type=checkbox]"));
+  const paises = checkboxes.filter(x => x.checked).map(x => x.value);
+  const metas = {};
+  document.querySelectorAll("#metas_" + escId(c.key) + " input").forEach(n => { metas[n.dataset.country] = parseInt(n.value) || 0; });
+  fetch("/api/campaigns/" + encodeURIComponent(c.key), { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ paises_objetivo: paises, meta_diaria_por_pais: metas }) })
+    .then(r => r.json()).then(() => { refreshWaPill(); return Promise.all([loadCampaigns(), reloadOne(c.key)]); })
+    .then(() => alert("Configuración guardada. El prospector solo trabajará sobre los países activos a partir del próximo ciclo."))
+    .catch(e => alert("Error: " + e.message));
+}
+
+// ─── Unified Data ───
+let ALL = { prospectos: [], distribuidores: [] };
+async function loadData() {
+  ALL = await api("/api/data/all");
+  applyData();
+}
+function applyData() {
+  const q = document.getElementById("dataSearch").value.trim().toLowerCase();
+  const rows = [...ALL.prospectos, ...ALL.distribuidores].filter(i => !q || Object.values(i).some(v => String(v).toLowerCase().includes(q)));
+  document.getElementById("dataCount").textContent = rows.length + " registros (" + ALL.total + " total)";
+  const tb = document.querySelector("#dataTable tbody");
+  tb.innerHTML = "";
+  rows.slice(0, 500).forEach(i => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${esc(i.origen)}</td><td>${esc(i.nombre)}</td><td>${esc(i.empresa)}</td><td>${esc(i.pais)}</td><td>${esc(i.ciudad)}</td><td>${esc(i.rubro)}</td><td class="small">${esc(i.telefono)}${i.email ? "<br>" + esc(i.email) : ""}</td><td>${esc(i.estado)}</td><td class="small">${esc((i.enviado||"").slice(0,10))}</td><td class="small">${esc((i.respondio||"").slice(0,10))}</td>`;
+    tb.appendChild(tr);
+  });
+  if (!rows.length) tb.innerHTML = '<tr><td colspan="10" class="muted">Sin resultados.</td></tr>';
+}
+function exportRows(fmt) {
+  const q = document.getElementById("dataSearch").value.trim().toLowerCase();
+  const rows = [...ALL.prospectos, ...ALL.distribuidores].filter(i => !q || Object.values(i).some(v => String(v).toLowerCase().includes(q)));
+  const cols = Object.keys(rows[0] || {});
+  let out, mime;
+  if (fmt === "csv") {
+    const escCsv = v => '"' + String(v ?? "").replace(/"/g,'""') + '"';
+    out = [cols.join(",")].concat(rows.map(r => cols.map(c => escCsv(r[c])).join(","))).join("\n");
+    mime = "text/csv";
+  } else { out = JSON.stringify(rows, null, 2); mime = "application/json"; }
+  const blob = new Blob(["\uFEFF" + (fmt === "csv" ? out : out)], { type: mime + ";charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "datos_pskloud_" + new Date().toISOString().slice(0,10) + "." + fmt;
+  a.click();
+}
+
+// ─── Email config (distribuidores) ───
+async function loadEmailConfig() {
+  try {
+    const cfg = await api("/api/email/config");
+    document.getElementById("smtp_host").value = cfg.smtp_host || "";
+    document.getElementById("smtp_port").value = cfg.smtp_port || 587;
+    document.getElementById("smtp_user").value = cfg.smtp_user || "";
+    document.getElementById("smtp_from_name").value = cfg.from_name || "";
+    document.getElementById("smtp_from_email").value = cfg.from_email || "";
+    const pl = await api("/api/email/plantilla");
+    document.getElementById("plantilla_asunto").value = pl.asunto || "";
+    document.getElementById("plantilla_cuerpo").value = pl.cuerpo || "";
+  } catch (e) {}
+}
+document.getElementById("btnSaveSmtp").onclick = async () => {
+  const body = {
+    smtp_host: document.getElementById("smtp_host").value.trim(),
+    smtp_port: parseInt(document.getElementById("smtp_port").value) || 587,
+    smtp_user: document.getElementById("smtp_user").value.trim(),
+    smtp_password: document.getElementById("smtp_password").value,
+    from_name: document.getElementById("smtp_from_name").value.trim(),
+    from_email: document.getElementById("smtp_from_email").value.trim(),
+  };
+  const r = await api("/api/email/config", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+  document.getElementById("smtpMsg").textContent = "Guardado. (Contraseña no se muestra por seguridad)";
+  document.getElementById("smtpMsg").className = "ok small";
+};
+document.getElementById("btnTestSmtp").onclick = async () => {
+  const msg = document.getElementById("smtpMsg");
+  msg.textContent = "Probando SMTP… Úsalo solo con un correo real al que tengas acceso para verificar.";
+  const r = await api("/api/email/test", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({}) });
+  msg.textContent = r.ok ? ("OK: " + (r.mensaje || "correo enviado")) : ("FALLO: " + (r.mensaje || ""));
+  msg.className = "small " + (r.ok ? "ok" : "err");
+};
+document.getElementById("btnSavePlantilla").onclick = async () => {
+  await api("/api/email/plantilla", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ asunto: document.getElementById("plantilla_asunto").value, cuerpo: document.getElementById("plantilla_cuerpo").value }) });
+  alert("Plantilla guardada");
+};
+document.getElementById("dataSearch").addEventListener("input", applyData);
+document.getElementById("btnExportJson").onclick = () => exportRows("json");
+document.getElementById("btnExportCsv").onclick = () => exportRows("csv");
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+const escId = s => String(s).replace(/[^A-Za-z0-9_]/g, "_");
+
+// ─── Live messages (visual de lo que se está enviando) ───
+async function loadWrongContacts() {
+  try {
+    const j = await api("/api/contactos/incorrectos");
+    const box = document.getElementById("wrongContacts");
+    box.innerHTML = "";
+    if (!j.contactos || !j.contactos.length) {
+      box.innerHTML = '<span>Sin contactos incorrectos por ahora.</span>';
+      return;
+    }
+    const table = document.createElement("table");
+    table.innerHTML = '<thead><tr><th>Teléfono</th><th>Nombre</th><th>Empresa</th><th>País</th><th>Motivo</th><th>Fecha</th><th>Corregir en BD</th></tr></thead>';
+    const tb = document.createElement("tbody");
+    for (const c of j.contactos) {
+      const tr = document.createElement("tr");
+      const phKey = escId(c.phone);
+      tr.innerHTML = `
+        <td class="small">${esc(c.phone)}</td>
+        <td>${esc(c.nombre || "—")}</td>
+        <td class="small">${esc(c.empresa || "—")}</td>
+        <td>${esc(c.pais || "—")}</td>
+        <td class="small">${esc(c.motivo)}</td>
+        <td class="small">${esc((c.excluido_en || "").slice(0, 16).replace("T", " "))}</td>
+        <td>
+          <input id="wcb2_${phKey}_n" placeholder="Nombre correcto" value="${esc(c.nombre)}" style="width:110px">
+          <input id="wcb2_${phKey}_e" placeholder="Empresa" value="${esc(c.empresa)}" style="width:110px">
+          <button class="ghost" onclick="fixWrongContact('${phKey}','${esc(c.phone)}')">Guardar</button>
+        </td>`;
+      tb.appendChild(tr);
+    }
+    table.appendChild(tb);
+    box.appendChild(table);
+  } catch (e) {}
+}
+
+async function fixWrongContact(key, phone) {
+  const n = document.getElementById("wcb2_" + key + "_n").value.trim();
+  const e = document.getElementById("wcb2_" + key + "_e").value.trim();
+  if (!n && !e) return alert("Indica al menos el nombre correcto");
+  await api("/api/contacto/renombrar", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ phone, nombre: n, empresa: e }) });
+  loadWrongContacts();
+}
+
+document.getElementById("btnMarkWrong").onclick = async () => {
+  const phone = document.getElementById("wrongPhone").value.trim();
+  if (!phone) return alert("Indica el teléfono");
+  await api("/api/contacto/excluir", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ phone, motivo: "Contacto equivocado (manual)" }) });
+  document.getElementById("wrongPhone").value = "";
+  loadWrongContacts();
+};
+
+// ─── Live messages (visual de lo que se está enviando) ───
+async function loadLiveMessages() {
+  try {
+    const j = await api("/api/messages/latest?limit=12");
+    const box = document.getElementById("liveMsgs");
+    box.innerHTML = "";
+    (j.mensajes || []).forEach(m => {
+      const item = document.createElement("div");
+      const name = m.nombre ? m.nombre + " · " : "";
+      let html = `<span class="pill">${esc(m.pais || "?")}</span> <b>${esc(name)}${esc(m.phone || "")}</b> `;
+      html += `<span class="muted">${esc((m.timestamp || "").slice(5, 19).replace("T", " "))}</span>`;
+      if (m.step == 3) html += ` <span class="pill on">imagen 🖼</span>`;
+      html += `<div class="msg-preview">${esc(m.text || "—") || "—"}</div>`;
+      item.innerHTML = html;
+      box.appendChild(item);
+    });
+    if (!j.mensajes || !j.mensajes.length) box.innerHTML = '<span>Sin envíos todavía.</span>';
+  } catch (e) {}
+}
+
+// ─── Países activos distribuidor ───
+let DIST_PAISES = [];
+async function loadDistCountries() {
+  try {
+    const j = await api("/api/dist/paises/activos");
+    DIST_PAISES = j.paises_activos || [];
+    const box = document.getElementById("distCountries");
+    box.innerHTML = "";
+    for (const p of (j.todos || [])) {
+      const lbl = document.createElement("label");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.value = p;
+      cb.checked = DIST_PAISES.includes(p);
+      lbl.appendChild(cb); lbl.appendChild(document.createTextNode(p.replace("_", " ")));
+      box.appendChild(lbl);
+    }
+  } catch (e) {}
+}
+document.getElementById("btnSaveDistPaises").onclick = async () => {
+  const paises = Array.from(document.querySelectorAll("#distCountries input[type=checkbox]")).filter(x => x.checked).map(x => x.value);
+  const r = await api("/api/dist/paises/activos", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ paises }) });
+  DIST_PAISES = r.paises || paises;
+  const msg = document.getElementById("distPaisesMsg");
+  msg.textContent = "Guardado. Países activos: " + DIST_PAISES.join(", ");
+  msg.className = "ok small";
+};
+
+refreshWaPill();
+loadCampaigns();
+loadData();
+loadEmailConfig();
+loadDistCountries();
+loadLiveMessages();
+setInterval(() => { reloadAll(); }, 30000);
+function reloadAll() { CAMPS.forEach(c => reloadOne(c.key)); refreshWaPill(); loadLiveMessages(); }
+</script>
+</body>
+</html>

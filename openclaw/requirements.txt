@@ -9,3 +9,4 @@ beautifulsoup4==4.12.3
 ddgs==9.14.4
 playwright==1.48.0
 pillow==10.4.0
+python-multipart==0.0.20

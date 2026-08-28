@@ -1,22 +1,33 @@
 [
   {
     "client_id": "254eee6c",
+    "campaign": "clinicas_dentales_piloto",
+    "paises_objetivo": ["Panamá", "Honduras"],
+    "meta_diaria_total": 40,
+    "meta_diaria_por_pais": {"Panamá": 20, "Honduras": 20},
+    "rubro": "clinicas dentales",
     "channel": "whatsapp",
     "messages": [
       {
         "step": 1,
-        "text": "{{ {saludo}, señores de {nombre_empresa}, un gusto saludarles.| {saludo}, equipo de {nombre_empresa}, un placer saludarles.| Hola, un gusto dirigirme al equipo de {nombre_empresa}.| {saludo}, saludos cordiales para el equipo de {nombre_empresa}.| Hola, feliz día a todo el equipo de {nombre_empresa}.| {saludo}, un cordial saludo para todo el equipo de {nombre_empresa}.| Hola, les saluda un consultor de software para {nombre_empresa}.| Saludos a todo el personal de {nombre_empresa}, encantado de escribirles.}}",
+        "text": "{{ {saludo}, señores de {nombre_empresa}, un gusto saludarles.| {saludo}, equipo de {nombre_empresa}, un placer saludarles.| Hola, un gusto dirigirme al equipo de {nombre_empresa}.| {saludo}, saludos cordiales para el equipo de {nombre_empresa}.| Hola, feliz día a todo el equipo de {nombre_empresa}.| {saludo}, un cordial saludo para todo el equipo de {nombre_empresa}.| Hola, les saluda un consultor de software para clínicas dentales en {nombre_empresa}.| Saludos a todo el personal de {nombre_empresa}, encantado de escribirles.}}",
         "enabled": true
       },
       {
         "step": 2,
-        "text": "{{Quería consultarles brevemente: ¿actualmente disponen de un software administrativo, contable y de control de inventario/POS que cumpla con las exigencias de ley?|Quisiera preguntarles: ¿hoy cuentan con un sistema administrativo y contable que integre inventario/POS y cumpla las normativas fiscales de su país?|Les escribo para saber si ya manejan un software que una lo administrativo, lo contable y el control de inventario/POS conforme a la ley.|Quería saber si disponen de una plataforma administrativa y contable con facturación electrónica e inventario/POS al día.|Me permito preguntar: ¿llevan hoy su administración, contabilidad e inventario con un software que cumpla las exigencias de la ley?|¿Ya trabajan con un sistema que integre lo administrativo, contable e inventario/POS y esté alineado a la normativa fiscal vigente?}}",
+        "text": "{{Quería consultarles brevemente: ¿actualmente disponen en su clínica dental de un software administrativo, contable y de control de inventario/POS que cumpla con las exigencias de ley y facturación electrónica?|Quisiera preguntarles: ¿hoy cuentan en su consultorio odontológico con un sistema que integre administración, contabilidad e inventario/POS conforme a la normativa fiscal?|Les escribo para saber si ya manejan una plataforma que una lo administrativo, contable y el control de inventario/POS en su clínica dental, conforme a la ley.|Quería saber si disponen de un software administrativo y contable con facturación electrónica e inventario/POS especializado para clínicas odontológicas.|Me permito preguntar: ¿llevan hoy la administración, contabilidad e inventario de su clínica dental con un software que cumpla las exigencias legales?|¿Ya trabajan con un sistema que integre lo administrativo, contable e inventario/POS y esté alineado a la normativa fiscal vigente para su clínica?}}",
         "enabled": true
       },
       {
         "step": 3,
-        "text": "{{Pertenezco a la casa Premium-Soft, creadora de un software administrativo y contable diseñado para adaptarse a las normativas de ley y facturación electrónica de cada país. Si tienen un espacio esta semana, podemos agendar una llamada o videollamada para mostrarles una demo en vivo sin compromiso.|Soy consultor de PSKloud, de Premium-Soft; desarrollamos software administrativo y contable que se ajusta a la facturación electrónica y las exigencias de ley. ¿Les quedaría bien una breve videollamada esta semana para ver la plataforma en vivo y sin compromiso?|Del lado de Premium-Soft, ofrecemos un sistema administrativo y contable con facturación electrónica y control de inventario/POS. Si les interesa, con gusto les hago una demo en vivo esta semana, sin ningún compromiso.|Trabajo con Premium-Soft, casa creadora de software administrativo y contable adaptado a la normativa fiscal y la facturación electrónica. ¿Podemos agendar una llamada corta para mostrarles la suite y ver cómo encaja con su operación?|Soy parte del equipo de Premium-Soft: ayudamos a negocios de Latinoamérica a automatizar su administración, contabilidad e inventario con facturación electrónica al día. ¿Les parece si les muestro una demo rápida esta semana?|Le escribo de Premium-Soft; creamos software administrativo y contable ajustado a la facturación electrónica y a la normativa de su país. Con gusto les agendo una breve demostración en línea para que la conozcan. Por aquí pueden agendar su demo: {bot_wa}}}",
-        "enabled": true
+        "text": "{{Les traemos esta nueva plataforma que acaba de salir al mercado para facilitar la gestión de su clínica dental: un software administrativo, contable y de control de inventario/POS especializado en odontología. El sistema irá creciendo y evolucionando junto con su consultorio. Somos representantes de Premium Soft Internacional / PSKloud Internacional. Adjunto les envío nuestra presentación visual. Si tienen un espacio esta semana, agendamos una videollamada para mostrarles la demo en vivo de la suite diseñada para clínicas dentales, sin compromiso.|En nombre de Premium Soft Internacional / PSKloud Internacional, les presentamos nuestro software administrativo, contable y de control de inventario/POS creado para clínicas y consultorios odontológicos. Les traemos esta nueva plataforma que acaba de salir al mercado para facilitar su gestión, y el sistema irá creciendo y evolucionando junto con su consultorio. Adjunto nuestra imagen de campaña. ¿Les parece si agendamos una breve videollamada esta semana para ver la demo en vivo?|Soy parte de Premium Soft Internacional / PSKloud Internacional. Les traemos una solución que acaba de salir al mercado: software administrativo, contable y de inventario/POS para clínicas dentales, que irá creciendo y evolucionando junto con su consultorio. Les comparto nuestra presentación adjunta. ¿Disponibles para una demo en vivo esta semana sin compromiso?|Desde Premium Soft Internacional / PSKloud Internacional, les ofrecemos el software administrativo, contable y de control de inventario/POS especializado para clínicas dentales. Les traemos esta nueva plataforma que acaba de salir al mercado para facilitar su gestión, y el sistema irá creciendo y evolucionando junto con su consultorio. Incluyo imagen de la campaña. ¿Les interesa una demo en vivo esta semana?}}",
+        "enabled": true,
+        "media": {
+          "enabled": true,
+          "type": "image",
+          "url": "/media/Campana_Odontologia_PSK.jpg",
+          "caption": "Premium Soft Internacional / PSKloud Internacional - Solución para Clínicas Dentales"
+        }
       }
     ]
   },
@@ -26,17 +37,17 @@
     "messages": [
       {
         "step": 1,
-        "text": "Hola {nombre_empresa},\n\nSomos Premium-Soft, especialistas en software administrativo y contable para Latinoamérica.\n\n¿Les gustaría conocer cómo podemos ayudarles a optimizar su gestión?",
+        "text": "Hola {nombre_empresa},\n\nSomos Premium Soft Internacional / PSKloud Internacional, especialistas en software administrativo, contable y de control de inventario/POS para clínicas y consultorios odontológicos en Latinoamérica.\n\n¿Les gustaría conocer cómo podemos optimizar la gestión administrativa de su clínica dental?",
         "enabled": true
       },
       {
         "step": 2,
-        "text": "Hola {nombre_empresa},\n\nQueríamos dar seguimiento a nuestro anterior mensaje. Tenemos planes flexibles adaptados a empresas como la suya.",
+        "text": "Hola {nombre_empresa},\n\nQueríamos dar seguimiento: tenemos una plataforma que acaba de salir al mercado, diseñada para facilitar la gestión de clínicas dentales (facturación electrónica, inventario de insumos, contabilidad, POS). El sistema irá creciendo y evolucionando junto con su consultorio.\n\nTenemos planes flexibles adaptados a clínicas odontológicas como la suya.",
         "enabled": true
       },
       {
         "step": 3,
-        "text": "Hola {nombre_empresa},\n\nComo último contacto, les ofrecemos una demo gratuita de nuestra suite administrativa. Sin compromiso.",
+        "text": "Hola {nombre_empresa},\n\nComo último contacto, les ofrecemos una demo gratuita de nuestra suite administrativa especializada para clínicas dentales. Sin compromiso.\n\nPremium Soft Internacional / PSKloud Internacional - Más de 25 años simplificando la operación de miles de negocios en la región.",
         "enabled": true
       }
     ]
@@ -47,12 +58,12 @@
     "messages": [
       {
         "step": 1,
-        "text": "¡Hola {nombre_empresa}! Somos Premium-Soft, te escribimos porque tenemos una solución que puede interesarles.",
+        "text": "¡Hola {nombre_empresa}! Somos Premium Soft Internacional / PSKloud Internacional. Tenemos una solución que acaba de salir al mercado para clínicas y consultorios odontológicos: software administrativo, contable y de inventario/POS que evoluciona con su consultorio. ¿Les interesa conocerla?",
         "enabled": true
       },
       {
         "step": 2,
-        "text": "¿Les gustaría agendar una breve llamada para conocer más?",
+        "text": "¿Les gustaría agendar una breve videollamada para ver la demo en vivo de nuestra plataforma para clínicas dentales?",
         "enabled": true
       }
     ]

@@ -122,6 +122,17 @@ def run_prospecting_cycle(config: dict, report: dict):
         logger.warning("No clients configured. Create a client in the dashboard first.")
         return {"timestamp": datetime.now().isoformat(), "total_enqueued": 0, "total_found": 0, "ciclo": [], "completados": []}
 
+    # Campaign targets: only active countries + top-N cities per campaign
+    try:
+        from campaign_store import apply_campaign_targets
+        before = sum(len(c.ubicaciones) for c in clients)
+        clients = apply_campaign_targets(clients)
+        after = sum(len(c.ubicaciones) for c in clients)
+        if after != before:
+            logger.info(f"Campaign targets applied: {before} -> {after} ubicaciones activas")
+    except Exception as e:
+        logger.warning(f"apply_campaign_targets skipped: {e}")
+
     # Apply rubro override if set
     if _prospector_rubro_override is not None:
         for c in clients:
@@ -146,14 +157,16 @@ def run_prospecting_cycle(config: dict, report: dict):
                 limite_pais = limites_por_pais.get(pais)
                 try:
                     logger.info(f"Buscando {rubro} en {ubicacion}")
-                    _log_activity("search", f"Buscando {rubro} en {ubicacion} (cliente: {client.name})")
+                    _log_activity("search", f"Buscando {rubro} en {ubicacion} (cliente: {client.name})",
+                                  {"rubro": rubro, "ubicacion": ubicacion, "cliente": client.name})
                     resultados = scrape_local(rubro, ubicacion, max_results=max_results)
                     con_telefono = [r for r in resultados if r.get("telefono")]
                     if limite_pais:
                         con_telefono = con_telefono[:limite_pais]
                         logger.info(f"  Límite país {pais}: {limite_pais}/rubro -> {len(con_telefono)} leads")
                     total_found += len(con_telefono)
-                    _log_activity("found", f"{len(con_telefono)} teléfonos en {len(resultados)} {rubro} de {ubicacion}")
+                    _log_activity("found", f"{len(con_telefono)} teléfonos en {len(resultados)} {rubro} de {ubicacion}",
+                                  {"encontrados": len(con_telefono), "rubro": rubro, "ubicacion": ubicacion})
 
                     if resultados:
                         guardados = agregar_prospectos_locales(resultados)
@@ -326,17 +339,46 @@ def _sleep_until_work():
 
 # ─── Control functions (thread-safe via module-level flags) ───
 
+def _prospector_pause_file() -> str:
+    from config import settings
+    return os.path.join(settings.data_dir, "prospector_pause.json")
+
+
+def _save_prospector_pause():
+    try:
+        with open(_prospector_pause_file(), "w", encoding="utf-8") as f:
+            json.dump({"paused": _prospector_paused}, f)
+    except Exception as e:
+        logger.error(f"prospector pause persist error: {e}")
+
+
+def _restore_prospector_pause():
+    global _prospector_paused
+    try:
+        p = _prospector_pause_file()
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                _prospector_paused = bool(json.load(f).get("paused", False))
+    except Exception as e:
+        logger.error(f"prospector pause restore error: {e}")
+
+
 def pause():
     global _prospector_paused
     _prospector_paused = True
+    _save_prospector_pause()
     _log_activity("pause", "Prospector paused by user")
     logger.warning("PROSPECTOR PAUSED")
 
 def resume():
     global _prospector_paused
     _prospector_paused = False
+    _save_prospector_pause()
     _log_activity("resume", "Prospector resumed by user")
     logger.warning("PROSPECTOR RESUMED")
+
+
+_restore_prospector_pause()
 
 def set_rubro(rubros: list[str] | None):
     global _prospector_rubro_override
@@ -354,6 +396,63 @@ def set_rubro(rubros: list[str] | None):
     _log_activity("set_rubro", f"Rubro override: {rubros} (nuevo embudo)")
     logger.warning(f"RUBRO OVERRIDE: {rubros}")
 
+def _activity_by_day() -> dict:
+    """Agrupa la actividad real (búsquedas, encontrados, encolados) por día."""
+    by_day: Dict[str, Dict] = {}
+    try:
+        with open(ACTIVITY_LOG, encoding="utf-8") as f:
+            for line in f:
+                try:
+                    m = json.loads(line)
+                except Exception:
+                    continue
+                kind = m.get("kind", "")
+                if kind not in ("search", "found", "enqueue"):
+                    continue
+                day = (m.get("ts") or "")[:10]
+                if not day:
+                    continue
+                row = by_day.setdefault(day, {
+                    "busquedas": 0, "encontrados": 0, "encolados": 0,
+                    "rubro": "", "ubicacion": "", "cliente": "",
+                })
+                data = m.get("data") or {}
+                msg = m.get("msg") or ""
+                if kind == "search":
+                    row["busquedas"] += 1
+                    if data.get("rubro"):
+                        row["rubro"] = data["rubro"]
+                        row["ubicacion"] = data.get("ubicacion", "")
+                        row["cliente"] = data.get("cliente", "")
+                    elif " en " in msg:
+                        try:
+                            rb, resto = msg.split(" en ", 1)
+                            if rb.startswith("Buscando "):
+                                row["rubro"] = rb[len("Buscando "):]
+                            row["ubicacion"] = resto.split(" (cliente:", 1)[0]
+                        except Exception:
+                            pass
+                elif kind == "found":
+                    n = data.get("encontrados")
+                    if n is None:
+                        try:
+                            n = int(msg.split()[0])
+                        except Exception:
+                            n = 1
+                    row["encontrados"] += n
+                elif kind == "enqueue":
+                    n = data.get("count", 0) if "count" in data else None
+                    if not n:
+                        try:
+                            n = int(msg.split()[0])
+                        except Exception:
+                            n = 1
+                    row["encolados"] += n
+    except Exception:
+        pass
+    return by_day
+
+
 def get_status() -> dict:
     from client_store import list_clients
     clients = list_clients()
@@ -370,6 +469,8 @@ def get_status() -> dict:
                 last_cycle = rpt.get("timestamp")
         except Exception:
             pass
+    today = datetime.now().date().isoformat()
+    day = _activity_by_day().get(today, {})
     return {
         "paused": _prospector_paused,
         "running": _prospector_running,
@@ -379,6 +480,9 @@ def get_status() -> dict:
         "ig_paused": False,
         "email_paused": False,
         "local_paused": _prospector_paused,
+        "found_today": int(day.get("encontrados", 0)),
+        "searches_today": int(day.get("busquedas", 0)),
+        "enqueued_today": int(day.get("encolados", 0)),
     }
 
 
@@ -456,4 +560,5 @@ def main():
 
 
 if __name__ == "__main__":
+    _restore_prospector_pause()
     main()

@@ -11,7 +11,7 @@ import os
 from pathlib import Path
 from datetime import datetime, timedelta
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -217,6 +217,177 @@ async def assistant_page():
     return HTMLResponse("<h1>Assistant</h1><p>assistant.html not found.</p>")
 
 
+@app.get("/campaign", response_class=HTMLResponse)
+async def campaign_page():
+    html_path = os.path.join(_static_dir, "campaign.html")
+    if os.path.exists(html_path):
+        with open(html_path, encoding="utf-8") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("<h1>Campaign Center</h1><p>campaign.html not found.</p>")
+
+
+# ─── CAMPAIGN CENTER ───
+
+
+@app.get("/api/campaigns")
+async def api_campaigns():
+    import campaign_store
+    return campaign_store.list_campaigns()
+
+
+@app.get("/api/campaigns/{key}")
+async def api_campaign(key: str):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return c
+
+
+@app.put("/api/campaigns/{key}")
+async def api_campaign_save(key: str, data: dict):
+    import campaign_store
+    st = campaign_store.save_state(key, data)
+    return {"status": "ok", "campaign": campaign_store.get_campaign(key)}
+
+
+@app.get("/api/campaigns/{key}/messages")
+async def api_campaign_messages(key: str):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return {"messages": c["messages"], "media": c["media"]}
+
+
+@app.put("/api/campaigns/{key}/messages")
+async def api_campaign_save_messages(key: str, data: dict):
+    import campaign_store
+    messages = data.get("messages")
+    if not isinstance(messages, list) or not messages:
+        return JSONResponse(status_code=400, content={"error": "messages must be a non-empty list"})
+    result = campaign_store.save_messages(key, messages)
+    if isinstance(result, dict) and result.get("error"):
+        return JSONResponse(status_code=404, content=result)
+    return {"status": "ok", "campaign": result}
+
+
+@app.post("/api/campaigns/{key}/media")
+async def api_campaign_media(key: str, file: UploadFile = File(...)):
+    import campaign_store
+    raw = await file.read()
+    if not raw:
+        return JSONResponse(status_code=400, content={"error": "empty file"})
+    ext = (file.filename or "jpg").rsplit(".", 1)[-1] if "." in (file.filename or "") else "jpg"
+    result = campaign_store.upload_media(key, raw, ext)
+    return {"status": "ok", "url": result["url"], "bytes": result["bytes"]}
+
+
+@app.delete("/api/campaigns/{key}/media")
+async def api_campaign_media_delete(key: str):
+    """Elimina la imagen de la campaña: el paso 3 pasa a enviarse solo como texto."""
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return campaign_store.remove_media(key)
+
+
+@app.get("/api/campaigns/{key}/queue")
+async def api_campaign_queue(key: str):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return campaign_store.queue_by_country(key)
+
+
+@app.get("/api/campaigns/{key}/activity")
+async def api_campaign_activity(key: str, limit: int = 40):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return {"activity": campaign_store.recent_activity(limit)}
+
+
+# ─── UNIFIED DATA (Prospectos + Distribuidores) ───
+
+
+@app.get("/api/data/all")
+async def api_data_all(q: str = ""):
+    """Prospectos (conversaciones.db) + distribuidores (prospeccion.db) unificados."""
+    import sqlite3
+    query = (q or "").strip().lower()
+    prospectos = []
+    db_path = os.path.join(settings.data_dir, "conversaciones.db")
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                "SELECT phone, lead_json, status, current_step, classification, started_at, last_reply_at "
+                "FROM conversations ORDER BY started_at DESC LIMIT 2000"
+            ).fetchall()
+            conn.close()
+            for r in rows:
+                try:
+                    lead = json.loads(r["lead_json"])
+                except Exception:
+                    continue
+                item = {
+                    "origen": "prospecto",
+                    "nombre": lead.get("nombre", ""),
+                    "empresa": lead.get("empresa", ""),
+                    "pais": lead.get("pais", ""),
+                    "ciudad": lead.get("ciudad", ""),
+                    "rubro": lead.get("rubro", ""),
+                    "telefono": r["phone"],
+                    "email": lead.get("email", ""),
+                    "canal": "whatsapp" if lead.get("telefono") else "instagram",
+                    "estado": r["status"] or "",
+                    "clasificacion": r["classification"] or "",
+                    "paso": r["current_step"] or 0,
+                    "enviado": r["started_at"] or "",
+                    "respondio": r["last_reply_at"] or "",
+                }
+                if not query or any(query in str(v).lower() for v in item.values()):
+                    prospectos.append(item)
+        except Exception as e:
+            logger.error(f"Error reading conversations: {e}")
+
+    distribuidores = []
+    try:
+        from distribuidores_store import listar_distribuidores as listar_dist
+        for d in listar_dist(pais=None, estado=None, semaforo=None, limit=2000):
+            item = {
+                "origen": "distribuidor",
+                "nombre": d.get("nombre", ""),
+                "empresa": d.get("empresa", ""),
+                "pais": d.get("pais", ""),
+                "ciudad": d.get("ciudad", ""),
+                "rubro": d.get("rubro", ""),
+                "telefono": d.get("telefono", "") or str(d.get("whatsapp", "")) or "",
+                "email": d.get("email", ""),
+                "canal": "distribuidores",
+                "estado": d.get("estado", ""),
+                "clasificacion": "",
+                "paso": 0,
+                "enviado": d.get("created_at", ""),
+                "respondio": d.get("last_activity_at", ""),
+            }
+            if not query or any(query in str(v).lower() for v in item.values()):
+                distribuidores.append(item)
+    except Exception as e:
+        logger.warning(f"distribuidores unavailable: {e}")
+
+    return {
+        "prospectos": prospectos,
+        "distribuidores": distribuidores,
+        "total": len(prospectos) + len(distribuidores),
+    }
+
+
 @app.get("/api/analytics")
 async def api_analytics():
     """Unified 365 analytics: daily series, hourly distribution, by country/rubro/city, conversations, corrections."""
@@ -324,15 +495,17 @@ async def api_activity_log(limit: int = 100):
 
 @app.get("/api/historical")
 async def api_historical(days: int = 7):
-    """Return aggregated historical data from reports."""
+    """Return aggregated historical data from reports + real per-day activity."""
     import prospector
+    from datetime import date, timedelta
     reports = []
     report_path = prospector.REPORT_PATH
     if report_path.exists():
         try:
             with open(report_path) as f:
                 rpt = json.load(f)
-                reports.append(rpt)
+                if rpt.get("total_found") or rpt.get("total_enqueued") or rpt.get("ciclo"):
+                    reports.append(rpt)
         except Exception:
             pass
     # Also try to load historical report files
@@ -342,9 +515,40 @@ async def api_historical(days: int = 7):
     for fpath in sorted(glob.glob(pattern))[-30:]:
         try:
             with open(fpath) as f:
-                reports.append(json.load(f))
+                rpt = json.load(f)
+                if rpt.get("total_found") or rpt.get("total_enqueued") or rpt.get("ciclo"):
+                    reports.append(rpt)
         except Exception:
             pass
+    # Real per-day activity (la fuente de verdad del scraping de hoy)
+    by_day = prospector._activity_by_day()
+    if by_day:
+        today = date.today().isoformat()
+        ciclo = []
+        grand_found = 0
+        grand_enq = 0
+        for d in sorted(by_day, reverse=True):
+            r = by_day[d]
+            grand_found += r["encontrados"]
+            grand_enq += r["encolados"]
+            ciclo.append({
+                "timestamp": f"{d}T00:00:00",
+                "cliente": r["cliente"] or "—",
+                "rubro": r["rubro"] or "—",
+                "ubicacion": r["ubicacion"] or "—",
+                "encontrados": r["encontrados"],
+                "con_telefono": r["encontrados"],
+                "encolados": r["encolados"],
+            })
+        ciclo = ciclo[: max(days, 30)]
+        reports.insert(0, {
+            "timestamp": f"{today}T00:00:00",
+            "total_found": grand_found,
+            "total_enqueued": grand_enq,
+            "ciclo": ciclo,
+            "completados": [],
+            "fuente": "actividad",
+        })
     return {"reports": reports}
 
 
@@ -392,6 +596,48 @@ async def api_contacto_renombrar(data: dict):
     lead = rename_contact(phone, nombre=nombre, empresa=empresa)
     updated = rename_in_queue(phone, nombre=nombre, empresa=empresa)
     return {"status": "ok", "phone": phone, "conversation": lead, "queue_updated": updated}
+
+
+@app.get("/api/contactos/incorrectos")
+async def api_contactos_incorrectos(limit: int = 100):
+    """Contactos que el bot detectó como equivocados (disculpa + exclusión automática)."""
+    import sqlite3
+    from store import get_contactos_excluidos
+    db_path = os.path.join(settings.data_dir, "conversaciones.db")
+    excluidos = get_contactos_excluidos() or {}
+    rows = []
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            data_rows = conn.execute(
+                "SELECT phone, lead_json, status, classification, started_at, last_reply_at "
+                "FROM conversations WHERE status = 'excluido' OR classification IN ('contacto_equivocado','excluido') "
+                "ORDER BY last_reply_at DESC LIMIT ?",
+                (max(1, min(int(limit), 500)),),
+            ).fetchall()
+            conn.close()
+            for r in data_rows:
+                try:
+                    lead = json.loads(r["lead_json"])
+                except Exception:
+                    lead = {}
+                inc = excluidos.get(r["phone"]) or {}
+                rows.append({
+                    "phone": r["phone"],
+                    "nombre": lead.get("nombre") or "",
+                    "empresa": lead.get("empresa") or "",
+                    "pais": lead.get("pais") or "",
+                    "rubro": lead.get("rubro") or "",
+                    "ciudad": lead.get("ciudad") or "",
+                    "status": r["status"],
+                    "classification": r["classification"],
+                    "motivo": inc.get("motivo") or "Contacto equivocado",
+                    "excluido_en": inc.get("fecha") or r["last_reply_at"] or r["started_at"],
+                })
+        except Exception as e:
+            logger.error(f"Error reading incorrectos: {e}")
+    return {"contactos": rows, "count": len(rows)}
 
 
 # ─── Sent leads API (who was contacted) ───
@@ -473,6 +719,45 @@ async def api_sent_stats():
         except Exception as e:
             logger.error(f"Error reading conversations stats: {e}")
     return stats
+
+
+@app.get("/api/messages/latest")
+async def api_messages_latest(limit: int = 15):
+    """Últimos mensajes OUT enviados por WhatsApp (visual en vivo del panel)."""
+    import sqlite3
+    db_path = os.path.join(settings.data_dir, "conversaciones.db")
+    rows = []
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            conn.row_factory = sqlite3.Row
+            cur = conn.cursor()
+            for r in cur.execute(
+                "SELECT m.phone, m.text, m.timestamp, m.classification, c.lead_json, c.status, c.current_step "
+                "FROM messages m LEFT JOIN conversations c ON c.phone = m.phone "
+                "WHERE m.direction='out' ORDER BY m.timestamp DESC LIMIT ?",
+                (max(1, min(int(limit), 100),),),
+            ):
+                try:
+                    lead = json.loads(r["lead_json"] or "{}")
+                except Exception:
+                    lead = {}
+                rows.append({
+                    "phone": r["phone"],
+                    "text": (r["text"] or "").strip()[:600],
+                    "timestamp": r["timestamp"],
+                    "classification": r["classification"],
+                    "status": r["status"],
+                    "step": r["current_step"],
+                    "nombre": lead.get("nombre") or "",
+                    "pais": lead.get("pais") or "",
+                    "rubro": lead.get("rubro") or "",
+                    "ciudad": lead.get("ciudad") or "",
+                })
+            conn.close()
+        except Exception as e:
+            logger.error(f"Error reading latest messages: {e}")
+    return {"mensajes": rows, "count": len(rows)}
 
 
 @app.get("/api/queue/reorder")
@@ -659,7 +944,8 @@ async def api_email_masivo(data: dict):
 async def api_search_keys():
     import api_search
     keys = api_search.get_keys()
-    return {k: (v if "key" not in k.lower() or k.endswith("_set") else ("***" if v else "")) for k, v in keys.items()}
+    secretas = ("apollo",)
+    return {k: (v if ("key" not in k.lower() or k.endswith("_set")) and k.lower() not in secretas else ("***" if v else "")) for k, v in keys.items()}
 
 
 @app.post("/api/search/keys")
@@ -667,6 +953,24 @@ async def api_search_save_keys(data: dict):
     import api_search
     api_search.save_keys(data)
     return {"status": "ok"}
+
+
+@app.post("/api/search/apollo/test")
+async def api_search_apollo_test(data: dict = None):
+    """Valida la key de Apollo.io con una búsqueda de prueba (1 resultado)."""
+    import api_search
+    data = data or {}
+    key = (data.get("api_key") or "").strip()
+    if not key:
+        keys = api_search.get_keys()
+        key = keys.get("apollo") or keys.get("APOLLO_API_KEY") or ""
+    if not key:
+        return JSONResponse(status_code=400, content={"error": "guarda primero la API key de Apollo o pásala en la petición"})
+    res, info = await asyncio.to_thread(api_search.buscar_contactos_apollo, key, "PSKloud", "", "", 1)
+    if info.get("error"):
+        return {"ok": False, "mensaje": info["error"]}
+    extra = info.get("nota", "") or (" (plan con people search)" if not info.get("solo_orgs") else "")
+    return {"ok": True, "mensaje": f"Apollo conectado: {info.get('total', 0)} resultado(s){extra}", "info": info}
 
 
 @app.post("/api/search/empresa")

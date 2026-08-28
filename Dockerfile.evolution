@@ -1,0 +1,13 @@
+# Evolution API v2.3.7 con Baileys 7.0.0-rc14 (genera QR con WhatsApp actual)
+# Base = imagen oficial (dependencias de Evolution intactas)
+FROM evoapicloud/evolution-api:v2.3.7
+
+# Instalar Baileys rc14 en un arbol aislado (deps anidadas, no pisan nada)
+RUN mkdir -p /swap && cd /swap \
+    && npm init -y >/dev/null 2>&1 \
+    && npm i @whiskeysockets/baileys@7.0.0-rc14 --no-save --install-strategy=nested --loglevel=error \
+    && rm -rf /evolution/node_modules/baileys \
+    && cp -r /swap/node_modules/@whiskeysockets/baileys /evolution/node_modules/baileys \
+    && rm -rf /swap
+
+RUN node -e "const b=require('baileys'); console.log('baileys rc14 listo:', typeof b.default, typeof b.useMultiFileAuthState)"

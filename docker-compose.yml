@@ -10,7 +10,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-evolution}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-evolution_secret_2026}
     volumes:
-      - ~/pskloud-data/evolution_pgdata:/var/lib/postgresql/data
+      - evolution_pgdata:/var/lib/postgresql/data
     networks:
       - openclaw-net
     healthcheck:
@@ -27,7 +27,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
     volumes:
-      - ~/pskloud-data/evolution_redisdata:/data
+      - evolution_redisdata:/data
     networks:
       - openclaw-net
     healthcheck:
@@ -37,11 +37,13 @@ services:
       retries: 5
 
   # =========================================================================
-  # Evolution API - WhatsApp Gateway (Baileys)
+  # Evolution API - WhatsApp Gateway (Baileys) - v2.1.1 ESTABLE
   # =========================================================================
   evolution-api:
-    image: evoapicloud/evolution-api:latest
+    image: evoapicloud/evolution-api:v2.3.7-pskloud2
     restart: unless-stopped
+    # Migraciones automaticas + arranque (mismo flujo que imagen oficial)
+    entrypoint: ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/postgresql-schema.prisma && npm run start:prod"]
     ports:
       - "8080:8080"
     environment:
@@ -66,8 +68,15 @@ services:
       WEBHOOK_GLOBAL_WEBHOOK_BY_EVENTS: "true"
       WEBHOOK_EVENTS_MESSAGES_UPSERT: "true"
       WEBHOOK_EVENTS_CONNECTION_UPDATE: "true"
+
+      # Estabilidad Baileys en WSL2
+      BAILEYS_NO_CHROME: "true"
+      # Version de protocolo WhatsApp (fijada por url del ultimo Baileys rc14)
+      BAILEYS_VERSION: "2,3000,1043857760"
+      PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+      NODE_OPTIONS: "--max-old-space-size=1024"
     volumes:
-      - ~/pskloud-data/evolution_instances:/evolution/store
+      - evolution_instances:/evolution/store
     depends_on:
       evolution-postgres:
         condition: service_healthy
@@ -105,8 +114,9 @@ services:
       MSG_PRESENTACION: '${MSG_PRESENTACION:-Pertenezco a la casa Premium-Soft creadora del software administrativo y contable disenado para adaptarse a todas las normativas de ley y facturacion electronica. Si tienes un espacio de tiempo esta semana, podemos agendar una llamada o videollamada para una demostracion en vivo de la suite y conversar sobre como podemos apoyarte con la migracion y nuestros planes flexibles.}'
       MAX_PER_COUNTRY_DAILY: ${MAX_PER_COUNTRY_DAILY:-20}
       PROSPECT_ACTIVE_HOURS: ${PROSPECT_ACTIVE_HOURS:-24}
+      APOLLO_API_KEY: ${APOLLO_API_KEY}
     volumes:
-      - ./:/app/data
+      - openclaw_data:/app/data
     depends_on:
       - evolution-api
     networks:
@@ -115,3 +125,9 @@ services:
 networks:
   openclaw-net:
     driver: bridge
+
+volumes:
+  evolution_pgdata:
+  evolution_redisdata:
+  evolution_instances:
+  openclaw_data:

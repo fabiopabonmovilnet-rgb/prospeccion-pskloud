@@ -228,6 +228,10 @@ def list_excluded_phones() -> set:
     return set(_load_excluded().keys())
 
 
+def get_contactos_excluidos() -> dict:
+    return _load_excluded()
+
+
 def is_phone_excluded(phone: str) -> bool:
     p = _normalize_phone(phone or "")
     return bool(p) and p in _load_excluded()

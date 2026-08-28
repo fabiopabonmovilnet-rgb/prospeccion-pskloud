@@ -36,6 +36,13 @@ data/
 
 # Local secrets
 .env
+email_config.json
+api_keys.json
+contactos_excluidos.json
+
+# Prospector runtime data/logs
+actividad_prospector.jsonl
+reporte_prospector.json
 
 # Images (local screenshots)
 images/

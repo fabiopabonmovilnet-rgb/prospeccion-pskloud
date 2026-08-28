@@ -490,6 +490,9 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
     </div>
     <div class="nav-group-label open" onclick="toggleNavGroup(this)">Campañas</div>
     <div class="nav-group-items open">
+      <a class="nav-item" href="/campaign" style="display:flex; align-items:center; padding:10px">
+        <span class="icon">🗂</span> Panel de Campañas
+      </a>
       <button class="nav-item" data-tab="email">
         <span class="icon">📧</span> Email
         <span class="status-dot" id="dot-email"></span>
@@ -1065,6 +1068,14 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
             <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">CUFinder API Key</label>
             <input class="input" id="cfg-cufinder-key" placeholder="CUFinder key..." value="">
           </div>
+          <div>
+            <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px;">Apollo.io API Key</label>
+            <div style="display:flex;gap:6px;">
+              <input class="input" id="cfg-apollo-key" placeholder="Apollo key..." value="" style="flex:1">
+              <button class="btn btn-ghost" type="button" onclick="testApollo()" title="Probar conexión con Apollo">Probar</button>
+            </div>
+            <div class="card-subtitle" id="apollo-test-msg" style="min-height:16px;font-size:12px;"></div>
+          </div>
         </div>
         <div style="margin-top:16px;">
           <button class="btn btn-primary" onclick="saveApiKeys()">💾 Guardar API Keys</button>
@@ -1135,7 +1146,7 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
       <div class="card" style="border:1px solid var(--accent);background:var(--bg-elevated);">
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
           <div style="flex:1;min-width:200px;">
-            <div class="card-title">🏢 Prospección Distribuidores / Partners</div>
+            <div class="card-title">Apollo IA 🏢 Prospección Distribuidores / Partners</div>
             <div class="card-subtitle" id="dist-subtitle">Motor automático: Hunter.io / Lusha / RocketReach → Semáforo automático → Pipeline continuo</div>
           </div>
           <div>
@@ -1551,6 +1562,7 @@ async function loadStatus() {
     : (status.current_rubro ? status.current_rubro.join(', ') : '--');
   $('local-rubro-display').textContent = rubroText;
   $('local-status-text').textContent = status.paused ? 'Pausado' : (status.running ? 'Activo' : 'Dormido');
+  $('local-found-today').textContent = status.found_today || 0;
   updateChannelUI('local');
   updateChannelUI('ig');
 
@@ -2164,9 +2176,25 @@ async function saveApiKeys() {
     lusha: $('cfg-lusha-key').value.trim(),
     rocketreach: $('cfg-rocketreach-key').value.trim(),
     cufinder: $('cfg-cufinder-key').value.trim(),
+    apollo: $('cfg-apollo-key').value.trim(),
   };
   await api('/api/search/keys', 'POST', keys);
   toast('API keys guardadas', 'success');
+}
+
+async function testApollo() {
+  const msg = $('apollo-test-msg');
+  msg.textContent = 'Probando Apollo…';
+  msg.style.color = 'var(--text-muted)';
+  msg.textContent = '';
+  try {
+    const r = await api('/api/search/apollo/test', 'POST', { api_key: $('cfg-apollo-key').value.trim() });
+    msg.textContent = r.ok ? ('✅ ' + r.mensaje) : ('❌ ' + r.mensaje);
+    msg.style.color = r.ok ? '#4ade80' : '#f87171';
+  } catch (e) {
+    msg.textContent = '❌ Error al probar: ' + (e.message || e);
+    msg.style.color = '#f87171';
+  }
 }
 
 async function saveSmtpConfig() {
@@ -2199,6 +2227,7 @@ async function loadSettings() {
     if ($('cfg-lusha-key')) $('cfg-lusha-key').value = keys.lusha || '';
     if ($('cfg-rocketreach-key')) $('cfg-rocketreach-key').value = keys.rocketreach || '';
     if ($('cfg-cufinder-key')) $('cfg-cufinder-key').value = keys.cufinder || '';
+    if ($('cfg-apollo-key')) $('cfg-apollo-key').value = keys.apollo || '';
   }
   const smtp = await api('/api/email/config', 'GET');
   if (smtp) {
@@ -2325,7 +2354,7 @@ async function loadDistCuotas(pais) {
     $('dist-kpi-con-meta').textContent = `Meta: ${c.contactados?.meta || metas.contactados} (${c.contactados?.actual || 0} esta semana)`;
     $('dist-kpi-reu-meta').textContent = `Meta: ${c.reuniones?.meta || metas.reuniones} (${c.reuniones?.actual || 0} esta semana)`;
   } else {
-    $('dist-kpi-inv-meta').textContent = `Meta semanal: ${metas.investigados}`;
+    $('dist-kpi-inv-meta').textContent = `Meta semanal total: ${metas.investigados} (reparto países activos)`;
     $('dist-kpi-pre-meta').textContent = `Meta semanal: ${metas.precalificados}`;
     $('dist-kpi-con-meta').textContent = `Meta semanal: ${metas.contactados}`;
     $('dist-kpi-reu-meta').textContent = `Meta semanal: ${metas.reuniones}`;
@@ -2635,13 +2664,15 @@ async function distToggleEngine() {
     $('dist-engine-btn').innerHTML = '🚀 Iniciar Prospección Automática';
     $('dist-engine-btn').className = 'btn btn-primary';
   } else {
-    const pais = $('dist-pais-filter')?.value;
-    if (!pais) { toast('Selecciona un País Target primero', 'error'); return; }
+    const pais = $('dist-pais-filter')?.value || '';
     const res = await api('/api/dist/engine/start', 'POST', { pais: pais });
     if (res.status === 'already_running') {
       toast('Motor ya ejecutándose en ' + res.pais, 'info');
+    } else if (res.status === 'pais_inactivo') {
+      toast(res.mensaje || 'País inactivo', 'error');
+      return;
     } else {
-      toast(`Motor iniciado: ${pais}`, 'success');
+      toast(`Motor iniciado: ${pais ? pais : '🌎 TODOS los países activos'}`, 'success');
     }
     distStartEnginePolling();
     $('dist-engine-btn').innerHTML = '⏹ Detener Motor';
@@ -2671,7 +2702,7 @@ async function loadDistEngineStatus() {
   if (!s) return;
   $('dist-engine-status').style.display = 'block';
   $('dist-engine-status-text').textContent = s.status_text || 'Idle';
-  $('dist-engine-pais').textContent = s.pais_target ? `| ${s.pais_target}` : '';
+  $('dist-engine-pais').textContent = s.pais_target ? (s.pais_target === 'TODOS' ? '| 🌎 Todos los países' : `| ${s.pais_target}`) : '';
   $('dist-engine-ciclos').textContent = s.ciclos_completados || 0;
   $('dist-engine-encontrados').textContent = s.total_encontrados || 0;
   $('dist-engine-ingestados').textContent = s.total_ingestados || 0;

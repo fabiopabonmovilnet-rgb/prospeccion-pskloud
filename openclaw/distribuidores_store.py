@@ -20,13 +20,96 @@ PAISES = {
     "HONDURAS": {"moneda": "HNL", "ciudades": ["Tegucigalpa", "San Pedro Sula", "La Ceiba", "Choluteca"]},
 }
 
-RUBROS_DISTRIBUIDORES = [
-    "Firmas Contables",
-    "Soporte TI",
-    "Integradores POS",
-    "Consultores Fiscales",
-    "Revendedores ERP",
-]
+RUBROS_CONFIG = {
+    "Firmas Contables": {
+        "queries": [
+            "contadores publicos y firmas contables",
+            "firma de contadores auditoria",
+            "servicios contables tributarios",
+            "despacho contable empresas",
+        ],
+        "keywords": ["contabl", "contador", "auditor", "impuest", "tributar", "firma contable"],
+        "cargo": "Socio Contador | Gerente de la Firma",
+        "descripcion": "Firmas contables, despachos de auditoría y tributación",
+    },
+    "Soporte TI": {
+        "queries": [
+            "soporte tecnico informatico empresas",
+            "empresa de soporte tecnico computacion",
+            "servicio tecnico outsourcing ti",
+            "soporte it infraestructura redes",
+        ],
+        "keywords": ["soporte tecnico", "soporte it", "informatic", "computacion", "help desk", "outsourcing ti", "servicio tecnico"],
+        "cargo": "Gerente de TI | CEO",
+        "descripcion": "Empresas de soporte técnico, mantenimiento e infraestructura TI",
+    },
+    "Integradores POS": {
+        "queries": [
+            "sistemas punto de venta",
+            "software pos restaurantes empresas",
+            "integradores facturacion electronica",
+            "sistemas de facturacion datafono",
+        ],
+        "keywords": ["punto de venta", "sistemas pt", "facturacion", "software pt", "integrador comercial"],
+        "cargo": "Gerente Comercial | Director de Canal",
+        "descripcion": "Integradores de punto de venta, facturación y datafonos",
+    },
+    "Consultores Fiscales": {
+        "queries": [
+            "consultoria fiscal tributaria",
+            "consultores tributarios impuestos",
+            "asesoria fiscal empresas",
+            "planificacion fiscal tributaria",
+        ],
+        "keywords": ["fiscal", "tributar", "impuest", "consultoria fiscal", "auditoria fiscal"],
+        "cargo": "Socio Consultor | Director Fiscal",
+        "descripcion": "Consultorías fiscales, tributarias y de planificación",
+    },
+    "Revendedores ERP": {
+        "queries": [
+            "software erp empresarial",
+            "revendedores e implementadores erp",
+            "soluciones erp gestion",
+            "sistemas de gestion contable empresas",
+        ],
+        "keywords": ["erp", "gestion empresarial", "software contable", "sistemas de gestion", "automatizacion empresarial", "implementadores"],
+        "cargo": "Partner Manager | Gerente Comercial",
+        "descripcion": "Revendedores e implementadores de ERP / software de gestión",
+    },
+}
+
+RUBROS_DISTRIBUIDORES = list(RUBROS_CONFIG.keys())
+
+# Tope global semanal en modo "Todos los países": reparto entre países activos
+META_TOTAL_SEMANAL = 40
+
+PAISES_ACTIVOS_FILE = os.path.join(os.path.dirname(__file__), "data", "dist_paises_activos.json")
+
+
+def get_paises_activos() -> list:
+    try:
+        with open(PAISES_ACTIVOS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            paises = data.get("paises", [])
+            if paises:
+                return paises
+    except Exception:
+        pass
+    return list(PAISES.keys())
+
+
+def set_paises_activos(paises: list) -> dict:
+    validos = [str(p) for p in paises if str(p) in PAISES]
+    if not validos:
+        validos = list(PAISES.keys())
+    with open(PAISES_ACTIVOS_FILE, "w", encoding="utf-8") as f:
+        json.dump({"paises": validos}, f, ensure_ascii=False, indent=2)
+    return {"paises": validos}
+
+
+def is_pais_activo(pais: str) -> bool:
+    return str(pais) in get_paises_activos()
+
 
 CLASIFICACION_SEMAFORO = ["VERDE", "AMARILLO", "ROJO"]
 ESTADO_CONVERSION = [

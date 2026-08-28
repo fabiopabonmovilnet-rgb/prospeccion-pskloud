@@ -200,11 +200,24 @@ def _email_contactado(email: str) -> bool:
 def enviar_masivo(leads: list[dict], cfg: Optional[dict] = None, plantilla: Optional[dict] = None, max_enviar: int = 40) -> dict:
     cfg = cfg or get_config()
     plantilla = plantilla or get_plantilla()
+    try:
+        import distribuidores_store as dstore
+        paises_activos = set(dstore.get_paises_activos())
+    except Exception:
+        paises_activos = None
     resultados = []
     ok = 0
     fail = 0
     saltados = 0
     for lead in leads:
+        pais = (lead.get("País") or lead.get("pais") or "").strip().upper()
+        if paises_activos is not None:
+            if not pais:
+                saltados += 1
+                continue
+            if pais in dstore.PAISES and pais not in paises_activos:
+                saltados += 1
+                continue
         email = (lead.get("Correo") or lead.get("email") or "").strip()
         if not email:
             continue
@@ -213,7 +226,6 @@ def enviar_masivo(leads: list[dict], cfg: Optional[dict] = None, plantilla: Opti
             continue
         nombre = lead.get("Contacto Clabe") or lead.get("Contacto") or lead.get("nombre") or ""
         empresa = lead.get("Empresa") or lead.get("empresa") or lead.get("nombre_empresa") or ""
-        pais = lead.get("País") or lead.get("pais") or ""
         cargo = lead.get("Cargo") or lead.get("cargo") or ""
         asunto = renderizar_plantilla(plantilla.get("asunto", ""), nombre, empresa, pais, cargo, email)
         cuerpo = renderizar_plantilla(plantilla.get("cuerpo", ""), nombre, empresa, pais, cargo, email)

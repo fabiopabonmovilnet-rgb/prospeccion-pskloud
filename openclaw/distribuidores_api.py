@@ -118,7 +118,24 @@ def api_dist_analytics():
 
 @router.get("/paises")
 def api_dist_paises():
-    return {"paises": store.PAISES, "rubros": store.RUBROS_DISTRIBUIDORES}
+    return {"paises": store.PAISES, "rubros": store.RUBROS_DISTRIBUIDORES,
+            "rubros_config": store.RUBROS_CONFIG,
+            "meta_total_semanal": store.META_TOTAL_SEMANAL,
+            "paises_activos": store.get_paises_activos()}
+
+
+class PaisesActivosBody(BaseModel):
+    paises: list
+
+
+@router.get("/paises/activos")
+def api_dist_paises_activos():
+    return {"paises_activos": store.get_paises_activos(), "todos": list(store.PAISES.keys())}
+
+
+@router.post("/paises/activos")
+def api_dist_paises_activos_save(body: PaisesActivosBody):
+    return store.set_paises_activos(body.paises)
 
 
 @router.post("/bulk-import")
@@ -137,7 +154,7 @@ def api_dist_bulk_import(body: BulkImport):
 # ─── Engine: Auto-Prospecting ───
 
 class EngineStart(BaseModel):
-    pais: str
+    pais: str = ""  # "" = TODOS los países activos (reparto de META_TOTAL_SEMANAL)
     rubros: Optional[list] = None
     ciudades: Optional[list] = None
 

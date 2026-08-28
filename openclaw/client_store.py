@@ -121,11 +121,31 @@ def delete_client(client_id: str):
     _save_json(TEMPLATES_FILE, templates)
 
 
+def _normalize_template_msg(m: dict) -> dict:
+    """Nivela el media anidado ({enabled,type,url,caption}) a media_url/media_type."""
+    out = dict(m)
+    if not out.get("media_url"):
+        media = out.get("media") or {}
+        out["media_url"] = media.get("url", "") if (media.get("enabled", True) if isinstance(media, dict) else True) else ""
+        out["media_type"] = media.get("type", "")
+    out.pop("media", None)
+    out.pop("media_enabled", None)
+    out.pop("caption", None)
+    return out
+
+
 def list_templates(client_id: str = None) -> list[MessageTemplateSet]:
     all_t = _load_json(TEMPLATES_FILE)
     if client_id:
         all_t = [t for t in all_t if t.get("client_id") == client_id]
-    return [MessageTemplateSet(**t) for t in all_t]
+    results = []
+    for t in all_t:
+        t = dict(t)
+        msgs = t.get("messages") or []
+        if isinstance(msgs, list):
+            t["messages"] = [_normalize_template_msg(m) for m in msgs if isinstance(m, dict)]
+        results.append(MessageTemplateSet(**t))
+    return results
 
 
 def get_template(client_id: str, channel: str) -> Optional[MessageTemplateSet]:

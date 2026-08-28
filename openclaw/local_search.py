@@ -131,6 +131,49 @@ def _nombre_consiste_con_rubro(nombre: str, rubro: str) -> bool:
     return True
 
 
+# Palabras de industrias AJENAS a clínicas dentales (rechazo estricto a nivel de scrape)
+_PALABRAS_AJENAS_DENTAL = [
+    "farmacia", "droguer", "supermercado", "supermercado", "minimarket", "abi",
+    "abarrote", "bodega", "pulperia", "pulpería", "quiosco", "tienda", "tiendita",
+    "licorer", "panader", "pasteleria", "pastelería", "tortas", "helado", "cafe", "café",
+    "restaurante", "restaurant", "comedor", "sushi", "pizza", "hamburg", "tacos",
+    "ceviche", "bar", "pub", "discoteca", "carnicer", "verduler", "fruteria",
+    "gimnasio", "gym", "crossfit", "pilates", "yoga", "boxing", "zumba",
+    "taller", "mecanic", "carro", "auto", "llanta", "carwash", "grua", "transporte", "flete",
+    "ferreter", "cemento", "block", "ladrillo", "plomeria", "electric", "aire acondicionado",
+    "seguridad", "fumigac", "imprenta", "arquitect", "ingenier", "constructora", "inmobiliaria",
+    "mueble", "colchon", "zapater", "boutique", "moda", "ropa", "lenceria", "accesorio", "regalo",
+    "joyer", "relojer", "perfume", "cosmetic", "maquillaj", "salon", "salón", "belleza", "beauty",
+    "peluquer", "barber", "unisex", "uñas", "nails", "manicure", "tattoo", "tatuaj", "estetica",
+    "veterinaria", "mascotas", "petshop", "funeraria", "sepelio", "iglesia", "templo",
+    "colegio", "escuela", "universidad", "academia", "guarderia", "kinder", "institucion",
+    "banco", "cooperativa", "credito", "caja", "seguro", "abogado", "notaria", "contador",
+    "contad", "auditor", "despacho", "consultori", "gabinete", "fundacion", "ONG", "policia",
+    "hotel", "motel", "hostal", "viaje", "turismo", "tour", "museo", "cine", "teatro",
+    "fotografi", "musica", "floristeria", "videojuego", "optica", "óptica", "electronica",
+    "computador", "software", "tecnolog", "sistemas", "implant", "publicidad", "marketing",
+    "distribuidor", "mayorista", "bazar", "codiller", "acopio", "reciclaj", "cementer",
+    "militar", "radio", "tv", "gas", "gasolinera", "farmacos", "clinica de suenos",
+    "centro de salud", "hospital", "medico", "medicina general", "pediatra", "psicolog",
+    "fisioterapia", "fisioterapeuta", "audifono", "cirugia plastica",
+    # comida / gastronomía / cadenas globales: nunca una clínica dental
+    "mcdonald", "burger", "hamburg", "hamburgues", "kfc", "pizza", "pizzeria", "domino",
+    "wendy", "taco", "tacos", "starbucks", "subway", "pollo", "campero", "church",
+    "hardee", "carl", "popeyes", "dunkin", "denny", "ihop", "applebee", "outback",
+    "chilli", "friday", "bembos", "grill", "parrilla", "comida rapida", "comida rápida",
+    "drive thru", "snack", "helad", "helader", "fries", "bistro", "comedor", "comedores",
+    "desayun", "almuerzo", "sandwich", "cabritos", "asado", "mariscos", "carnes",
+    "tortillas", "tamales", "pupusas", "baleada", "casamiento", "gaseosa", "fresco",
+    "burger king", "jamburgers", "cocacola", "pepsi", "coca-cola",
+]
+
+_RUBRO_DENTAL_KEYS = [
+    "clinicas dentales", "clinica dental", "clínica dental", "clínicas dentales",
+    "odontologia", "odontología", "odontologo", "dentista", "dental clinics",
+    "ortodoncia", "implantes dentales", "blanqueamiento dental", "endodoncia",
+    "periodoncia", "cirugia oral", "dental", "dientes",
+]
+
 # Positive keywords: name MUST contain at least one of these per rubro.
 # If a rubro has entries here, ONLY businesses matching these are accepted.
 # If a rubro has NO entries here, only the negative filter applies.
@@ -172,6 +215,25 @@ _RUBRO_POSITIVE_KEYWORDS = {
     'farmacia': [
         'farmacia', 'drogueria', 'droguería',
     ],
+    'clinicas dentales': [
+        'clinica', 'clínica', 'clinic', 'odontolog', 'dentista', 'dental',
+        'ortodoncia', 'implante', 'endodoncia', 'periodoncia',
+        'blanqueamiento', 'caries', 'muela', 'sonris', 'smile', 'dientes', 'maxilo',
+    ],
+    'clinica dental': ['clinica', 'clínicas', 'clinic', 'odontolog', 'dentista', 'dental'],
+    'clínica dental': ['clinica', 'clínicas', 'clinic', 'odontolog', 'dentista', 'dental'],
+    'odontologia': ['odontolog', 'dentista', 'dental'],
+    'odontología': ['odontolog', 'dentista', 'dental'],
+    'odontologo': ['odontolog', 'dentista'],
+    'dentista': ['dentista', 'dental', 'odontolog'],
+    'dental clinics': ['clinic', 'clínica', 'clinica', 'dental', 'odontolog', 'dentist'],
+    'ortodoncia': ['ortodoncia', 'dentista', 'dental', 'clinica', 'clínica'],
+    'implantes dentales': ['implante', 'dental', 'dentista', 'clinica', 'clínica'],
+    'blanqueamiento dental': ['blanqueamiento', 'dental', 'dentista', 'clinica', 'clínica'],
+    'endodoncia': ['endodoncia', 'dental', 'dentista', 'clinica', 'clínica'],
+    'periodoncia': ['periodoncia', 'dental', 'dentista', 'clinica', 'clínica'],
+    'cirugia oral': ['cirugia oral', 'maxil', 'dental', 'dentista', 'clinica', 'clínica'],
+    'dental': ['dental', 'dentista', 'odontolog', 'clinica', 'clínica'],
 }
 
 
@@ -179,9 +241,21 @@ def _nombre_consiste_con_rubro(nombre: str, rubro: str) -> bool:
     """Two-layer filter:
     1. NEGATIVE: reject if name clearly belongs to a different business type.
     2. POSITIVE: if this rubro has positive keywords, name MUST match at least one.
-    If rubro has no positive keywords, negative filter alone is enough."""
+    If rubro has no positive keywords, negative filter alone is enough.
+    Rubros dentales: además se rechazan palabras de industrias ajenas y se aceptan
+    marcas genéricas (sin palabra de rubro) pero nunca negocios de otra categoría."""
     rubro_lower = rubro.lower().strip()
     nombre_lower = nombre.lower().strip()
+
+    if rubro_lower in _RUBRO_DENTAL_KEYS:
+        for w in _PALABRAS_AJENAS_DENTAL:
+            if w in nombre_lower:
+                return False
+        # EXIGENTE: debe haber señal dental explícita en el nombre (mismo criterio que el envío)
+        for kw in _RUBRO_POSITIVE_KEYWORDS.get("clinicas dentales", []):
+            if kw in nombre_lower:
+                return True
+        return False
 
     # Layer 1: negative filter
     neg = _NON_RUBRO_KEYWORDS.get(rubro_lower, [])
@@ -242,6 +316,35 @@ def _extraer_telefonos(texto: str, prefijo: str = "") -> List[str]:
     return phones
 
 
+_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}")
+_EMAIL_ARTIFACT = (".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".css", ".js", "@example", "@domain", "@email", "sentry")
+
+
+def _validar_email(email: str) -> bool:
+    e = (email or "").strip().lower()
+    return bool(e and 5 < len(e) < 254 and _EMAIL_RE.fullmatch(e) and not any(a in e for a in _EMAIL_ARTIFACT))
+
+
+def _extraer_email(texto: str) -> List[str]:
+    unicos = {}
+    for m in _EMAIL_RE.finditer(texto or ""):
+        e = m.group(0).strip().lower().strip(".")
+        if _validar_email(e) and e not in unicos:
+            unicos[e] = e
+    return list(unicos.values())
+
+
+def _validar_website(website: str) -> str:
+    w = (website or "").strip()
+    if not w:
+        return ""
+    if w.lower().startswith("www."):
+        w = "https://" + w
+    if not w.lower().startswith(("http://", "https://")):
+        w = "https://" + w
+    return w
+
+
 # =============================================================================
 # FUENTE 1: OpenStreetMap
 # =============================================================================
@@ -290,6 +393,21 @@ _RUBRO_OSM = {
     "clínica": ["amenity=clinic", "healthcare=clinic"],
     "dentista": ["amenity=dentist", "healthcare=dentist"],
     "dental": ["amenity=dentist", "healthcare=dentist"],
+    "clinicas dentales": ["amenity=dentist", "healthcare=dentist"],
+    "clinica dental": ["amenity=dentist", "healthcare=dentist"],
+    "clínica dental": ["amenity=dentist", "healthcare=dentist"],
+    "clínicas dentales": ["amenity=dentist", "healthcare=dentist"],
+    "odontologia": ["amenity=dentist", "healthcare=dentist"],
+    "odontología": ["amenity=dentist", "healthcare=dentist"],
+    "odontologo": ["amenity=dentist", "healthcare=dentist"],
+    "dental clinics": ["amenity=dentist", "healthcare=dentist"],
+    "ortodoncia": ["amenity=dentist", "healthcare=dentist"],
+    "implantes dentales": ["amenity=dentist", "healthcare=dentist"],
+    "blanqueamiento dental": ["amenity=dentist", "healthcare=dentist"],
+    "endodoncia": ["amenity=dentist", "healthcare=dentist"],
+    "periodoncia": ["amenity=dentist", "healthcare=dentist"],
+    "cirugia oral": ["amenity=dentist", "healthcare=dentist"],
+    "dientes": ["amenity=dentist", "healthcare=dentist"],
     "peluqueria": ["shop=hairdresser"],
     "peluquería": ["shop=hairdresser"],
     "gasolinera": ["amenity=fuel"],

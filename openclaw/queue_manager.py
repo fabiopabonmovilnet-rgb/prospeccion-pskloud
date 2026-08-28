@@ -110,14 +110,35 @@ def pause_queue():
     """Stop all message sending immediately."""
     global _queue_paused
     _queue_paused = True
+    _persist_queue_pause()
     _log_activity("pause", "Cola pausada por el usuario (Stop)")
     logger.warning("QUEUE PAUSED by user")
+
+
+def _persist_queue_pause():
+    try:
+        with open(os.path.join(settings.data_dir, "queue_pause.json"), "w", encoding="utf-8") as f:
+            json.dump({"paused": _queue_paused}, f)
+    except Exception as e:
+        logger.error(f"pause persist error: {e}")
+
+
+def _restore_queue_pause():
+    global _queue_paused
+    try:
+        p = os.path.join(settings.data_dir, "queue_pause.json")
+        if os.path.exists(p):
+            with open(p, "r", encoding="utf-8") as f:
+                _queue_paused = bool(json.load(f).get("paused", False))
+    except Exception as e:
+        logger.error(f"pause restore error: {e}")
 
 
 def resume_queue():
     """Resume message sending."""
     global _queue_paused
     _queue_paused = False
+    _persist_queue_pause()
     _log_activity("resume", "Cola reanudada por el usuario (Play)")
     logger.warning("QUEUE RESUMED by user")
 
@@ -126,6 +147,7 @@ def replay_queue():
     """Reload the queue from disk and resume sending."""
     global _queue_paused, _queue
     _queue_paused = False
+    _persist_queue_pause()
     load_queue(force_reload=True)
     _log_activity("resume", f"Cola reiniciada (Replay): {len(_queue)} leads recargados")
     logger.warning(f"QUEUE REPLAY by user: {len(_queue)} leads reloaded")
@@ -229,6 +251,26 @@ def _mark_country_sent(country: str, rubro: str = ""):
     _save_country_counts(counts)
 
 
+def _country_target(country: str) -> int:
+    """Meta diaria del país según la campaña whatsapp activa; fallback al cap global."""
+    try:
+        from campaign_store import list_campaigns
+        for c in list_campaigns():
+            if c.get("channel") == "whatsapp" and c.get("active", True):
+                metas = c.get("meta_diaria_por_pais") or {}
+                if country in metas:
+                    return max(1, int(metas.get(country, 0)))
+    except Exception:
+        pass
+    return settings.max_per_country_daily
+
+
+def _country_fair_score(pais: str, rubro: str = "") -> float:
+    """Ratio envíos/meta del país: a menor ratio, más 'atrasado' (se le da prioridad)."""
+    sent = _load_country_counts().get(_country_rubro_key(pais, rubro), 0)
+    return sent / max(_country_target(pais), 1)
+
+
 # ---------------------------------------------------------------------------
 # Queue persistence
 # ---------------------------------------------------------------------------
@@ -276,25 +318,55 @@ def _norm_phone(phone: str) -> str:
     return phone
 
 
-def _get_contacted_phones() -> set[str]:
-    """Load all already-contacted phones in a single query (fast dedup)."""
+def _contacted_rows() -> list:
+    """(phone, lead dict, current_step) de todas las conversaciones en DB."""
+    rows_out = []
     for attempt in range(3):
         try:
             import sqlite3
             db_path = settings.conversations_db
             if not os.path.exists(db_path):
-                return set()
+                return rows_out
             conn = sqlite3.connect(db_path, timeout=10)
             try:
-                rows = conn.execute("SELECT phone FROM conversations").fetchall()
+                rows = conn.execute("SELECT phone, lead_json, current_step FROM conversations").fetchall()
             finally:
                 conn.close()
-            return {r[0] for r in rows}
+            for r in rows:
+                try:
+                    lead = json.loads(r[1])
+                except Exception:
+                    lead = {}
+                rows_out.append((r[0], lead, r[2] or 0))
+            return rows_out
         except Exception as e:
             if attempt == 2:
                 logger.error(f"Dedup: error leyendo contactados: {e}")
             time.sleep(0.5)
-    return set()
+    return rows_out
+
+
+def _conversation_total_steps(client_id: str) -> int:
+    """Cuántos pasos tiene la plantilla activa (para saber si una secuencia está completa)."""
+    try:
+        tset = get_template(client_id or _default_client_id(), "whatsapp")
+        if tset:
+            return len(tset.enabled_messages() or [])
+    except Exception:
+        pass
+    return 3
+
+
+def _is_conv_complete(lead: dict, step: int) -> bool:
+    """True = el lead ya recibió TODA la secuencia. False = secuencia a medias
+    (cayó tras un reinicio) → debe poder reanudarse."""
+    total = _conversation_total_steps(lead.get("client_id", ""))
+    return int(step or 0) >= total
+
+
+def _get_contacted_phones() -> set[str]:
+    """Phones cuya secuencia ya terminó (no re-marcar los completos)."""
+    return {p for p, lj, st in _contacted_rows() if _is_conv_complete(lj, st)}
 
 
 def _business_key(entry: dict) -> str:
@@ -311,28 +383,15 @@ def _business_key(entry: dict) -> str:
 
 
 def _get_contacted_business_keys() -> set[str]:
-    """Carga las claves de negocio ya contactadas (nombre limpio + país)."""
+    """Claves de negocio cuya secuencia YA terminó (evita recontactar completos,
+    permite reanudar los que quedaron a medias por un reinicio)."""
     keys: set[str] = set()
-    try:
-        import sqlite3
-        db_path = settings.conversations_db
-        if not os.path.exists(db_path):
-            return keys
-        conn = sqlite3.connect(db_path, timeout=10)
-        try:
-            rows = conn.execute("SELECT lead_json, started_at FROM conversations").fetchall()
-        finally:
-            conn.close()
-        for lead_json, _ in rows:
-            try:
-                lead = json.loads(lead_json)
-            except Exception:
-                continue
-            key = _business_key(lead)
-            if key:
-                keys.add(key)
-    except Exception as e:
-        logger.error(f"Dedup: error leyendo negocios contactados: {e}")
+    for _, lead, step in _contacted_rows():
+        if not _is_conv_complete(lead, step):
+            continue
+        key = _business_key(lead)
+        if key:
+            keys.add(key)
     return keys
 
 
@@ -434,6 +493,61 @@ def load_queue(force_reload: bool = False):
     _queue = _deduplicate_queue(_queue)
 
 
+_NO_DENTAL_TERMS = (
+    "cafeter", "cafeteria", "café", "restaurante", "comedor", "iglesia", "bautista", "escuela",
+    "colegio", "kinder", "guarderia", "jardin de", "jardín de", "farmacia", "supermercado",
+    "abarrote", "licorer", "gimnasio", "hotel", "ferreter", "tienda", "bodega", "funeraria",
+    "notaria", "fabrica", "banco", "cooperativa", "veterinaria", "mascotas", "zapater", "librer",
+    "taller", "llanta", "barber", "peluquer", "salon de", "salón de", "unisex", "discoteca",
+    "cine", "muebler", "joyer", "pasteler", "panader", "feria", "tiendita", "minus", "centro comercial",
+    "optica", "óptica", "electronica", "agencia", "fumigacion", "solar", "inmobiliaria",
+    "supermercado", "auto", "reposter", "calzado", "boutique", "florister", "asesor",
+    "abogado", "arquitect", "ingenier", "constructora", "transporte", "flete", "taxi",
+    # Sector salud NO dental (clínicas médicas, hospitales, etc.)
+    "medic", "hospital", "salud", "pediat", "ginecolog", "obstetric", "ojo", "oftalm",
+    "diabet", "ultrasonido", "cardiolog", "dermatolog", "nutric", "endocrin", "urolog",
+    "internista", "fisioterapia", "rehabilitacion", "rehabilitación", "psicolog", "policlinic",
+    "centro de salud", "centro de atencion", "posta", "torre medica", "sanatorio", "asilo",
+)
+
+# Cadenas globales de comida/gastro: NUNCA contactar aunque el rubro diga dental
+_FASTFOOD_GASTRO_TERMS = (
+    "mcdonald", "burger", "hamburg", "kfc", "pizza", "pizzeria", "domino", "domino's",
+    "wendy", "taco", "starbucks", "subway", "pollo", "campero", "church", "hardee",
+    "carl's", "popeyes", "dunkin", "denny", "ihop", "applebee", "outback", "chilli",
+    "friday", "bembos", "grill", "parrilla", "comida rapida", "comida rápida",
+    "drive thru", "drive-through", "snack", "helad", "fries", "bistro",
+)
+
+# Señal POSITIVA FUERTE: el nombre debe ser inequívocamente dental/odontológico.
+_DENTAL_POSITIVE_TERMS = (
+    "dent", "odontolog", "ortodoncia", "endodoncia", "periodoncia", "parodont",
+    "ortodon", "endodon", "periodon", "implante", "blanqueamiento", "maxil",
+    "dientes", "caries", "bucal", "muela", "sonrisa", "smile", "dental",
+)
+
+
+def es_rubro_dental_lead(nombre: str = "", rubro: str = "", keywords: str = "",
+                         requerir_nombre_dental: bool = True) -> bool:
+    """Filtro ESTRICTO: solo acepta negocios que parezcan clínicas dentales.
+
+    1. Rechaza palabras de negocios ajenos (lista negativa) en todo el texto.
+    2. Rechaza cadenas/franquicias de comida y gastro en todo el texto.
+    3. Con `requerir_nombre_dental` (por defecto True) exige además al menos
+       una señal dental POSITIVA en el NOMBRE del negocio (no en el rubro:
+       el rubro lo asigna el scraper y siempre dice 'clinicas dentales').
+    """
+    texto = f"{nombre} {rubro} {keywords}".lower().strip()
+    nombre_txt = f"{nombre}".lower().strip()
+    if any(t in texto for t in _NO_DENTAL_TERMS):
+        return False
+    if any(t in texto for t in _FASTFOOD_GASTRO_TERMS):
+        return False
+    if requerir_nombre_dental:
+        return any(t in nombre_txt for t in _DENTAL_POSITIVE_TERMS)
+    return True
+
+
 def enqueue_leads(leads: list[Lead]) -> int:
     count = 0
     contacted = _get_contacted_phones()
@@ -447,11 +561,17 @@ def enqueue_leads(leads: list[Lead]) -> int:
         if not lead.telefono and not lead.email and not is_ig:
             continue
         channel = _pick_channel(lead)
+        if channel in ("whatsapp", "instagram") and not es_rubro_dental_lead(
+            f"{lead.nombre or ''} {lead.empresa or ''}", lead.rubro or "", lead.keywords or ""
+        ):
+            _log_activity("skip", f"Omitido (rubro fuera de clínicas dentales): {lead.nombre or '?'} ({lead.pais or '?'})")
+            continue
         entry = {
             "nombre": _clean_business_name(lead.nombre),
             "empresa": _clean_business_name(lead.empresa),
             "telefono": _format_phone(lead.telefono, lead.pais),
             "email": lead.email,
+            "website": lead.website or "",
             "rubro": lead.rubro,
             "pais": lead.pais,
             "ciudad": lead.ciudad,
@@ -482,7 +602,7 @@ def enqueue_leads(leads: list[Lead]) -> int:
         count += 1
     save_queue()  # debounced: prospector bursts don't rewrite the whole file each time
     logger.info(f"Enqueued {count} leads (total queue: {len(_queue)})")
-    _log_activity("enqueue", f"{count} leads encolados (cola: {len(_queue)})")
+    _log_activity("enqueue", f"{count} leads encolados (cola: {len(_queue)})", {"count": count})
     return count
 
 
@@ -685,7 +805,13 @@ def _get_messages_for_lead(entry: dict) -> list[dict]:
     result = []
     for m in msgs:
         if isinstance(m, dict):
-            result.append(m)
+            item = dict(m)
+            # plantilla keeps media nested ({"enabled","type","url","caption"})
+            if not item.get("media_url"):
+                media = item.get("media") or {}
+                item["media_url"] = media.get("url", "")
+                item["media_type"] = media.get("type", "")
+            result.append(item)
         else:
             result.append({
                 "step": m.step,
@@ -1132,14 +1258,29 @@ async def _send_messages(lead: Lead) -> bool | None:
     # La conversación se crea AHORA (no al final de la secuencia): si el
     # prospecto responde mientras dormimos el delay entre mensajes (45-90s),
     # handle_incoming debe poder encontrarla. Guardamos tras cada envío.
+    # Si el lead ya tiene conversación incompleta (p.ej. reinicio entre MSG1 y
+    # MSG2), la REANUDAMOS desde el paso pendiente en lugar de reenviar todo.
+    start_i = 0
     conv = Conversation(
         lead=lead,
         status="active",
         current_step=0,
         started_at=datetime.now(),
     )
+    if channel == "whatsapp":
+        phone_existing = _format_phone(entry.get("telefono", ""), entry.get("pais", ""))
+        existing = get_conversation(phone_existing) if phone_existing else None
+        if existing:
+            if _is_conv_complete({"client_id": entry.get("client_id", "")}, existing.current_step or 0):
+                logger.info(f"Secuencia ya completa para {entry.get('nombre','')} ({phone_existing}), omitido")
+                return False
+            if existing.current_step and existing.status not in ("handoff", "negativo", "cerrado"):
+                start_i = min(max(existing.current_step, 0), total - 1)
+                conv = existing
+                logger.info(f"Reanudando secuencia de {entry.get('nombre','')} ({phone_existing}) desde MSG{start_i + 1}")
 
-    for i, tmpl in enumerate(msgs):
+    for i in range(start_i, total):
+        tmpl = msgs[i]
         text = _render_template(tmpl["text"] if isinstance(tmpl, dict) else tmpl.text, entry)
         media_url = tmpl.get("media_url", "") if isinstance(tmpl, dict) else getattr(tmpl, "media_url", "")
         media_type = tmpl.get("media_type", "") if isinstance(tmpl, dict) else getattr(tmpl, "media_type", "")
@@ -1431,11 +1572,13 @@ async def process_auto():
             max_per_cycle = 5
 
             try:
+                # Reparto equitativo: los países con menos envíos hoy (vs su meta) van primero
                 for group_key in available:
                     if len(sent_batch) >= max_per_cycle:
                         break
                     client_id, channel = group_key.split("|", 1)
-                    for entry in list(groups[group_key]):
+                    group_entries = sorted(list(groups[group_key]), key=lambda e: _country_fair_score(e.get("pais", ""), e.get("rubro", "")))
+                    for entry in group_entries:
                         if len(sent_batch) >= max_per_cycle:
                             break
                         if not _can_send_channel(client_id, channel):
@@ -1453,10 +1596,12 @@ async def process_auto():
                         phone_raw = entry.get("telefono", "")
                         phone_clean = _format_phone(phone_raw, entry.get("pais", "")) if phone_raw else ""
 
-                        if channel == "whatsapp" and phone_clean and get_conversation(phone_clean):
-                            skip_keys.add(phone_clean)
-                            _log_activity("skip", f"Omitido (ya contactado): {entry.get('nombre','')} ({entry.get('pais','?')})")
-                            continue
+                        if channel == "whatsapp" and phone_clean:
+                            _conv_existing = get_conversation(phone_clean)
+                            if _conv_existing and _is_conv_complete({"client_id": entry.get("client_id", "")}, _conv_existing.current_step or 0):
+                                skip_keys.add(phone_clean)
+                                _log_activity("skip", f"Omitido (secuencia ya completa): {entry.get('nombre','')} ({entry.get('pais','?')})")
+                                continue
 
                         biz_key = _business_key(entry)
                         if channel == "whatsapp" and biz_key and _business_key_contacted(biz_key):
@@ -1467,6 +1612,19 @@ async def process_auto():
                         if channel == "whatsapp" and phone_clean and is_phone_excluded(phone_clean):
                             skip_keys.add(phone_clean)
                             _log_activity("skip", f"Omitido (excluido): {entry.get('nombre','')} ({entry.get('pais','?')})")
+                            continue
+
+                        if channel == "whatsapp" and not es_rubro_dental_lead(
+                            f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
+                        ):
+                            skip_keys.add(phone_clean or entry.get("email", ""))
+                            _log_activity("skip", f"Omitido (no es clínica dental - verificación envío): {entry.get('nombre','')} ({entry.get('pais','?')})")
+                            if phone_clean and not is_phone_excluded(phone_clean):
+                                try:
+                                    from store import exclude_phone
+                                    exclude_phone(phone_clean, "Descartado en envío: no es clínica dental")
+                                except Exception:
+                                    pass
                             continue
 
                         if not phone_clean and not entry.get("email", "") and not (entry.get("instagram_username") or "").strip():
@@ -1540,7 +1698,10 @@ async def process_next_batch(count: int = 5) -> dict:
             if get_today_count() >= settings.max_daily_outbound:
                 break
 
-            found = False
+            # Escaneo: recolectar candidato(enviable) con peor ratio país (reparto equitativo)
+            best_i = None
+            best_entry = None
+            best_score = float("inf")
             scanned = 0
             for i, entry in enumerate(_queue):
                 scanned += 1
@@ -1577,6 +1738,7 @@ async def process_next_batch(count: int = 5) -> dict:
                     continue
 
                 biz_key = _business_key(entry)
+
                 if channel == "whatsapp" and biz_key and _business_key_contacted(biz_key):
                     if scanned <= 3:
                         logger.info(f"  SKIP biz_contacted: {entry.get('nombre','')} ({biz_key})")
@@ -1592,30 +1754,52 @@ async def process_next_batch(count: int = 5) -> dict:
                         logger.info(f"  SKIP no_channel: {entry.get('nombre','')}")
                     continue
 
-                _queue.pop(i)
-                found = True
+                score = _country_fair_score(pais, entry.get("rubro", ""))
+                if score < best_score:
+                    best_score = score
+                    best_i = i
+                    best_entry = entry
 
-                lead = Lead(**{k: v for k, v in entry.items() if k in Lead.model_fields})
-                try:
-                    result = await asyncio.wait_for(_send_messages(lead), timeout=600)
-                except asyncio.TimeoutError:
-                    logger.warning(f"Queue watchdog: manual send timeout for {entry.get('nombre','?')}, skipping")
-                    result = False
-                if result is True:
-                    _mark_channel_sent(client_id, channel)
-                    _mark_country_sent(pais, entry.get("rubro", ""))
-                    increment_today_count()
-                    sent_list.append(entry)
-                elif result is None:
-                    _queue = [e for e in _queue if _norm_phone(e.get("telefono", "") or e.get("email", "")) != _norm_phone(entry.get("telefono", "") or entry.get("email", ""))]
-
-                delay = random.uniform(settings.min_delay_seconds, settings.max_delay_seconds)
-                await asyncio.sleep(delay)
-                break
-
-            if not found:
+            if best_i is None:
                 logger.info(f"process_next_batch: no sendable lead found after scanning {scanned} leads")
                 break
+
+            entry = best_entry
+            _queue.pop(best_i)
+
+            client_id = entry.get("client_id", _default_client_id())
+            channel = entry.get("channel", "whatsapp")
+            pais = entry.get("pais", "")
+            phone_clean = _format_phone(entry.get("telefono", ""), pais)
+
+            if channel == "whatsapp" and not es_rubro_dental_lead(
+                f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
+            ):
+                logger.info(f"process_next_batch: DROP no_dental: {entry.get('nombre','?')} ({pais})")
+                if phone_clean and not is_phone_excluded(phone_clean):
+                    try:
+                        from store import exclude_phone
+                        exclude_phone(phone_clean, "Descartado en envío: no es clínica dental")
+                    except Exception:
+                        pass
+                continue
+
+            lead = Lead(**{k: v for k, v in entry.items() if k in Lead.model_fields})
+            try:
+                result = await asyncio.wait_for(_send_messages(lead), timeout=600)
+            except asyncio.TimeoutError:
+                logger.warning(f"Queue watchdog: manual send timeout for {entry.get('nombre','?')}, skipping")
+                result = False
+            if result is True:
+                _mark_channel_sent(client_id, channel)
+                _mark_country_sent(pais, entry.get("rubro", ""))
+                increment_today_count()
+                sent_list.append(entry)
+            elif result is None:
+                _queue = [e for e in _queue if _norm_phone(e.get("telefono", "") or e.get("email", "")) != _norm_phone(entry.get("telefono", "") or entry.get("email", ""))]
+
+            delay = random.uniform(settings.min_delay_seconds, settings.max_delay_seconds)
+            await asyncio.sleep(delay)
 
     finally:
         save_queue(force=True)
@@ -2002,3 +2186,6 @@ async def handle_incoming(phone: str, sender_name: str, message_text: str):
     save_conversation(conv)
     registrar_caso(phone, message_text, reply, classification)
     logger.info(f"Incoming from {sender_name}: classified as {classification.value}")
+
+
+_restore_queue_pause()

@@ -13,8 +13,10 @@ class Lead(BaseModel):
     pais: str = ""
     ciudad: str = ""
     email: str = ""
+    website: str = ""
     fuente: str = ""
     client_id: str = ""
+    keywords: str = ""
 
 
 class Classification(str, enum.Enum):

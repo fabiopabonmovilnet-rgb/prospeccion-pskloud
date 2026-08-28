@@ -69,6 +69,12 @@ def _db_conversations():
         con = sqlite3.connect(CONVERSACIONES_DB)
         con.row_factory = sqlite3.Row
         cur = con.cursor()
+        out_msgs = defaultdict(int)
+        try:
+            for r in cur.execute("SELECT phone, COUNT(*) AS n FROM messages WHERE direction='out' GROUP BY phone"):
+                out_msgs[r["phone"]] = r["n"]
+        except Exception:
+            pass
         rows = cur.execute(
             "SELECT phone, lead_json, status, current_step, classification, started_at, last_reply_at FROM conversations"
         ).fetchall()
@@ -88,6 +94,7 @@ def _db_conversations():
                 "clasificacion": r["classification"],
                 "started_at": r["started_at"],
                 "last_reply_at": r["last_reply_at"],
+                "out": out_msgs.get(r["phone"], 0),
             }
             out["rows"].append(row)
             out["por_status"][r["status"] or "sin_estado"] += 1
@@ -224,17 +231,13 @@ def build_analytics():
         pool_by_city[(ci, p)] += 1
     totals["pool_prospectos"] = len(pool)
 
-    # Envíos diarios por país/rubro desde resumen_diario
-    resumen = _load(RESUMEN_DIARIO, [])
+    # Envíos por país/rubro: mensajes outbound reales desde las conversaciones.
+    # (resumen_diario.json no es fiable: se crea por lote y puede no existir).
     sent_by_country = defaultdict(int)
     sent_by_rubro = defaultdict(int)
-    for entry in resumen:
-        if not isinstance(entry, dict):
-            continue
-        for k, v in (entry.get("por_pais") or {}).items():
-            sent_by_country[k] += v
-        for k, v in (entry.get("por_rubro") or {}).items():
-            sent_by_rubro[k] += v
+    for r in convs["rows"]:
+        sent_by_country[r["pais"] or "Sin país"] += r["out"]
+        sent_by_rubro[r["rubro"] or "Sin rubro"] += r["out"]
 
     # Correcciones detalladas (últimas 50)
     correcciones = []
