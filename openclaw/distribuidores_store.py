@@ -83,6 +83,80 @@ RUBROS_DISTRIBUIDORES = list(RUBROS_CONFIG.keys())
 # Tope global semanal en modo "Todos los países": reparto entre países activos
 META_TOTAL_SEMANAL = 40
 
+# Plantillas de correo por rubro (Contexto + Encaje). Variables {{nombre}}, {{empresa}}, {{pais}}.
+PLANTILLAS_DISTRIBUIDOR = {
+    "CTX_DISTRIBUIDOR_Firma_Contable": {
+        "rubro": "Firmas Contables",
+        "asunto": "Alianza PSKloud para distribuir software contable en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Vi que en {{empresa}} ofrecen servicios contables y tributarios en {{pais}}. Como parte del ecosistema PSKloud, buscamos socios comerciales que ya atiendan empresas con necesidades de software administrativo, contable y de facturación electrónica.
+
+Creemos que nuestra suite (que cumple las normativas locales y automatiza facturación, inventario y reportes financieros) encaja bien con la cartera de clientes de una firma contable como la suya. Trabajamos con modelos de co-marketing y comisiones por venta.
+
+¿Tendrías 10 minutos esta semana para una llamada corta y evaluamos el encaje?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales""",
+    },
+    "CTX_DISTRIBUIDOR_SOporte_TI": {
+        "rubro": "Soporte TI",
+        "asunto": "Alianza PSKloud para soporte TI y software administrativo en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Me puse en contacto porque en {{empresa}} prestan servicios de soporte técnico e infraestructura en {{pais}}. En PSKloud desarrollamos software administrativo, contable y de facturación electrónica que requiere implementación, migración y soporte continuo por parte de aliados técnicos.
+
+Su perfil de soporte TI encaja perfecto para sumar ingresos recurrentes: nuestros clientes necesitan exactamente el acompañamiento local que ustedes proveen, y nosotros entregamos la licencia del producto y la capacitación de base.
+
+¿Tendrías 10 minutos esta semana para que conversemos y evaluemos una alianza?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales""",
+    },
+    "CTX_DISTRIBUIDOR_POS": {
+        "rubro": "Integradores POS",
+        "asunto": "Alianza PSKloud para integradores POS en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Veo que en {{empresa}} integran sistemas de punto de venta en {{pais}}. En PSKloud tenemos una suite administrativa y de facturación electrónica que complementa el POS: control de inventario, contabilidad y facturación que cumple las normativas locales.
+
+Para un integrador como ustedes, representa una ampliación natural de su portafolio y una fuente de margen recurrente, porque nuestros clientes necesitan el mismo tipo de implantación y soporte que ustedes ya hacen.
+
+¿Tendrías 10 minutos esta semana para conversar y ver si hay fit?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales""",
+    },
+    "CTX_DISTRIBUIDOR_ERP": {
+        "rubro": "Revendedores ERP",
+        "asunto": "Alianza PSKloud para revendedor ERP en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Me contacté con ustedes porque en {{empresa}} implementan soluciones ERP y de gestión en {{pais}}. PSKloud ofrece una suite administrativa-contable con facturación electrónica nativa, pensada para las pymes de la región y con canal de revendedores.
+
+Su experiencia en implantación de ERP encaja con nuestro modelo: nosotros aportamos el producto y la habilitación técnica, y ustedes la venta, implementación y soporte local con unidades recurrentes.
+
+¿Tendrías 10 minutos esta semana para evaluar una alianza comercial?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales""",
+    },
+    "CTX_DISTRIBUIDOR_Consultor": {
+        "rubro": "Consultores Fiscales",
+        "asunto": "Alianza PSKloud con consultoría fiscal en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Vi que en {{empresa}} brindan consultoría fiscal y tributaria en {{pais}}. En PSKloud desarrollamos software administrativo y de facturación electrónica que cumple las exigencias fiscales locales, y buscamos consultores aliados que recomienden la suite a sus clientes.
+
+Para un consultor fiscal, es una herramienta que les facilita el trabajo: reportes financieros confiables, facturación a la norma y control de inventario, con un modelo de contraprestación por cada cliente referido o en co-marketing.
+
+¿Tendrías 10 minutos esta semana para conversar sobre un acuerdo?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales""",
+    },
+}
+
 PAISES_ACTIVOS_FILE = os.path.join(os.path.dirname(__file__), "data", "dist_paises_activos.json")
 
 

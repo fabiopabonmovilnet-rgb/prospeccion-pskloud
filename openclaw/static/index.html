@@ -2441,18 +2441,18 @@ async function distExecuteBulk() {
       statusEl.innerHTML = `<span style="color:var(--danger);">⛔ Bloqueado por cuota: ${blocked.join(', ')}</span>`;
       return;
     }
-    statusEl.textContent = `Encolando ${ids.length} distribuidores...`;
-    for (const id of ids) {
-      await api(`/api/dist/${id}`, 'PUT', { estado_conversion: 'CONTACTADO', canal_contacto: canal });
-      // Register activity with template
-      await api(`/api/dist/${id}/actividad`, 'POST', {
-        accion: 'ENCOLADO',
-        detalle: `Plantilla: ${plantilla}`,
-        canal: canal,
-        plantilla: plantilla,
-      });
+    statusEl.textContent = `Enviando ${ids.length} correos SMTP...`;
+    try {
+      const res = await api('/api/dist/enviar-correos', 'POST', { ids, plantilla });
+      const sinEmail = (res.sin_email || []).map(s => s.empresa).join(', ');
+      let msg = `✔ ${res.enviados} correo(s) enviados, ${res.fallidos} fallidos`;
+      if (sinEmail) msg += ` — sin email: ${sinEmail}`;
+      if (res.status === 'smtp_incompleto') msg = '⚠ ' + (res.mensaje || 'SMTP sin configurar');
+      statusEl.textContent = msg;
+      toast(msg, res.enviados > 0 ? 'success' : 'error');
+    } catch (e) {
+      toast('Error enviando correos: ' + e, 'error');
     }
-    toast(`${ids.length} distribuidores encolados con ${plantilla} (${canal})`, 'success');
     await distRefreshAll();
 
   } else if (accion === 'CAMBIAR_SEMAFORO') {

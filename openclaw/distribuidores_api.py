@@ -57,6 +57,11 @@ class BulkImport(BaseModel):
     leads: list
 
 
+class EnviarCorreosBody(BaseModel):
+    ids: list
+    plantilla: Optional[str] = ""
+
+
 # ─── Endpoints ───
 
 @router.get("/stats")
@@ -157,6 +162,13 @@ class EngineStart(BaseModel):
     pais: str = ""  # "" = TODOS los países activos (reparto de META_TOTAL_SEMANAL)
     rubros: Optional[list] = None
     ciudades: Optional[list] = None
+
+
+@router.post("/enviar-correos")
+def api_dist_enviar_correos(body: EnviarCorreosBody):
+    """Envía correos SMTP reales a los distribuidores seleccionados (plantilla por rubro)."""
+    from distribuidores_engine import enviar_correos_distribuidores
+    return enviar_correos_distribuidores(body.ids, body.plantilla)
 
 
 @router.post("/engine/start")

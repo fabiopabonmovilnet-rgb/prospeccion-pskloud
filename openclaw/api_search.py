@@ -153,58 +153,83 @@ def buscar_contactos_cufinder(api_key: str, empresa: str, pais: str = "", cargo:
 
 
 def buscar_organizaciones_apollo(api_key: str, rubro: str = "", pais: str = "", ciudad: str = "", limite: int = 10) -> tuple[list, dict]:
-    """Apollo.io Organizations Search. Funciona en plan Free (a diferencia de people search)."""
+    """Apollo.io Organizations Search (plan Free, no consume créditos de people-export).
+    Pagina (máx 3 páginas / hasta 25 por página) para alcanzar el límite pedido."""
     url = "https://api.apollo.io/v1/organizations/search"
     headers = {"X-Api-Key": api_key, "Api-Key": api_key, "Content-Type": "application/json", "Cache-Control": "no-cache"}
-    payload: dict = {"page": 1, "per_page": max(1, min(int(limite), 25)), "q_keywords": rubro or "software"}
-    if pais:
-        payload["country"] = pais
-    if ciudad:
-        payload["city"] = ciudad
-    try:
-        resp = httpx.post(url, headers=headers, json=payload, timeout=25)
-        if resp.status_code == 401:
-            return [], {"error": "API key Apollo inválida (401)", "status": 401}
-        if resp.status_code == 429:
-            return [], {"error": "Cuota Apollo agotada (429)", "status": 429}
-        resp.raise_for_status()
-        data = resp.json()
-        orgs = data.get("organizations", []) or []
-        resultados = []
-        for o in orgs[:limite]:
-            tel = o.get("phone_numbers")
-            if isinstance(tel, list) and tel:
-                prim = tel[0]
-                tel = prim.get("phone", "") if isinstance(prim, dict) else str(prim)
-            elif isinstance(tel, dict):
-                tel = tel.get("phone", "")
-            else:
-                tel = o.get("phone", "") or ""
-            resultados.append({
-                "Contacto Clabe": "",
-                "Cargo": "",
-                "Empresa": o.get("name", ""),
-                "País": o.get("country", "") or pais,
-                "Ciudad": o.get("city", "") or ciudad,
-                "Correo": o.get("email", "") or "",
-                "Telefono": tel,
-                "Fuente": "Apollo (empresas)",
-                "industria": o.get("industry", "") or "",
-                "website": o.get("website_url", "") or o.get("primary_domain", "") or "",
-                "empleados": o.get("employees", "") or "",
-                "fundada": o.get("founded_year", "") or "",
-            })
-        return resultados, {"total": len(orgs), "solo_orgs": True,
-                            "nota": "Plan Free: solo búsqueda de empresas (organizations/search)"}
-    except httpx.HTTPStatusError as e:
-        return [], {"error": f"Error Apollo: {e.response.status_code} - {e.response.text[:200]}", "status": e.response.status_code}
-    except Exception as e:
-        return [], {"error": f"Error Apollo: {str(e)}"}
+    espacios = max(1, min(int(limite or 10), 75))
+    per_page = min(25, max(1, espacios))
+    resultados = []
+    vistos = set()
+    page = 1
+    ultimo_error = ""
+    while len(resultados) < espacios and page <= 3:
+        payload: dict = {"page": page, "per_page": per_page, "q_keywords": rubro or "software"}
+        if pais:
+            payload["country"] = pais
+        if ciudad:
+            payload["city"] = ciudad
+        try:
+            resp = httpx.post(url, headers=headers, json=payload, timeout=25)
+            if resp.status_code == 401:
+                return [], {"error": "API key Apollo inválida (401)", "status": 401}
+            if resp.status_code == 429:
+                return [], {"error": "Cuota Apollo agotada (429)", "status": 429}
+            resp.raise_for_status()
+            data = resp.json()
+            orgs = data.get("organizations", []) or []
+            if not orgs:
+                break
+            for o in orgs:
+                nombre = o.get("name", "")
+                clave = f"{nombre}|{o.get('website_url', '')}".lower()
+                if clave in vistos:
+                    continue
+                vistos.add(clave)
+                tel = o.get("phone_numbers")
+                if isinstance(tel, list) and tel:
+                    prim = tel[0]
+                    tel = prim.get("phone", "") if isinstance(prim, dict) else str(prim)
+                elif isinstance(tel, dict):
+                    tel = tel.get("phone", "")
+                else:
+                    tel = o.get("phone", "") or ""
+                resultados.append({
+                    "Contacto Clabe": "",
+                    "Cargo": "",
+                    "Empresa": nombre,
+                    "País": o.get("country", "") or pais,
+                    "Ciudad": o.get("city", "") or ciudad,
+                    "Correo": o.get("email", "") or "",
+                    "Telefono": tel,
+                    "Fuente": "Apollo (empresas)",
+                    "industria": o.get("industry", "") or "",
+                    "website": o.get("website_url", "") or o.get("primary_domain", "") or "",
+                    "empleados": o.get("employees", "") or "",
+                    "fundada": o.get("founded_year", "") or "",
+                })
+        except httpx.HTTPStatusError as e:
+            ultimo_error = f"Error Apollo: {e.response.status_code} - {e.response.text[:200]}"
+            break
+        except Exception as e:
+            ultimo_error = f"Error Apollo: {str(e)}"
+            break
+        page += 1
+    if not resultados and ultimo_error:
+        return [], {"error": ultimo_error, "status": "error"}
+    return resultados[:espacios], {"total": len(resultados), "solo_orgs": True,
+                                    "nota": "Plan Free: solo búsqueda de empresas (organizations/search)"}
 
 
-def buscar_contactos_apollo(api_key: str, empresa: str = "", pais: str = "", cargo: str = "", limite: int = 10) -> tuple[list, dict]:
+def buscar_contactos_apollo(api_key: str, empresa: str = "", pais: str = "", cargo: str = "", limite: int = 10, solo_orgs: bool = False) -> tuple[list, dict]:
     """Apollo.io People Search (mixed_people/search). Header X-Api-Key.
-    En planes Free devuelve 403 → fallback automático a búsqueda de empresas (organizations/search)."""
+    En planes Free devuelve 403 → fallback automático a búsqueda de empresas (organizations/search).
+    Con solo_orgs=True salta el people-search (no consume créditos en ningún plan)."""
+    if solo_orgs:
+        res, info = buscar_organizaciones_apollo(api_key, empresa or cargo, pais, "", limite)
+        info["solo_orgs"] = True
+        info["credits"] = 0
+        return res, info
     url = "https://api.apollo.io/v1/mixed_people/search"
     headers = {"X-Api-Key": api_key, "Api-Key": api_key, "Content-Type": "application/json", "Cache-Control": "no-cache"}
     payload: dict = {"page": 1, "per_page": max(1, min(int(limite), 25))}
@@ -329,7 +354,7 @@ def buscar_por_empresa(empresa: str, pais: str = "", cargo: str = "", limite: in
     if "Apollo" in fuentes:
         a_key = keys.get("apollo") or keys.get("APOLLO_API_KEY")
         if a_key:
-            res, info = buscar_contactos_apollo(a_key, empresa, pais, cargo, limite)
+            res, info = buscar_contactos_apollo(a_key, empresa, pais, cargo, limite, solo_orgs=True)
             info_por_fuente["Apollo"] = info
             if info.get("error"):
                 errores.append(f"Apollo: {info['error']}")

@@ -116,7 +116,7 @@ services:
       PROSPECT_ACTIVE_HOURS: ${PROSPECT_ACTIVE_HOURS:-24}
       APOLLO_API_KEY: ${APOLLO_API_KEY}
     volumes:
-      - openclaw_data:/app/data
+      - C:/Users/psklo/OneDrive/prospeccion_data:/app/data
     depends_on:
       - evolution-api
     networks:
@@ -130,4 +130,3 @@ volumes:
   evolution_pgdata:
   evolution_redisdata:
   evolution_instances:
-  openclaw_data:

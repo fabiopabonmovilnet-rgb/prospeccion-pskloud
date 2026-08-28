@@ -15,6 +15,7 @@ from typing import Optional
 
 import distribuidores_store as store
 import api_search
+import email_campaign
 
 logger = logging.getLogger("distribuidores.engine")
 
@@ -189,6 +190,85 @@ def classify_semaphore(lead: dict) -> str:
         return "ROJO"
 
 
+# ─── Envío real de correos a distribuidores ───
+
+def enviar_correos_distribuidores(ids: list, plantilla_key: str = "") -> dict:
+    """Envía correos SMTP a los distribuidores seleccionados usando su plantilla por rubro.
+    Marca CONTACTADO + canal EMAIL_SMTP solo si el envío fue exitoso."""
+    cfg = email_campaign.get_config()
+    if not (cfg.get("host") and (cfg.get("user") or cfg.get("smtp_email")) and cfg.get("password")):
+        return {"status": "smtp_incompleto",
+                "mensaje": "Configura primero el correo SMTP en la pestaña Correo (campaign).",
+                "enviados": 0, "fallidos": 0, "sin_email": [], "resultados": []}
+
+    plantillas_por_rubro = {}
+    for key, tpl in store.PLANTILLAS_DISTRIBUIDOR.items():
+        plantillas_por_rubro[tpl["rubro"]] = (key, tpl)
+    plantilla_def = store.PLANTILLAS_DISTRIBUIDOR.get(plantilla_key)
+
+    enviados = 0
+    fallidos = 0
+    sin_email = []
+    resultados = []
+    errores = []
+
+    with store._get_conn() as conn:
+        for dist_id in ids:
+            row = conn.execute(
+                "SELECT * FROM distribuidores WHERE id = ?", (dist_id,)
+            ).fetchone()
+            if not row:
+                errores.append(f"id {dist_id} no existe")
+                continue
+
+            email = (row["contacto_email"] or "").strip()
+            if not email:
+                sin_email.append({"id": dist_id, "empresa": row["empresa"]})
+                resultados.append({"id": dist_id, "empresa": row["empresa"] if row["empresa"] else None,
+                                   "ok": False, "mensaje": "Sin dirección de correo"})
+                continue
+
+            nombre = (row["contacto_nombre"] or row["empresa"] or "").strip()
+            empresa = (row["empresa"] or "").strip()
+            pais = (row["pais_target"] or "").replace("_", " ")
+            rubro = (row["rubro"] or "").strip()
+
+            key_plant, tpl = plantillas_por_rubro.get(rubro, (plantilla_key, plantilla_def))
+            if not tpl:
+                tpl = email_campaign.DEFAULT_PLANTILLA
+            asunto = email_campaign.renderizar_plantilla(tpl["asunto"], nombre, empresa, pais, "", email)
+            cuerpo = email_campaign.renderizar_plantilla(tpl["cuerpo"], nombre, empresa, pais, "", email)
+
+            exito, msg = email_campaign.enviar_correo_real(cfg, email, asunto, cuerpo)
+            email_campaign.registrar_envio(email, nombre, empresa, asunto, "ok" if exito else "error", msg)
+
+            if exito:
+                enviados += 1
+                conn.execute("""
+                    UPDATE distribuidores SET estado_conversion = 'CONTACTADO',
+                        canal_contacto = 'EMAIL_SMTP', updated_at = ? WHERE id = ?
+                """, (datetime.now().isoformat(), dist_id))
+                store._registrar_actividad(conn, dist_id, "EMAIL_ENVIADO", "Correo enviado OK",
+                                           "EMAIL_SMTP", key_plant)
+            else:
+                fallidos += 1
+                _engine.add_log(f"[MAIL] {empresa}: {msg}", "error")
+                store._registrar_actividad(conn, dist_id, "EMAIL_FALLIDO", f"Error: {msg}",
+                                           "EMAIL_SMTP", key_plant)
+
+            resultados.append({"id": dist_id, "empresa": empresa, "ok": exito, "mensaje": msg})
+            time.sleep(email_campaign.DELAY_BETWEEN)
+
+    return {
+        "status": "ok",
+        "enviados": enviados,
+        "fallidos": fallidos,
+        "sin_email": sin_email,
+        "resultados": resultados,
+        "errores": errores[:10],
+    }
+
+
 # ─── Dedup check ───
 
 def _is_duplicate(conn, empresa: str, pais: str) -> bool:
@@ -305,71 +385,77 @@ def _search_apis(pais: str, rubros: list[str], ciudades: list[str], max_leads: i
     errors = []
 
     for rubro in rubros:
+        config = store.RUBROS_CONFIG.get(rubro, {})
+        cargo = config.get("cargo", rubro)
+        queries = config.get("queries") or [rubro.lower()]
+
         for ciudad in ciudades[:2]:
             if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
                 break
 
-            config = store.RUBROS_CONFIG.get(rubro, {})
-            cargo = config.get("cargo", rubro)
-            query = f"{rubro} {ciudad}"
-            _engine.status_text = f"APIs: {query}"
+            # Usa los términos de nicho estructurados (RUBROS_CONFIG) para extraer más leads
+            for query in queries[:2]:
+                if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
+                    break
 
-            try:
-                result = api_search.buscar_por_empresa(
-                    empresa=query,
-                    pais=pais.replace("_", " "),
-                    cargo=cargo,
-                    limite=5,
-                )
-                leads = result.get("leads", [])
-                errs = result.get("errores", [])
-                if errs:
-                    errors.extend(errs)
+                _engine.status_text = f"APIs: {query} en {ciudad}"
 
-                found += len(leads)
-                _engine.add_log(f"[API] {ciudad}/{rubro}: {len(leads)} contactos")
+                try:
+                    result = api_search.buscar_por_empresa(
+                        empresa=query,
+                        pais=pais.replace("_", " "),
+                        cargo=cargo,
+                        limite=25,
+                    )
+                    leads = result.get("leads", [])
+                    errs = result.get("errores", [])
+                    if errs:
+                        errors.extend(errs)
 
-                for lead in leads:
-                    if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
-                        break
+                    found += len(leads)
+                    _engine.add_log(f"[API] {ciudad}/{rubro}: {len(leads)} contactos")
 
-                    empresa_name = lead.get("Empresa") or lead.get("empresa") or ""
-                    if not empresa_name or len(empresa_name) < 3:
-                        discarded += 1
-                        continue
+                    for lead in leads:
+                        if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
+                            break
 
-                    semaforo = classify_semaphore(lead)
-
-                    dist_data = {
-                        "empresa": empresa_name.strip(),
-                        "contacto_nombre": (lead.get("Contacto Clabe") or "").strip(),
-                        "contacto_email": (lead.get("Correo") or "").strip(),
-                        "contacto_telefono": (lead.get("Telefono") or lead.get("Teléfono") or "").strip(),
-                        "pais_target": pais,
-                        "ciudad": ciudad,
-                        "rubro": rubro,
-                        "clasificacion_semaforo": semaforo,
-                        "canal_contacto": "EMAIL_SMTP" if lead.get("Correo") else "",
-                        "website": (lead.get("dominio") or "").strip(),
-                        "fuente": lead.get("Fuente", "API"),
-                        "notas": f"Auto-prospeccion API ciclo {_engine.ciclos_completados + 1}",
-                    }
-
-                    with store._get_conn() as conn:
-                        if _is_duplicate(conn, empresa_name, pais):
+                        empresa_name = lead.get("Empresa") or lead.get("empresa") or ""
+                        if not empresa_name or len(empresa_name) < 3:
                             discarded += 1
                             continue
 
-                    result_ins = store.crear_distribuidor(dist_data)
-                    if result_ins.get("status") == "created":
-                        ingested += 1
-                    else:
-                        discarded += 1
+                        semaforo = classify_semaphore(lead)
 
-            except Exception as e:
-                errors.append(f"[API] {ciudad}/{rubro}: {str(e)}")
+                        dist_data = {
+                            "empresa": empresa_name.strip(),
+                            "contacto_nombre": (lead.get("Contacto Clabe") or "").strip(),
+                            "contacto_email": (lead.get("Correo") or "").strip(),
+                            "contacto_telefono": (lead.get("Telefono") or lead.get("Teléfono") or "").strip(),
+                            "pais_target": pais,
+                            "ciudad": ciudad,
+                            "rubro": rubro,
+                            "clasificacion_semaforo": semaforo,
+                            "canal_contacto": "EMAIL_SMTP" if lead.get("Correo") else "",
+                            "website": (lead.get("dominio") or "").strip(),
+                            "fuente": lead.get("Fuente", "API"),
+                            "notas": f"Auto-prospeccion API ciclo {_engine.ciclos_completados + 1}",
+                        }
 
-            time.sleep(2)
+                        with store._get_conn() as conn:
+                            if _is_duplicate(conn, empresa_name, pais):
+                                discarded += 1
+                                continue
+
+                        result_ins = store.crear_distribuidor(dist_data)
+                        if result_ins.get("status") == "created":
+                            ingested += 1
+                        else:
+                            discarded += 1
+
+                except Exception as e:
+                    errors.append(f"[API] {ciudad}/{rubro}: {str(e)}")
+
+                time.sleep(2)
 
     return {"found": found, "ingested": ingested, "discarded": discarded, "errors": errors}
 
@@ -391,14 +477,15 @@ def _run_search_cycle(pais: str, rubros: list[str], ciudades: list[str], max_lea
     total_discarded += scrape["discarded"]
     total_errors.extend(scrape["errors"])
 
-    # PHASE 2: APIs (if keys available) — supplements with ~30-50%
+    # PHASE 2: APIs (if keys available) — llenan lo que falte hasta la meta
+    restante = (max_leads - scrape["ingested"]) if max_leads else None
     keys = api_search.get_keys()
     has_keys = any(v for v in keys.values() if v)
-    if has_keys and max_leads and total_ingested >= max_leads:
+    if has_keys and restante is not None and restante <= 0:
         has_keys = False
     if has_keys:
-        _engine.add_log("=== FASE 2: APIs (Hunter/Lusha/RocketReach) ===")
-        api_res = _search_apis(pais, rubros, ciudades, max_leads)
+        _engine.add_log("=== FASE 2: APIs (Hunter/Lusha/RocketReach/Apollo) ===")
+        api_res = _search_apis(pais, rubros, ciudades, restante)
         total_found += api_res["found"]
         total_ingested += api_res["ingested"]
         total_discarded += api_res["discarded"]
@@ -441,7 +528,7 @@ def _engine_loop(paises: list[str], rubros: list[str], ciudades_global: list[str
     _engine.save_state()
 
     idx = 0
-    share = _share_por_pais(paises) if len(paises) > 1 else None
+    share = _share_por_pais(paises) if len(paises) > 1 else store.META_TOTAL_SEMANAL
 
     while not _engine.stop_event.is_set():
         pais = paises[idx % len(paises)]
