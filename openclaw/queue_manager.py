@@ -1336,10 +1336,7 @@ async def _send_messages(lead: Lead) -> bool | None:
             logger.info(f"MSG{i+1}/{total} ({channel}) sent to {entry.get('nombre','')}")
 
         if i < total - 1:
-            await asyncio.sleep(random.uniform(
-                ch_cfg.min_delay_seconds,
-                ch_cfg.max_delay_seconds,
-            ))
+            await asyncio.sleep(settings.intrasequence_delay_seconds)
 
     if sent_any:
         _log_activity("sent_complete", f"{total} MSG ({channel}) → {entry.get('nombre','')} ({entry.get('pais','')})")
@@ -1667,10 +1664,13 @@ async def process_auto():
                             sent_batch.append(entry)
                         if result is None:
                             skip_keys.add(phone_clean or entry.get("email", ""))
+                        if result is False:
+                            # TOPE-DURO / ya-gestionado / fallo permanente: quitarlo de la cola
+                            # para no re-intentarlo cada ciclo y no bloquear el avance.
+                            skip_keys.add(phone_clean or entry.get("email", ""))
 
-                        delay = random.uniform(5, 10) if result is None else random.uniform(
-                            settings.min_delay_seconds, settings.max_delay_seconds
-                        )
+                        delay = random.uniform(5, 10) if result is None else \
+                            settings.outbound_lead_delay_seconds if result is True else 5
                         await asyncio.sleep(delay)
 
             finally:
@@ -1819,7 +1819,8 @@ async def process_next_batch(count: int = 5) -> dict:
             elif result is None:
                 _queue = [e for e in _queue if _norm_phone(e.get("telefono", "") or e.get("email", "")) != _norm_phone(entry.get("telefono", "") or entry.get("email", ""))]
 
-            delay = random.uniform(settings.min_delay_seconds, settings.max_delay_seconds)
+            delay = random.uniform(settings.min_delay_seconds, settings.max_delay_seconds) if result is False else \
+                settings.outbound_lead_delay_seconds
             await asyncio.sleep(delay)
 
     finally:

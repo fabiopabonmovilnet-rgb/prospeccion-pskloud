@@ -13,6 +13,8 @@ class Settings:
     max_daily_outbound: int = int(os.getenv("MAX_DAILY_OUTBOUND", "50"))
     min_delay_seconds: int = int(os.getenv("MIN_DELAY_SECONDS", "60"))
     max_delay_seconds: int = int(os.getenv("MAX_DELAY_SECONDS", "120"))
+    outbound_lead_delay_seconds: int = int(os.getenv("OUTBOUND_LEAD_DELAY_SECONDS", "180"))
+    intrasequence_delay_seconds: int = int(os.getenv("INTRASEQUENCE_DELAY_SECONDS", "10"))
     typing_delay_min_ms: int = int(os.getenv("TYPING_DELAY_MIN_MS", "3000"))
     typing_delay_max_ms: int = int(os.getenv("TYPING_DELAY_MAX_MS", "5000"))
 
