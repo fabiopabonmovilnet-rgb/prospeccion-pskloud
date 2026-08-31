@@ -195,6 +195,107 @@ def save_messages(key: str, messages: list) -> dict:
     return get_campaign(key)
 
 
+def _existing_keys(plantillas: list = None) -> set:
+    plantillas = plantillas if plantillas is not None else _read_json(PLANTILLAS_FILE, [])
+    return {e.get("campaign") for e in _campaign_entries(plantillas)}
+
+
+def _unique_key(rubro: str, plantillas: list = None) -> str:
+    base = _slugify(rubro)
+    keys = _existing_keys(plantillas)
+    if base not in keys:
+        return base
+    n = 2
+    while f"{base}_{n}" in keys:
+        n += 1
+    return f"{base}_{n}"
+
+
+def create_campaign(client_id: str, rubro: str, paises_objetivo: list,
+                    mensajes: list, meta_diaria_total: int = 25,
+                    image_media: dict = None) -> dict:
+    """Crea una campaña WhatsApp nueva en plantillas.json y la activa."""
+    plantillas = _read_json(PLANTILLAS_FILE, [])
+    key = _unique_key(rubro, plantillas)
+    image_media = image_media or {}
+
+    steps = sorted([(int(m.get("step", 0)), str(m.get("text", ""))) for m in (mensajes or []) if m.get("text")])
+    steps = steps[:3]
+    messages = []
+    for i, (step, text) in enumerate(steps, start=1):
+        msg = {"step": i, "text": text, "enabled": True}
+        if i == 3 and image_media.get("url"):
+            msg["media"] = {
+                "enabled": bool(image_media.get("enabled", True)),
+                "type": image_media.get("type", "image"),
+                "url": image_media.get("url"),
+                "caption": image_media.get("caption", ""),
+            }
+        messages.append(msg)
+
+    paises = [str(p).strip() for p in paises_objetivo if str(p).strip()]
+    per = max(1, int(meta_diaria_total) // max(len(paises), 1)) if paises else int(meta_diaria_total)
+
+    entry = {
+        "client_id": client_id,
+        "campaign": key,
+        "paises_objetivo": paises,
+        "meta_diaria_total": int(meta_diaria_total),
+        "meta_diaria_por_pais": {p: per for p in paises},
+        "rubro": str(rubro).strip(),
+        "channel": "whatsapp",
+        "messages": messages,
+    }
+    plantillas.append(entry)
+    _write_json(PLANTILLAS_FILE, plantillas)
+
+    save_state(key, {"active": True, "cities_per_country": 5, "paises_objetivo": paises,
+                     "meta_diaria_por_pais": {p: per for p in paises}})
+    return get_campaign(key)
+
+
+def reset_campaign(key: str) -> dict:
+    """Reinicia una campaña: limpia su cola, pone a 0 los envíos de hoy y
+    borra los filtros anti-duplicado vinculados a esa campaña."""
+    key = str(key)
+    from queue_manager import _load_country_counts, _save_country_counts
+
+    # 1) Cleans leads de la campaña de la cola
+    try:
+        from queue_manager import _queue, save_queue
+        kept = []
+        removed = 0
+        for e in _queue if isinstance(_queue, list) else []:
+            if e.get("campaign_key") == key:
+                removed += 1
+                continue
+            if not e.get("campaign_key"):
+                active = [c for c in list_campaigns() if c.get("active", True)]
+                if len(active) == 1 and active[0]["key"] == key:
+                    removed += 1
+                    continue
+            kept.append(e)
+        if removed:
+            _queue[:] = kept
+            save_queue(force=True)
+    except Exception:
+        removed = 0
+
+    # 2) Pone a 0 los envíos de hoy de la campaña
+    counts = _load_country_counts()
+    rubro = ""
+    c = get_campaign(key)
+    if c:
+        rubro = c.get("rubro", "")
+    for k in list(counts.keys()):
+        pais, _, r = k.partition("|")
+        if c and (pais in (c.get("paises_objetivo") or [])) and (r == rubro):
+            counts[k] = 0
+    _save_country_counts(counts)
+
+    return {"ok": True, "campaign": key, "queue_removed": removed}
+
+
 def _current_media_filename(key: str) -> Optional[str]:
     c = get_campaign(key)
     if c and c.get("media", {}).get("url", "").startswith("/media/"):
@@ -327,7 +428,7 @@ def apply_campaign_targets(clients: list) -> list:
 
 
 def queue_by_country(key: str) -> dict:
-    from queue_manager import get_queue_status
+    from queue_manager import get_queue_status, _queue
     qs = get_queue_status()
     campaign = get_campaign(key)
     pending = qs.get("pending_por_pais", {})
@@ -344,12 +445,25 @@ def queue_by_country(key: str) -> dict:
             "enviados_hoy": int(sent.get(pais, {}).get("today", 0)) if isinstance(sent.get(pais), dict) else int(sent.get(pais, 0)),
             "meta": int(metas.get(pais, 0)),
         })
+    queue_this = 0
+    queue_unassigned = 0
+    try:
+        for e in _queue if isinstance(_queue, list) else []:
+            ck = e.get("campaign_key", "")
+            if ck == key:
+                queue_this += 1
+            elif not ck:
+                queue_unassigned += 1
+    except Exception:
+        pass
     return {
         "campaign": key,
         "active": (campaign or {}).get("active", True),
         "total_pendiente": sum(r["pendiente"] for r in rows),
         "rows": rows,
         "queue_total": int(qs.get("pending", 0)),
+        "queue_de_esta_campana": queue_this,
+        "queue_sin_campana": queue_unassigned,
         "running": bool(qs.get("running", False)),
         "queue_paused": bool(qs.get("queue_paused", False)),
         "last_cycle": _last_cycle_ts(),

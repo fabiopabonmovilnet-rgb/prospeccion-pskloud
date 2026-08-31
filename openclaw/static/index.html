@@ -660,6 +660,20 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
       <div class="card">
         <div class="card-header">
           <div>
+            <div class="card-title">Mensaje del DM e Imagen</div>
+            <div class="card-subtitle">Texto y presentación adjunta que recibe cada prospecto (clínicas dentales)</div>
+          </div>
+        </div>
+        <div class="input-group" style="flex-direction:column; align-items:stretch; gap:10px;">
+          <textarea class="input" id="ig-dm-mensaje" rows="6" placeholder="Escribe el mensaje que irá en el DM..."></textarea>
+          <input class="input" id="ig-dm-imagen" placeholder="Ruta de la imagen en el contenedor, ej: /app/data/media/Campana_Odontologia_PSK.jpg">
+          <button class="btn btn-primary" onclick="saveIgDmConfig()">💾 Guardar Mensaje e Imagen</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
             <div class="card-title">Actividad Reciente</div>
           </div>
           <button class="btn btn-outline btn-sm" onclick="loadActivity('ig')">↻</button>
@@ -1520,6 +1534,36 @@ async function setIgHashtags() {
     await api(`/api/clients/${client.id}/ig-hashtags`, 'PUT', { hashtags });
   }
   toast(`Hashtags actualizados: ${hashtags.join(', ')}`, 'success');
+}
+
+async function saveIgDmConfig() {
+  const mensaje = $('ig-dm-mensaje').value.trim();
+  const imagen = $('ig-dm-imagen').value.trim();
+  if (!mensaje && !imagen) return toast('Ingresa el mensaje o la imagen', 'error');
+  const clients = await api('/api/clients', 'GET');
+  if (!clients || clients.length === 0) return toast('No hay cliente configurado', 'error');
+  const client = clients[0];
+  const r = await api(`/api/clients/${client.id}/ig-dm-config`, 'PUT', { mensaje, imagen });
+  if (r) toast('Mensaje e imagen del DM guardados', 'success');
+}
+
+async function loadIgDmConfig() {
+  const clients = await api('/api/clients', 'GET');
+  if (!clients || clients.length === 0) return;
+  const client = clients[0];
+  const ig = client.instagram || {};
+  if (ig.ig_imagen) $('ig-dm-imagen').value = ig.ig_imagen;
+  // Load current IG template (first enabled message)
+  if (client.id) {
+    const tpls = await api(`/api/clients/${client.id}/templates`, 'GET');
+    if (tpls) {
+      const igTpl = (Array.isArray(tpls) ? tpls : []).find(t => t.channel === 'instagram');
+      if (igTpl && igTpl.messages && igTpl.messages.length) {
+        const first = [...igTpl.messages].sort((a, b) => (a.step || 1) - (b.step || 1))[0];
+        if (first && first.text) $('ig-dm-mensaje').value = first.text;
+      }
+    }
+  }
 }
 
 // ─── REPLAY ───

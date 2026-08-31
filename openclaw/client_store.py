@@ -82,6 +82,7 @@ def _migrate_client_data(data: dict) -> dict:
             "ig_proxy": data.get("ig_proxy", ""),
             "ig_hashtags": data.get("ig_hashtags", ["boutique", "moda", "shopping", "accesorios"]),
             "ig_wa_phone": data.get("ig_wa_phone", ""),
+            "ig_imagen": data.get("ig_imagen", ""),
         },
         "created_at": data.get("created_at", datetime.now().isoformat()),
     }
@@ -194,8 +195,7 @@ def get_default_templates(client_id: str) -> dict:
             client_id=client_id,
             channel="instagram",
             messages=[
-                TemplateMessage(step=1, text="¡Hola {nombre_empresa}! Soy Fabio Pabón, consultor de ventas internacional de PSKloud (Premium-Soft). Somos creadores del software administrativo, contable y de inventario/POS líder en Latinoamérica, adaptado a las normativas de ley de cada país. ¿Les interesaría conocer cómo podemos ayudarles a optimizar su gestión?"),
-                TemplateMessage(step=2, text="Contamos con planes flexibles y una demostración en vivo sin compromiso. ¿Les parece si agendamos una breve llamada esta semana para mostrarles la plataforma?"),
+                TemplateMessage(step=1, text="Soy Fabio Pabón, formo parte de Premium Soft / PSKloud Internacional. Les traemos una solución que acaba de salir al mercado: software administrativo, contable y de inventario/POS para clínicas dentales, que irá creciendo y evolucionando junto con su consultorio. Les comparto nuestra presentación. Si prefiere coordinar directamente por mensaje, puede escribirme o solicitar su agenda vía WhatsApp al +507 6426-7262."),
             ],
         ),
     }

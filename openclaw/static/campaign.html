@@ -68,6 +68,31 @@
   </div>
 
   <section id="tab-campaigns">
+    <div class="row" style="margin-bottom:12px">
+      <button id="btnNewCampaign">＋ Nueva Campaña</button>
+      <span id="newCampaignMsg" class="muted small" style="align-self:center"></span>
+    </div>
+    <div class="card hidden" id="newCampaignForm">
+      <h2>Crear campaña nueva</h2>
+      <div class="grid2">
+        <div>
+          <label>Cliente <select id="nc_client"></select></label>
+          <label>Rubro <input type="text" id="nc_rubro" placeholder="ej: contadores colombia"></label>
+          <label>Países objetivo (separados por coma) <input type="text" id="nc_paises" placeholder="ej: Colombia, Panamá"></label>
+          <label>Meta diaria total <input type="number" id="nc_meta" value="25" min="1"></label>
+        </div>
+        <div>
+          <h3>Mensajes (pasos 1 / 2 / 3)</h3>
+          <textarea id="nc_msg1" placeholder="Paso 1 — saludo / presentación"></textarea>
+          <textarea id="nc_msg2" placeholder="Paso 2 — pregunta de calificación"></textarea>
+          <textarea id="nc_msg3" placeholder="Paso 3 — presentación + llamada a la acción"></textarea>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button id="btnCreateCampaign">Crear campaña</button>
+        <button id="btnCancelCampaign" class="ghost">Cancelar</button>
+      </div>
+    </div>
     <div class="card">
       <h2>Mensajes que se están enviando <span class="muted small">(últimos WhatsApp enviados, se actualiza solo cada 30 s)</span></h2>
       <div id="liveMsgs" class="chips muted small">…</div>
@@ -172,6 +197,55 @@ async function loadCampaigns() {
   for (const c of CAMPS) document.getElementById("campaignList").appendChild(campaignCard(c));
 }
 
+// ─── Nueva campaña ───
+async function loadNewCampaignForm() {
+  try {
+    const clients = await api("/api/clients");
+    const sel = document.getElementById("nc_client");
+    sel.innerHTML = "";
+    for (const cl of clients) {
+      const opt = document.createElement("option");
+      opt.value = cl.id; opt.textContent = (cl.name || cl.id) + " (" + cl.id + ")";
+      sel.appendChild(opt);
+    }
+    if (clients.length) sel.value = clients[0].id;
+  } catch (e) {}
+}
+document.getElementById("btnNewCampaign").onclick = () => {
+  document.getElementById("newCampaignForm").classList.toggle("hidden");
+};
+document.getElementById("btnCancelCampaign").onclick = () => {
+  document.getElementById("newCampaignForm").classList.add("hidden");
+};
+document.getElementById("btnCreateCampaign").onclick = async () => {
+  const rubro = document.getElementById("nc_rubro").value.trim();
+  const paises = document.getElementById("nc_paises").value.split(",").map(s => s.trim()).filter(Boolean);
+  const meta = parseInt(document.getElementById("nc_meta").value) || 25;
+  const msg = document.getElementById("newCampaignMsg");
+  if (!rubro) { alert("Indica el rubro de la campaña"); return; }
+  if (!paises.length) { alert("Indica al menos un país objetivo"); return; }
+  const mensajes = [
+    { step: 1, text: document.getElementById("nc_msg1").value },
+    { step: 2, text: document.getElementById("nc_msg2").value },
+    { step: 3, text: document.getElementById("nc_msg3").value },
+  ];
+  msg.textContent = "Creando campaña…"; msg.className = "muted small";
+  try {
+    const r = await api("/api/campaigns", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({
+      client_id: document.getElementById("nc_client").value,
+      rubro, paises_objetivo: paises, mensajes, meta_diaria_total: meta,
+    }) });
+    msg.textContent = "Campaña «" + r.campaign.key + "» creada."; msg.className = "ok small";
+    document.getElementById("newCampaignForm").classList.add("hidden");
+    document.getElementById("nc_rubro").value = "";
+    document.getElementById("nc_paises").value = "";
+    document.getElementById("nc_msg1").value = "";
+    document.getElementById("nc_msg2").value = "";
+    document.getElementById("nc_msg3").value = "";
+    await loadCampaigns();
+  } catch (e) { msg.textContent = "Error: " + e.message; msg.className = "err small"; }
+};
+
 function campaignCard(c) {
   const d = document.createElement("div");
   d.className = "card";
@@ -183,6 +257,7 @@ function campaignCard(c) {
       </div>
       <button id="toggle_${escId(c.key)}" class="ghost">${c.active ? "Pausar campaña" : "Activar campaña"}</button>
       <button id="reload_${escId(c.key)}" class="ghost">↻</button>
+      <button id="reset_${escId(c.key)}" class="ghost danger">↻ Reiniciar campaña</button>
     </div>
 
     <div class="grid2">
@@ -193,6 +268,7 @@ function campaignCard(c) {
           <div>Envíos hoy <b id="sent_${escId(c.key)}">…</b></div>
           <div id="run_${escId(c.key)}" class="muted small">—</div>
           <div id="cycle_${escId(c.key)}" class="muted small"></div>
+          <div id="qcamp_${escId(c.key)}" class="muted small"></div>
         </div>
         <h3>Países activos (prospector + envíos)</h3>
         <div class="cols" id="countries_${escId(c.key)}"></div>
@@ -229,6 +305,11 @@ function campaignCard(c) {
     refreshWaPill(); await Promise.all([loadCampaigns(), reloadOne(c.key)]);
   };
   document.getElementById("reload_" + escId(c.key)).onclick = () => reloadOne(c.key);
+  document.getElementById("reset_" + escId(c.key)).onclick = async () => {
+    if (!confirm("¿Reiniciar la campaña «" + c.key + "»? Se limpiará su cola y el contador de envíos del día volverá a 0.")) return;
+    await api("/api/campaigns/" + encodeURIComponent(c.key) + "/reset", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({}) });
+    await loadCampaigns();
+  };
   document.getElementById("saveCfg_" + escId(c.key)).onclick = () => saveConfig(c);
   document.getElementById("file_" + escId(c.key)).onchange = () => uploadMedia(c);
   renderCountries(c); renderMetas(c); renderCities(c); renderMsgs(c); renderMedia(c);
@@ -248,6 +329,7 @@ async function reloadOne(key) {
     document.getElementById("sent_" + id).textContent = q.rows.reduce((a,r)=>a+r.enviados_hoy,0);
     document.getElementById("run_" + id).textContent = q.running ? "● enviando" : (q.queue_paused ? "⏸ en pausa" : "○ en espera");
     document.getElementById("cycle_" + id).textContent = q.last_cycle ? "Último ciclo: " + q.last_cycle.slice(0,16) : "";
+    document.getElementById("qcamp_" + id).textContent = "Cola: " + (q.queue_de_esta_campana || 0) + " leads de esta campaña · " + (q.queue_sin_campana || 0) + " sin campaña";
     const tbody = document.querySelector("#qtable_" + id + " tbody");
     tbody.innerHTML = "";
     for (const r of q.rows) {
@@ -555,6 +637,7 @@ document.getElementById("btnSaveDistPaises").onclick = async () => {
 
 refreshWaPill();
 loadCampaigns();
+loadNewCampaignForm();
 loadData();
 loadEmailConfig();
 loadDistCountries();

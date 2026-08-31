@@ -238,6 +238,27 @@ async def api_campaigns():
     return campaign_store.list_campaigns()
 
 
+@app.post("/api/campaigns")
+async def api_campaign_create(data: dict):
+    import campaign_store
+    client_id = str(data.get("client_id", "")).strip()
+    rubro = str(data.get("rubro", "")).strip()
+    paises = data.get("paises_objetivo") or []
+    if not client_id:
+        return JSONResponse(status_code=400, content={"error": "client_id es requerido"})
+    if not rubro:
+        return JSONResponse(status_code=400, content={"error": "rubro es requerido"})
+    if not isinstance(paises, list) or not paises:
+        return JSONResponse(status_code=400, content={"error": "paises_objetivo debe ser una lista no vacía"})
+    mensajes = data.get("mensajes") or []
+    meta = int(data.get("meta_diaria_total", 25) or 25)
+    try:
+        c = campaign_store.create_campaign(client_id, rubro, paises, mensajes, meta, data.get("image_media"))
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": f"no pude crear la campaña: {e}"})
+    return {"status": "ok", "campaign": c}
+
+
 @app.get("/api/campaigns/{key}")
 async def api_campaign(key: str):
     import campaign_store
@@ -252,6 +273,15 @@ async def api_campaign_save(key: str, data: dict):
     import campaign_store
     st = campaign_store.save_state(key, data)
     return {"status": "ok", "campaign": campaign_store.get_campaign(key)}
+
+
+@app.post("/api/campaigns/{key}/reset")
+async def api_campaign_reset(key: str):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    return campaign_store.reset_campaign(key)
 
 
 @app.get("/api/campaigns/{key}/messages")
@@ -849,6 +879,42 @@ async def api_update_ig_hashtags(client_id: str, data: dict):
     client.instagram.ig_hashtags = hashtags
     save_client(client)
     return {"status": "ok", "client_id": client_id, "hashtags": hashtags}
+
+
+@app.put("/api/clients/{client_id}/ig-dm-config")
+async def api_update_ig_dm_config(client_id: str, data: dict):
+    """Guardar el mensaje del DM y/o la imagen de presentación de Instagram."""
+    from client_store import get_client, save_client, get_template, save_template
+    from models import TemplateMessage, MessageTemplateSet
+
+    client = get_client(client_id)
+    if not client:
+        return JSONResponse(status_code=404, content={"error": "client not found"})
+
+    mensaje = data.get("mensaje", "")
+    imagen = data.get("imagen", "")
+
+    # Guardar la imagen en el canal IG del cliente (ruta dentro del contenedor)
+    if imagen is not None:
+        client.instagram.ig_imagen = imagen
+        save_client(client)
+
+    # Guardar el mensaje como template IG (un solo paso de presentación)
+    if mensaje is not None and mensaje.strip():
+        tpl = get_template(client_id, "instagram")
+        new_tpl = TemplateMessage(step=1, text=mensaje.strip(), enabled=True)
+        if tpl:
+            tpl.messages = [new_tpl]
+            save_template(tpl)
+        else:
+            save_template(MessageTemplateSet(client_id=client_id, channel="instagram", messages=[new_tpl]))
+
+    return {
+        "status": "ok",
+        "client_id": client_id,
+        "mensaje": mensaje,
+        "imagen": client.instagram.ig_imagen,
+    }
 
 
 _webhook_msg_ids: set[str] = set()

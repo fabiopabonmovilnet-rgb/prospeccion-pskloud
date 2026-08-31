@@ -26,7 +26,7 @@ logger = logging.getLogger("openclaw.ig")
 DATA_DIR = "/app/data"
 COOKIES_DIR = os.path.join(DATA_DIR, "ig_cookies")
 STATE_FILE = os.path.join(DATA_DIR, "ig_state.json")
-DAILY_LIMIT = 3  # max DMs per day (global, not per country)
+DAILY_LIMIT = 5  # max DMs per day (global, not per country)
 IG_USER_AGENTS = [
     "Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36",
@@ -387,8 +387,25 @@ async def _follow_user(context, username: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def _send_dm(context, username: str, message_text: str) -> bool:
-    """Send a DM to an Instagram user. Returns True if sent."""
+async def text_area_enable(page):
+    """Ensure the DM compose text area is opened (waits for it to be actionable)."""
+    for _ in range(5):
+        try:
+            text_area = page.locator('div[role="textbox"]')
+            if text_area.count() > 0:
+                try:
+                    await text_area.first.click(timeout=1500)
+                except Exception:
+                    pass
+                return True
+        except Exception:
+            pass
+        await asyncio.sleep(random.uniform(1, 2))
+    return False
+
+
+async def _send_dm(context, username: str, message_text: str, image_path: str = "") -> bool:
+    """Send a DM to an Instagram user, optionally attaching an image. Returns True if sent."""
     page = await context.new_page()
 
     try:
@@ -411,6 +428,42 @@ async def _send_dm(context, username: str, message_text: str) -> bool:
             logger.info(f"Cannot message {username}: no Message button (private or restricted)")
             return False
         await asyncio.sleep(random.uniform(1.5, 2.5))
+
+        # Attach image if provided (photos/videos gallery icon -> file input)
+        if image_path and os.path.exists(image_path):
+            attached = False
+            try:
+                # Instagram uses a file input hidden behind the gallery button
+                file_input = page.locator('input[type="file"]')
+                # Ensure the compose input is visible / gallery available
+                await text_area_enable(page)
+                file_input_set = False
+                for attempt in range(3):
+                    count = await file_input.count()
+                    if count > 0:
+                        await file_input.first.set_input_files(image_path)
+                        file_input_set = True
+                        break
+                    await asyncio.sleep(random.uniform(1, 2))
+                if not file_input_set:
+                    logger.warning(f"No file input found to attach image for {username}")
+                await asyncio.sleep(random.uniform(2, 4))
+                # Confirm the media send (small circle checkbox bottom-right)
+                try:
+                    confirm = page.locator('div[role="button"]:has-text("Enviar"), div[role="button"]:has-text("Send")').first
+                    if await confirm.is_visible(timeout=2000):
+                        await confirm.click()
+                        attached = True
+                        await asyncio.sleep(random.uniform(2, 3))
+                except Exception:
+                    pass
+            except Exception as e:
+                logger.warning(f"Could not attach image for {username}: {e}")
+            if attached:
+                logger.info(f"Image attached and sent to {username}")
+                return True
+        elif image_path:
+            logger.warning(f"Image path does not exist: {image_path}")
 
         # Type message
         text_area = page.locator('div[role="textbox"]')
@@ -495,8 +548,8 @@ class InstagramSender:
             await asyncio.sleep(random.uniform(3, 6))
         return all_leads
 
-    async def send_dm(self, username: str, message_text: str, country: str = "", follow: bool = True) -> bool:
-        """Send a DM respecting daily limits (3/day global). Optionally follows first."""
+    async def send_dm(self, username: str, message_text: str, country: str = "", follow: bool = True, image_path: str = "") -> bool:
+        """Send a DM respecting daily limits (5/day global). Optionally attaches image and follows first."""
         if not self._logged_in:
             if not await self.ensure_login():
                 return False
@@ -505,7 +558,7 @@ class InstagramSender:
             logger.info(f"Daily limit ({DAILY_LIMIT}) reached")
             return False
 
-        success = await _send_dm(self._context, username, message_text)
+        success = await _send_dm(self._context, username, message_text, image_path)
         if success:
             _mark_sent()
             logger.info(f"DM sent to {username} (remaining: {remaining_today()})")

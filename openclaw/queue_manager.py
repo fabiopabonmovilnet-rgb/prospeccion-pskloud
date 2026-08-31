@@ -251,24 +251,27 @@ def _mark_country_sent(country: str, rubro: str = ""):
     _save_country_counts(counts)
 
 
-def _country_target(country: str) -> int:
+def _country_target(country: str, campaign_key: str = "") -> int:
     """Meta diaria del país según la campaña whatsapp activa; fallback al cap global."""
     try:
         from campaign_store import list_campaigns
         for c in list_campaigns():
-            if c.get("channel") == "whatsapp" and c.get("active", True):
-                metas = c.get("meta_diaria_por_pais") or {}
-                if country in metas:
-                    return max(1, int(metas.get(country, 0)))
+            if c.get("channel") != "whatsapp" or not c.get("active", True):
+                continue
+            if campaign_key and c.get("key") != campaign_key:
+                continue
+            metas = c.get("meta_diaria_por_pais") or {}
+            if country in metas:
+                return max(1, int(metas.get(country, 0)))
     except Exception:
         pass
     return settings.max_per_country_daily
 
 
-def _country_fair_score(pais: str, rubro: str = "") -> float:
+def _country_fair_score(pais: str, rubro: str = "", campaign_key: str = "") -> float:
     """Ratio envíos/meta del país: a menor ratio, más 'atrasado' (se le da prioridad)."""
     sent = _load_country_counts().get(_country_rubro_key(pais, rubro), 0)
-    return sent / max(_country_target(pais), 1)
+    return sent / max(_country_target(pais, campaign_key), 1)
 
 
 # ---------------------------------------------------------------------------
@@ -578,6 +581,7 @@ def enqueue_leads(leads: list[Lead]) -> int:
             "fuente": lead.fuente,
             "client_id": lead.client_id or _default_client_id(),
             "channel": channel,
+            "campaign_key": getattr(lead, "campaign_key", "") or "",
             "queued_at": datetime.now().isoformat(),
         }
         biz_key = _business_key(entry)
@@ -1162,21 +1166,38 @@ async def _send_instagram_message(entry: dict, msg_text: str, client_id: str) ->
     if not ig_username:
         return False
 
-    # Build DM with WA transfer link
-    wa_phone = client.instagram.ig_wa_phone or client.whatsapp.evolution_api_url or ""
-    dm_text = build_dm_text(
-        lead_name=entry.get("nombre", ""),
-        company=entry.get("empresa", ""),
-        rubro=entry.get("rubro", ""),
-        wa_phone=wa_phone,
-    )
+    # Build DM: use the client's IG template (step 1) if available, else generic builder.
+    # Template messages are configurable from the prospector (plantillas IG del cliente).
+    dm_text = ""
+    try:
+        from client_store import get_template
+        tpl = get_template(client_id, "instagram")
+        if tpl and tpl.messages:
+            first = sorted([m for m in tpl.messages if getattr(m, "step", 1) and m.enabled], key=lambda m: m.step)[0]
+            dm_text = (first.text or "").format(
+                nombre_empresa=entry.get("empresa", "") or entry.get("nombre", ""),
+                empresa=entry.get("empresa", "") or entry.get("nombre", ""),
+                nombre=entry.get("nombre", ""),
+                pais=entry.get("pais", "") or client.name or "",
+            )
+    except Exception as e:
+        logger.warning(f"Could not load IG template for {client_id}: {e}")
+    if not dm_text or not dm_text.strip():
+        wa_phone = client.instagram.ig_wa_phone or ""
+        dm_text = build_dm_text(
+            lead_name=entry.get("nombre", ""),
+            company=entry.get("empresa", ""),
+            rubro=entry.get("rubro", ""),
+            wa_phone=wa_phone,
+        )
 
     # Use a per-client IG sender (cached)
     sender = _get_ig_sender(client)
     if not sender:
         return False
 
-    success = await sender.send_dm(ig_username, dm_text, country=entry.get("pais", ""))
+    image_path = client.instagram.ig_imagen or ""
+    success = await sender.send_dm(ig_username, dm_text, country=entry.get("pais", ""), image_path=image_path)
     if success:
         logger.info(f"IG DM sent to {ig_username}")
         _log_activity("sent_instagram", f"DM → {ig_username} ({entry.get('pais','?')})", {"username": ig_username, "pais": entry.get("pais","")})
@@ -1577,7 +1598,7 @@ async def process_auto():
                     if len(sent_batch) >= max_per_cycle:
                         break
                     client_id, channel = group_key.split("|", 1)
-                    group_entries = sorted(list(groups[group_key]), key=lambda e: _country_fair_score(e.get("pais", ""), e.get("rubro", "")))
+                    group_entries = sorted(list(groups[group_key]), key=lambda e: _country_fair_score(e.get("pais", ""), e.get("rubro", ""), e.get("campaign_key", "")))
                     for entry in group_entries:
                         if len(sent_batch) >= max_per_cycle:
                             break
@@ -1754,7 +1775,7 @@ async def process_next_batch(count: int = 5) -> dict:
                         logger.info(f"  SKIP no_channel: {entry.get('nombre','')}")
                     continue
 
-                score = _country_fair_score(pais, entry.get("rubro", ""))
+                score = _country_fair_score(pais, entry.get("rubro", ""), entry.get("campaign_key", ""))
                 if score < best_score:
                     best_score = score
                     best_i = i

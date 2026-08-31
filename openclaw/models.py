@@ -17,6 +17,7 @@ class Lead(BaseModel):
     fuente: str = ""
     client_id: str = ""
     keywords: str = ""
+    campaign_key: str = ""
 
 
 class Classification(str, enum.Enum):
@@ -90,6 +91,7 @@ class InstagramChannel(ChannelSettings):
     ig_proxy: str = ""
     ig_hashtags: list[str] = ["boutique", "moda", "shopping", "accesorios"]
     ig_wa_phone: str = ""  # WhatsApp Business number for the live demo link (wa.me)
+    ig_imagen: str = ""  # path to the presentation image to attach with the DM
     max_daily: int = 3
     min_delay_seconds: int = 180
     max_delay_seconds: int = 300
