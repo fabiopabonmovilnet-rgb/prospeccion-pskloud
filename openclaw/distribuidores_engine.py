@@ -143,12 +143,15 @@ def _rubro_coincide(rubro_lower: str) -> bool:
     return False
 
 
-def classify_semaphore(lead: dict) -> str:
+def classify_semaphore(lead: dict, nombre_negocio: str = "", rubro_real: str = "") -> str:
     """
     Auto-classify based on data quality:
     - VERDE: email valid + domain active + rubro match + contact name
     - AMARILLO: email exists but unverified, or missing phone
     - ROJO: no valid email, domain dead, or no contact at all
+
+    Con FILTRO RÍGIDO: el nombre del negocio debe coincidir con el rubro objetivo.
+    Si el nombre NO coincide con palabras clave del rubro -> ROJO (no es del rubro).
     """
     email = (lead.get("Correo") or lead.get("contacto_email") or "").strip()
     dominio = (lead.get("dominio") or lead.get("website") or "").strip()
@@ -157,6 +160,12 @@ def classify_semaphore(lead: dict) -> str:
     rubro = (lead.get("Rubro") or lead.get("rubro") or "").strip()
     telefono = (lead.get("Telefono") or lead.get("Teléfono") or
                 lead.get("contacto_telefono") or lead.get("telefono") or "").strip()
+
+    # FILTRO RÍGIDO: si el nombre del negocio no coincide con keywords del rubro, NO es del rubro
+    biz = (nombre_negocio or nombre or "").strip().lower()
+    rubro_objetivo = (rubro_real or rubro or "").strip().lower()
+    if biz and rubro_objetivo and not _nombre_coincide_rubro(biz, rubro_objetivo):
+        return "ROJO"
 
     score = 0
 
@@ -176,18 +185,56 @@ def classify_semaphore(lead: dict) -> str:
 
     # Rubro match (config-driven)
     if rubro and _rubro_coincide(rubro.lower()):
-        score += 2
+        score += 1
 
     # Phone
     if telefono and len(telefono) >= 8:
         score += 1
 
-    if score >= 5:
+    # VERDE exige email real + dominio real; nunca por defecto
+    if score >= 5 and email and dominio and "." in dominio:
         return "VERDE"
-    elif score >= 2:
+    elif score >= 3:
         return "AMARILLO"
     else:
         return "ROJO"
+
+
+# Palabras que delatan títulos/basura de búsqueda (NO empresas del rubro)
+_BASURA_PROSPECTO = ["boleto", "ferry", "cómo contactar", "como contactar",
+                     "páginas amarillas", "paginas amarillas", "blog", "wiki",
+                     "foro", "foros", "vuelo", "hotel", "alquiler", "tour",
+                     "vuelta", "precio de", "cuánto cuesta", "como llegar",
+                     "contactar "]
+
+def _es_basura_prospecto(nombre: str, rubro: str) -> bool:
+    if not nombre:
+        return True
+    n = nombre.lower()
+    for k in _BASURA_PROSPECTO:
+        if k in n:
+            return True
+    return False
+
+
+def _nombre_coincide_rubro(nombre_lower: str, rubro_lower: str) -> bool:
+    """True si el nombre del negocio contiene keywords del rubro objetivo."""
+    cfg = store.RUBROS_CONFIG.get(rubro_lower.replace("_", " ").strip() if rubro_lower else "", {})
+    keywords = [k.lower() for k in (cfg.get("keywords") or [])]
+    cargo = cfg.get("cargo", "").lower()
+    # Rubros normalizados sin acentos para matching robusto
+    nombre_flat = nombre_lower
+    for kw in keywords:
+        if kw and kw in nombre_flat:
+            return True
+    if cargo and cargo[:6] in nombre_flat:
+        return True
+    # Los rubros estándar (firmas contables, etc.)
+    for std in ("contabl", "contador", "auditor", "impuest", "tributar", "fiscal",
+                "despacho", "consultor", "asesor", "contab", "cp"):
+        if std in nombre_flat:
+            return True
+    return False
 
 
 # ─── Envío real de correos a distribuidores ───
@@ -279,6 +326,34 @@ def _is_duplicate(conn, empresa: str, pais: str) -> bool:
     return row is not None
 
 
+def site_tiene_dominio(website: str) -> str:
+    """Devuelve el host real de un website (sin protocolo/www) si parece un dominio propio de la empresa.
+    Si es un directorio/portal (yellowpages, google, facebook...) devuelve '' (no sirve para Hunter)."""
+    w = (website or "").strip()
+    if not w:
+        return ""
+    m = re.match(r'https?://([^/]+)', w)
+    if not m:
+        m = re.match(r'([a-z0-9\-]+(\.[a-z0-9\-]+)+)', w)
+        if not m:
+            return ""
+    host = (m.group(1) if m.lastindex else m.group(0) or "").lower()
+    host = host.split(":")[0]
+    for p in ("www.", "m.", "www2.", "web."):
+        if host.startswith(p):
+            host = host[len(p):]
+    if not host or "." not in host:
+        return ""
+    for d in ("yellowpages", "paginasamarillas", "duckduckgo", "google.", "bing",
+              "mercadolibre", "linkedin", "facebook", "instagram", "twitter",
+              "yelp", "cylex", "infoisinfo", "directorio", "guia.", "infobel",
+              "encuentra24", "empresite", "bizpedia", "1000directorio",
+              "colombiatelefonos", "telefonos", "listado"):
+        if d in host:
+            return ""
+    return host
+
+
 # ─── Source 1: Local scraping (DDG + OSM) — backbone ───
 
 def _scrape_local(pais: str, rubros: list[str], ciudades: list[str], max_leads: int = None) -> dict:
@@ -319,32 +394,93 @@ def _scrape_local(pais: str, rubros: list[str], ciudades: list[str], max_leads: 
                         if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
                             break
 
-                        nombre = lead.get("nombre", "").strip()
+                        nombre = (lead.get("nombre") or "").strip()
                         if not nombre or len(nombre) < 3:
                             discarded += 1
                             continue
 
+                        # FILTRO RÍGIDO #1: descartar títulos/basura que NO son empresas reales del rubro
+                        if _es_basura_prospecto(nombre, rubro):
+                            discarded += 1
+                            _engine.add_log(f"[FILTRO] Descartado (no es {rubro}): {nombre[:60]}", "warning")
+                            continue
+
                         telefono = lead.get("telefono", "").strip()
                         website = lead.get("website", "").strip()
-                        if not telefono and not website:
+                        dominio_hunter = site_tiene_dominio(lead.get("dominio_firma") or website) or site_tiene_dominio(website)
+                        # FILTRO RÍGIDO #2: sin teléfono Y sin dominio real => sin canal => descartar
+                        if not telefono and not dominio_hunter:
                             discarded += 1
                             continue
 
-                        semaforo = classify_semaphore(lead)
+                        semaforo = classify_semaphore(lead, nombre_negocio=nombre, rubro_real=rubro)
+
+                        email = (lead.get("email") or "").strip()
+                        if not email and lead.get("web_email"):
+                            email = lead["web_email"].strip()
+
+                        # Fuente gratis/ilimitada: scrape del sitio corporativo (extrae emails publicados + teléfono)
+                        if dominio_hunter:
+                            try:
+                                import enrichment as _enr
+                                web = _enr.scrape_website("https://" + dominio_hunter)
+                                web_emails = [e for e in web.get("emails", [])
+                                              if not any(x in e.lower() for x in
+                                                         ("noreply", "no-reply", "donotreply", "example", "@domain",
+                                                          "hello@kerr", "support@", "admin@", "info.wordpress", "sentry"))]
+                                real_web_emails = [e for e in web_emails if "." in e.split("@")[-1]]
+                                if not email and real_web_emails:
+                                    email = real_web_emails[0]
+                                if not telefono:
+                                    tels = [t for t in web.get("telefonos", [])
+                                            if len("".join(c for c in t if c.isdigit())) >= 8]
+                                    if tels:
+                                        telefono = tels[0]
+                            except Exception:
+                                pass
+
+                        # Si sigue sin email y hay dominio real, enriquecer con Hunter (email + contacto + cargo)
+                        if not email and dominio_hunter:
+                            try:
+                                enr = api_search.enriquecer_email_por_dominio(dominio_hunter, limite=5)
+                                if enr.get("email"):
+                                    email = enr["email"]
+                                    lead["contacto_enri"] = enr.get("contacto", "")
+                                    lead["cargo_enri"] = enr.get("cargo", "")
+                            except Exception:
+                                pass
+
+                        # Respaldo adicional de teléfono vía enrichment (Páginas Amarillas/Lusha) cuando falta
+                        if not telefono and dominio_hunter:
+                            try:
+                                import enrichment as _enr
+                                pais_nombre = pais.replace("_", " ")
+                                enriched = _enr.enrich_company(nombre, pais_nombre, website="https://" + dominio_hunter)
+                                tels = [t for t in enriched.get("telefonos", []) if len("".join(c for c in t if c.isdigit())) >= 8]
+                                if tels:
+                                    telefono = tels[0]
+                                if not email and enriched.get("emails"):
+                                    email = enriched["emails"][0]
+                                if not lead.get("contacto_enri") and enriched.get("contacto_nombre"):
+                                    lead["contacto_enri"] = enriched["contacto_nombre"]
+                                if not lead.get("cargo_enri") and enriched.get("contacto_cargo"):
+                                    lead["cargo_enri"] = enriched["contacto_cargo"]
+                            except Exception:
+                                pass
 
                         dist_data = {
                             "empresa": nombre,
-                            "contacto_nombre": nombre,
-                            "contacto_email": "",
+                            "contacto_nombre": (lead.get("contacto_enri") or nombre),
+                            "contacto_email": email,
                             "contacto_telefono": telefono,
                             "pais_target": pais,
                             "ciudad": ciudad,
                             "rubro": rubro,
                             "clasificacion_semaforo": semaforo,
-                            "canal_contacto": "WHATSAPP_DIRECTO" if telefono else "",
-                            "website": website,
+                            "canal_contacto": "EMAIL_SMTP" if email else ("WHATSAPP_DIRECTO" if telefono else ""),
+                            "website": ("https://" + dominio_hunter) if dominio_hunter else website,
                             "maps_url": lead.get("maps_url", ""),
-                            "fuente": "scraping_ddg",
+                            "fuente": "scraping_ddg" + ("+Hunter" if email and not lead.get("email") and not lead.get("web_email") else ""),
                             "notas": f"Auto-prospeccion scraping ciclo {_engine.ciclos_completados + 1}",
                         }
 
@@ -399,45 +535,87 @@ def _search_apis(pais: str, rubros: list[str], ciudades: list[str], max_leads: i
                     break
 
                 _engine.status_text = f"APIs: {query} en {ciudad}"
+                ubicacion = f"{ciudad}, {pais.replace('_', ' ')}"
 
                 try:
-                    result = api_search.buscar_por_empresa(
-                        empresa=query,
-                        pais=pais.replace("_", " "),
-                        cargo=cargo,
-                        limite=25,
-                    )
-                    leads = result.get("leads", [])
-                    errs = result.get("errores", [])
-                    if errs:
-                        errors.extend(errs)
+                    import local_search
+                    leads = local_search._buscar_ddg_batch(query, ubicacion, max_results=15)
+                    errs = []
 
                     found += len(leads)
-                    _engine.add_log(f"[API] {ciudad}/{rubro}: {len(leads)} contactos")
+                    _engine.add_log(f"[API-DDG] {ciudad}/{rubro}: {len(leads)} firmas")
 
                     for lead in leads:
                         if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
                             break
 
-                        empresa_name = lead.get("Empresa") or lead.get("empresa") or ""
+                        empresa_name = (lead.get("nombre") or "").strip()
                         if not empresa_name or len(empresa_name) < 3:
                             discarded += 1
                             continue
 
-                        semaforo = classify_semaphore(lead)
+                        # FILTRO RÍGIDO: descartar basura (títulos/ferrys/blog, etc.)
+                        if _es_basura_prospecto(empresa_name, rubro):
+                            discarded += 1
+                            _engine.add_log(f"[FILTRO-API] Descartado (no es {rubro}): {empresa_name[:60]}", "warning")
+                            continue
+
+                        semaforo = classify_semaphore(lead, nombre_negocio=empresa_name, rubro_real=rubro)
+
+                        telefono = (lead.get("telefono") or "").strip()
+                        website = (lead.get("website") or "").strip()
+                        dominio_hunter = site_tiene_dominio(lead.get("dominio_firma") or website) or site_tiene_dominio(website)
+                        email = (lead.get("email") or lead.get("web_email") or "").strip()
+
+                        # OPTIMIZACIÓN CRÉDITOS: sin dominio real => no gastar Hunter. Descartar si además no hay teléfono.
+                        if not dominio_hunter and not telefono:
+                            discarded += 1
+                            continue
+
+                        # Site scrape (gratis) para email publicado + teléfono
+                        if dominio_hunter:
+                            try:
+                                import enrichment as _enr
+                                web = _enr.scrape_website("https://" + dominio_hunter)
+                                web_emails = [e for e in web.get("emails", [])
+                                              if not any(x in e.lower() for x in
+                                                         ("noreply", "example", "@domain", "hello@kerr",
+                                                          "support@", "admin@", "sentry")) and "." in e.split("@")[-1]]
+                                if not email and web_emails:
+                                    email = web_emails[0]
+                                if not telefono:
+                                    tels = [t for t in web.get("telefonos", []) if len("".join(c for c in t if c.isdigit())) >= 8]
+                                    if tels:
+                                        telefono = tels[0]
+                            except Exception:
+                                pass
+
+                        # Hunter solo como refuerzo de contacto (respetando presupuesto)
+                        if not email and dominio_hunter:
+                            try:
+                                enr = api_search.enriquecer_email_por_dominio(dominio_hunter, limite=5)
+                                if enr.get("email"):
+                                    email = enr["email"]
+                                    lead["contacto_enri"] = enr.get("contacto", "")
+                                    lead["cargo_enri"] = enr.get("cargo", "")
+                            except Exception:
+                                pass
+
+                        contacto_nombre = (lead.get("contacto_enri") or "").strip()
+                        cargo_c = (lead.get("cargo_enri") or "").strip()
 
                         dist_data = {
-                            "empresa": empresa_name.strip(),
-                            "contacto_nombre": (lead.get("Contacto Clabe") or "").strip(),
-                            "contacto_email": (lead.get("Correo") or "").strip(),
-                            "contacto_telefono": (lead.get("Telefono") or lead.get("Teléfono") or "").strip(),
+                            "empresa": empresa_name,
+                            "contacto_nombre": contacto_nombre or empresa_name,
+                            "contacto_email": email,
+                            "contacto_telefono": telefono,
                             "pais_target": pais,
                             "ciudad": ciudad,
                             "rubro": rubro,
                             "clasificacion_semaforo": semaforo,
-                            "canal_contacto": "EMAIL_SMTP" if lead.get("Correo") else "",
-                            "website": (lead.get("dominio") or "").strip(),
-                            "fuente": lead.get("Fuente", "API"),
+                            "canal_contacto": "EMAIL_SMTP" if email else ("WHATSAPP_DIRECTO" if telefono else ""),
+                            "website": ("https://" + dominio_hunter) if dominio_hunter else website,
+                            "fuente": "api_ddg" + ("+Hunter" if email and lead.get("contacto_enri") else ""),
                             "notas": f"Auto-prospeccion API ciclo {_engine.ciclos_completados + 1}",
                         }
 

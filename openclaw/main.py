@@ -127,6 +127,7 @@ async def daily_summary():
 
 
 @app.get("/ig/status")
+@app.get("/api/ig/status")
 async def ig_status():
     from ig_sender import remaining_today
     return {
@@ -136,12 +137,14 @@ async def ig_status():
 
 
 @app.post("/ig/login")
+@app.post("/api/ig/login")
 async def ig_login():
     await _ensure_ig_logins()
     return {"status": "ok"}
 
 
 @app.post("/ig/search-and-enqueue")
+@app.post("/api/ig/search-and-enqueue")
 async def ig_search_enqueue(data: dict):
     """Search IG for leads matching hashtags and enqueue them."""
     client_id = data.get("client_id", "")
@@ -486,8 +489,6 @@ async def api_prospector_paises_update(data: dict):
 async def api_queue_play():
     """Resume queue processing (Play button)."""
     resume_queue()
-    import prospector
-    prospector.resume()
     return {"status": "resumed", "queue_status": get_queue_status()}
 
 
@@ -502,8 +503,6 @@ async def api_queue_stop():
 async def api_queue_replay():
     """Reload queue from disk and resume (Replay button)."""
     count = replay_queue()
-    import prospector
-    prospector.resume()
     return {"status": "reloaded", "leads_loaded": count, "queue_status": get_queue_status()}
 
 

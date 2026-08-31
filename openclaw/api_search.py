@@ -25,6 +25,32 @@ BASE_DIR = "/app/data"
 KEYS_FILE = os.path.join(BASE_DIR, "api_keys.json")
 RESULTS_FILE = os.path.join(BASE_DIR, "leads_api_search.json")
 
+# Presupuesto Hunter (plan Free ≈ 50 searches/mes). Toque diario para no agotarlo en un ciclo.
+HUNTER_LIMITE_DIARIO = os.getenv("HUNTER_DIARIO", "15")
+HUNTER_STATE_FILE = os.path.join(BASE_DIR, "hunter_quota.json")
+
+
+def _hunter_dispone() -> bool:
+    """Guarda un tope diario de búsquedas Hunter en disco (persistente entre reinicios)."""
+    try:
+        hoy = __import__("datetime").date.today().isoformat()
+        estado = {}
+        if os.path.exists(HUNTER_STATE_FILE):
+            with open(HUNTER_STATE_FILE, "r", encoding="utf-8") as f:
+                estado = json.load(f)
+        dia = estado.get("dia", "")
+        if dia != hoy:
+            estado = {"dia": hoy, "usados": 0}
+        limite = max(1, int(str(HUNTER_LIMITE_DIARIO)))
+        if estado.get("usados", 0) >= limite:
+            return False
+        estado["usados"] = estado.get("usados", 0) + 1
+        with open(HUNTER_STATE_FILE, "w", encoding="utf-8") as f:
+            json.dump(estado, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return True
+
 try:
     import enrichment
     from enrichment import search_lusha_company, search_lusha_by_email, search_lusha
@@ -306,6 +332,41 @@ def _extract_domain(empresa: str) -> str:
         dominio = f"https://{empresa.lower().replace(' ', '').replace('.', '')}.com"
     m = re.match(r"https?://(?:www\.)?([^/]+)", dominio)
     return m.group(1) if m else dominio
+
+
+def _dominio_limpio(sitio: str) -> str:
+    """Extrae el dominio desnudo (sin protocolo/www/ruta) de una URL o dominio."""
+    s = (sitio or "").strip().lower()
+    if not s:
+        return ""
+    s = re.sub(r"^https?://", "", s)
+    s = re.sub(r"^www\.", "", s)
+    s = s.split("/")[0].split("?")[0]
+    if not s or "." not in s or s.endswith("."):
+        return ""
+    return s
+
+
+def enriquecer_email_por_dominio(dominio_o_sitio: str, limite: int = 5) -> dict:
+    """Dado un dominio real, usa Hunter domain-search para obtener el mejor email de contacto."""
+    dominio = _dominio_limpio(dominio_o_sitio)
+    if not dominio:
+        return {"email": "", "contacto": "", "cargo": "", "error": "sin dominio"}
+    keys = get_keys()
+    hunter_key = keys.get("hunter") or keys.get("HUNTER_API_KEY")
+    if not hunter_key:
+        return {"email": "", "contacto": "", "cargo": "", "error": "sin key Hunter"}
+    if not _hunter_dispone():
+        return {"email": "", "contacto": "", "cargo": "", "error": "cuota Hunter diaria alcanzada"}
+    res, info = buscar_contactos_hunter(hunter_key, dominio, limite)
+    if info.get("error"):
+        return {"email": "", "contacto": "", "cargo": "", "error": info["error"]}
+    for c in res:
+        correo = (c.get("Correo") or "").strip()
+        if correo:
+            return {"email": correo, "contacto": (c.get("Contacto Clabe") or "").strip(),
+                    "cargo": (c.get("Cargo") or "").strip(), "dominio": dominio}
+    return {"email": "", "contacto": "", "cargo": "", "dominio": dominio}
 
 
 def buscar_por_empresa(empresa: str, pais: str = "", cargo: str = "", limite: int = 10, fuentes: list[str] | None = None) -> dict:

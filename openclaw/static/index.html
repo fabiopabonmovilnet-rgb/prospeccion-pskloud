@@ -2299,12 +2299,16 @@ async function loadDistribuidores() {
   const data = await api(`/api/dist/list?${params}`);
   if (!data) return;
   DIST.rows = data.distribuidores || [];
-  DIST.selected.clear();
+  // Conservar la selección a través del refresh: solo quitar los ids que ya no existen
+  const validIds = new Set(DIST.rows.map(r => r.id));
+  for (const id of [...DIST.selected]) {
+    if (!validIds.has(id)) DIST.selected.delete(id);
+  }
   renderDistTable(DIST.rows);
   renderDistKpis(DIST.rows, pais);
   $('dist-count-label').textContent = `${data.count || 0} distribuidores`;
   $('badge-dist').textContent = data.count || 0;
-  $('dist-check-all').checked = false;
+  $('dist-check-all').checked = DIST.rows.length > 0 && DIST.rows.every(r => DIST.selected.has(r.id));
   updateDistBulkActions();
 }
 
@@ -2318,7 +2322,7 @@ function renderDistTable(rows) {
   const canalIcons = { EMAIL_SMTP: '📧', LINKEDIN: '💼', WHATSAPP_DIRECTO: '💬', LLAMADA: '📞' };
 
   $('dist-table-body').innerHTML = rows.map(r => `<tr data-id="${r.id}">
-    <td><input type="checkbox" class="dist-sel" value="${r.id}" onchange="distToggleSelect(${r.id}, this.checked)"></td>
+    <td><input type="checkbox" class="dist-sel" value="${r.id}" ${DIST.selected.has(r.id) ? 'checked' : ''} onchange="distToggleSelect(${r.id}, this.checked)"></td>
     <td><strong>${r.empresa || '--'}</strong>${r.contacto_nombre ? '<br><span style="font-size:11px;color:var(--text-muted);">' + r.contacto_nombre + '</span>' : ''}</td>
     <td>${r.contacto_email ? '<span style="font-size:11px;">📧 ' + r.contacto_email + '</span>' : ''}${r.contacto_telefono ? '<br><span style="font-size:11px;">📞 ' + r.contacto_telefono + '</span>' : ''}${!r.contacto_email && !r.contacto_telefono ? '<span style="color:var(--danger);font-size:11px;">Sin contacto</span>' : ''}</td>
     <td><span style="font-size:12px;">${r.pais_target || '--'}</span></td>

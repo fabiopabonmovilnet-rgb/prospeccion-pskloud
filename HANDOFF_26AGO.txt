@@ -1,0 +1,48 @@
+============================================================
+  HANDOFF - 26 agosto 2026, 5:00 PM
+  PC de trabajo - WSL2 Ubuntu
+============================================================
+
+ESTADO ACTUAL
+-------------
+- WhatsApp: VINCULADO y conectado (open)
+- Evolution API: corriendo en puerto 8080
+- PostgreSQL + Redis: healthy
+- OpenClaw: corriendo pero dashboard NO carga (localhost:9000)
+- Git: configurado (Fabio Pabon / fabiopabon.movilnet@gmail.com)
+- gh CLI: instalado (v2.98.0) pero NO autenticado
+
+PARA INICIAR (en WSL):
+  cd /mnt/c/Users/psklo/OneDrive/Desktop/prospeccion-pskloud
+  docker compose up -d
+  docker logs prospeccion-pskloud-openclaw-1 --tail 30
+
+PENDIENTE PARA MAÑANA
+---------------------
+1. Diagnosticar por que localhost:9000 no carga
+   - Revisar: docker logs prospeccion-pskloud-openclaw-1 --tail 50
+   - Verificar si uvicorn esta corriendo dentro del container
+   - Puede ser conflicto de puertos o error en main.py
+
+2. Completar gh auth login:
+   - Abrir https://github.com/login/device
+   - Usar gh auth login -p https -h github.com --web
+
+3. Push a GitHub:
+   git push origin main
+
+4. Probar que el prospector funcione correctamente
+
+ARCHIVOS CLAVE
+--------------
+- docker-compose.yml: puertos 9000, 8501, 8080
+- openclaw/start.sh: fix aplicado (loop de restart corregido)
+- .env: secrets (GEMINI_API_KEY, etc)
+- .gitignore: excluye .env, data/, *.db, images/
+
+REPO GITHUB
+-----------
+https://github.com/fabiopabonmovilnet-rgb/prospeccion-pskloud
+Branch: main
+Ultimo commit: c44429f
+============================================================

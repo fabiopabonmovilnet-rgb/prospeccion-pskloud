@@ -17,7 +17,8 @@ PAISES = {
     "EL_SALVADOR": {"moneda": "USD", "ciudades": ["San Salvador", "Santa Ana", "San Miguel"]},
     "COSTA_RICA": {"moneda": "CRC", "ciudades": ["San Jose", "Cartago", "Alajuela", "Heredia"]},
     "NICARAGUA": {"moneda": "NIO", "ciudades": ["Managua", "Leon", "Masaya", "Esteli"]},
-    "HONDURAS": {"moneda": "HNL", "ciudades": ["Tegucigalpa", "San Pedro Sula", "La Ceiba", "Choluteca"]},
+    "HONDURAS": {"moneda": "HNL", "ciudades": ["Tegucigalpa", "San Pedro Sula", "La Ceiba", "Choloma", "Comayagua"]},
+    "PANAMA": {"moneda": "USD", "ciudades": ["Ciudad de Panamá", "San Miguelito", "Colón", "David", "La Chorrera"]},
 }
 
 RUBROS_CONFIG = {

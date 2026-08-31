@@ -345,6 +345,44 @@ def _validar_website(website: str) -> str:
     return w
 
 
+_DIRECTORIOS_DOMINIOS = (
+    "yellowpages", "paginasamarillas", "paginas-amarillas", "paginasamarrillas",
+    "paginas amarillas", "yp.com", "yptogo", "duckduckgo", "google.", "bing",
+    "mercadolibre", "linkedin.com", "facebook.", "instagram.", "twitter.",
+    "yelp", "cylex", "infoisinfo", "tupagina", "directorioweb", "guia",
+    "directorio", "admision", "lapaginadelprogreso", "encuentra24", "comercioyempresa",
+    "1000directorio", "directoriodeempresas", "empresite", "infobel", "bizpedia",
+    "tuparada", "empresasde", "directoriohoy", "portaldirectorio", "paginaspro",
+    "colombiatelefonos", "telefonos", "listado", "azdirectory", "nuestroproveedor",
+)
+
+def _dominio_firma(link: str) -> str:
+    """Devuelve un dominio real de la empresa si un enlace NO es de un directorio/chimenea.
+    Usado para alimentar Hunter por dominio. Retorna '' si es un directorio (no sirve)."""
+    link = (link or "").strip()
+    if not link:
+        return ""
+    m = re.match(r'https?://([^/]+)', link)
+    if not m:
+        return ""
+    host = m.group(1).lower()
+    host_clean = host.replace("www.", "")
+    # quitar subdominios comunes de portales
+    for part in host_clean.split("."):
+        if part in ("yellowpages", "paginasamarillas", "directorio", "guia", "portal", "infoisinfo", "cylex"):
+            return ""
+    if host_clean.startswith(("m.", "www.")):
+        host_clean = host_clean[2:]
+    if not host_clean or "." not in host_clean:
+        return ""
+    if any(d in host_clean for d in _DIRECTORIOS_DOMINIOS):
+        return ""
+    # rechaza enlaces a directorios con rutas conocidas
+    if any(k in link.lower() for k in ("/directorio", "paginas-amarillas", "yellowpages", "infobel")):
+        return ""
+    return host_clean
+
+
 # =============================================================================
 # FUENTE 1: OpenStreetMap
 # =============================================================================
@@ -586,7 +624,16 @@ def _buscar_ddg_batch(rubro: str, ubicacion: str, max_results: int = 30) -> List
                     continue
                 vistos.add(name.lower())
 
-                resultados.append(_construir(name, phones[0], "", rubro, ubicacion, link, link, fuente="ddg_batch"))
+                emails = _extraer_email(full)
+                web_email = emails[0] if emails else ""
+                firm_domain = _dominio_firma(link)
+                sitio = "https://" + firm_domain if firm_domain else link
+
+                lead = _construir(name, phones[0], "", rubro, ubicacion, link, sitio, fuente="ddg_batch")
+                lead["email"] = web_email
+                lead["web_email"] = web_email
+                lead["dominio_firma"] = firm_domain
+                resultados.append(lead)
             except Exception:
                 continue
 
