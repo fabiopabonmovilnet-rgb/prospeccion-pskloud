@@ -38,7 +38,7 @@ class Settings:
         "con la migracion y nuestros planes flexibles.",
     )
 
-    max_per_country_daily: int = int(os.getenv("MAX_PER_COUNTRY_DAILY", "20"))
+    max_per_country_daily: int = int(os.getenv("MAX_PER_COUNTRY_DAILY", "25"))
 
     prospect_active_hours: int = int(os.getenv("PROSPECT_ACTIVE_HOURS", "24"))
 

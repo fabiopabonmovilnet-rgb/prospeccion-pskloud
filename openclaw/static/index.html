@@ -588,6 +588,20 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
       <div class="card">
         <div class="card-header">
           <div>
+            <div class="card-title">Países de Prospección</div>
+            <div class="card-subtitle">Selecciona dónde lanzar la prospección local</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="savePaisesLocal()">Aplicar</button>
+        </div>
+        <div class="checkbox-group" id="paises-checkboxes-local">
+          <div class="loading">Cargando países...</div>
+        </div>
+        <div class="distribucion-info" id="distribucion-local" style="margin-top:8px;padding:8px 10px;background:var(--bg-light,#f5f5f5);border-radius:6px;font-size:13px;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
             <div class="card-title">Actividad Reciente</div>
           </div>
           <button class="btn btn-outline btn-sm" onclick="loadActivity('local')">↻</button>
@@ -2770,6 +2784,7 @@ function startPolling() {
   loadActivity();
   loadQueue();
   loadIgStatus();
+  loadPaisesLocal();
   // Get active tab
   const active = document.querySelector('.nav-item.active');
   if (active && active.dataset.tab === 'historical') loadHistorical();
@@ -2791,10 +2806,56 @@ function startPolling() {
   }, 30000);
 }
 
+// ─── PAÍSES DE PROSPECCIÓN (tab Local) ───
+async function loadPaisesLocal() {
+  const data = await api('/api/prospector/paises');
+  if (!data) return;
+  const container = $('paises-checkboxes-local');
+  if (!container) return;
+  const disponibles = data.disponibles || {};
+  const activos = data.activos || [];
+  let html = '';
+  for (const [pais, ciudades] of Object.entries(disponibles)) {
+    const checked = activos.includes(pais) ? 'checked' : '';
+    html += `
+      <label class="checkbox-item" style="display:flex;align-items:center;gap:8px;padding:6px 2px;cursor:pointer;">
+        <input type="checkbox" value="${pais}" ${checked} onchange="updateDistribucionLocal()">
+        <span>${pais} <small style="color:var(--text-muted)">(${ciudades.length} ciudades)</small></span>
+      </label>`;
+  }
+  container.innerHTML = html || '<div class="loading">Sin países disponibles</div>';
+  updateDistribucionLocal();
+}
+
+function updateDistribucionLocal() {
+  const el = $('distribucion-local');
+  const boxes = document.querySelectorAll('#paises-checkboxes-local input:checked');
+  const activos = Array.from(boxes).map(i => i.value);
+  const total = 25;
+  const n = activos.length;
+  if (n === 0) { el.textContent = `${total} leads/día — selecciona al menos un país para distribuir.`; return; }
+  const base = Math.floor(total / n);
+  const residuo = total % n;
+  const parts = activos.map((p, i) => `${base + (i < residuo ? 1 : 0)} ${p}`);
+  el.textContent = `${total} leads/día (equitativo): ${parts.join(', ')}`;
+}
+
+async function savePaisesLocal() {
+  const boxes = document.querySelectorAll('#paises-checkboxes-local input:checked');
+  const activos = Array.from(boxes).map(i => i.value);
+  if (activos.length === 0) { toast('Selecciona al menos un país', 'error'); return; }
+  const res = await api('/api/prospector/paises', 'POST', { activos });
+  if (res && res.status === 'ok') {
+    updateDistribucionLocal();
+    toast(`Países activos: ${res.activos.join(', ')}`, 'success');
+  }
+}
+
 // ─── INIT ───
 document.addEventListener('DOMContentLoaded', () => {
   ensureClientsAPI();
   startPolling();
+  loadPaisesLocal();
   initColToggles('cols-country', 'tbl-country');
   initColToggles('cols-rubro', 'tbl-rubro');
   initColToggles('cols-city', 'tbl-city');

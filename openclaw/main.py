@@ -446,6 +446,40 @@ async def api_prospector_rubro(data: dict):
     return {"status": "ok", "rubros": rubros}
 
 
+@app.get("/api/prospector/paises")
+async def api_prospector_paises():
+    """Retorna países disponibles, activos y la distribución diaria equitativa."""
+    import prospector
+    cfg = prospector.load_config()
+    disponibles = cfg.get("paises_disponibles", {})
+    activos = cfg.get("paises_activos") or []
+    max_diario = int(cfg.get("max_por_pais_diario", 25))
+    distribucion = prospector._distribuir_cupo(activos, max_diario)
+    return {
+        "disponibles": disponibles,
+        "activos": activos,
+        "max_diario": max_diario,
+        "distribucion": distribucion,
+    }
+
+
+@app.post("/api/prospector/paises")
+async def api_prospector_paises_update(data: dict):
+    """Actualiza los países activos de prospección en la config."""
+    import prospector
+    activos = data.get("activos") or []
+    validos = set(prospector.load_config().get("paises_disponibles", {}).keys())
+    activos = [a for a in activos if a in validos]
+    cfg = prospector.load_config()
+    cfg["paises_activos"] = activos
+    result = prospector.save_config(cfg)
+    if not result.get("ok"):
+        return JSONResponse(status_code=500, content={"error": result.get("error", "error")})
+    max_diario = int(cfg.get("max_por_pais_diario", 25))
+    distribucion = prospector._distribuir_cupo(activos, max_diario)
+    return {"status": "ok", "activos": activos, "max_diario": max_diario, "distribucion": distribucion}
+
+
 # ─── Queue Play / Stop / Replay controls ───
 
 @app.post("/api/queue/play")

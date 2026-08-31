@@ -112,7 +112,7 @@ services:
       MSG_SALUDO: '${MSG_SALUDO:-Buenos dias, senores de {nombre_empresa}, un gusto saludarles.}'
       MSG_CALIFICACION: '${MSG_CALIFICACION:-Queria consultarles brevemente: actualmente disponen de un software administrativo, contable y de control de inventario/POS que cumpla con las exigencias de ley?}'
       MSG_PRESENTACION: '${MSG_PRESENTACION:-Pertenezco a la casa Premium-Soft creadora del software administrativo y contable disenado para adaptarse a todas las normativas de ley y facturacion electronica. Si tienes un espacio de tiempo esta semana, podemos agendar una llamada o videollamada para una demostracion en vivo de la suite y conversar sobre como podemos apoyarte con la migracion y nuestros planes flexibles.}'
-      MAX_PER_COUNTRY_DAILY: ${MAX_PER_COUNTRY_DAILY:-20}
+      MAX_PER_COUNTRY_DAILY: ${MAX_PER_COUNTRY_DAILY:-25}
       PROSPECT_ACTIVE_HOURS: ${PROSPECT_ACTIVE_HOURS:-24}
       APOLLO_API_KEY: ${APOLLO_API_KEY}
     volumes:

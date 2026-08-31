@@ -76,6 +76,33 @@ def _pais_de_ubicacion(ubicacion: str) -> str:
     return ubicacion.split(",")[-1].strip() if "," in ubicacion else ubicacion.strip()
 
 
+def save_config(cfg: dict) -> dict:
+    """Persiste la configuración del prospector en prospector_config.json."""
+    try:
+        existing = load_config()
+        existing.update({k: v for k, v in cfg.items()})
+        with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+            json.dump(existing, f, ensure_ascii=False, indent=2)
+        return {"ok": True, "config": existing}
+    except Exception as e:
+        logger.error(f"No pude guardar {CONFIG_PATH}: {e}")
+        return {"ok": False, "error": str(e)}
+
+
+def _distribuir_cupo(paises: list, total: int = 25) -> dict:
+    """Reparte `total` leads diarios de forma equitativa entre países activos.
+    Ej: 25/2 -> {A:13, B:12}; 25/3 -> {A:9, B:8, C:8}."""
+    n = len(paises)
+    if n == 0:
+        return {}
+    base = int(total // n)
+    residuo = int(total % n)
+    cupos = {}
+    for i, pais in enumerate(paises):
+        cupos[pais] = base + (1 if i < residuo else 0)
+    return cupos
+
+
 def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "") -> int:
     if not leads:
         return 0
@@ -132,6 +159,18 @@ def run_prospecting_cycle(config: dict, report: dict):
             logger.info(f"Campaign targets applied: {before} -> {after} ubicaciones activas")
     except Exception as e:
         logger.warning(f"apply_campaign_targets skipped: {e}")
+
+    # Filtro de países activos (selector del tab Local)
+    paises_activos = config.get("paises_activos") or []
+    if paises_activos:
+        activos_set = set(paises_activos)
+        for c in clients:
+            c.ubicaciones = [ub for ub in c.ubicaciones if _pais_de_ubicacion(ub) in activos_set]
+        logger.info(f"Países activos: {', '.join(paises_activos)}")
+        # Reparto equitativo del tope diario entre países activos
+        cupos_pais = _distribuir_cupo(paises_activos, config.get("max_por_pais_diario", 25))
+        limites_por_pais = cupos_pais
+        logger.info(f"Cupo diario por país: {cupos_pais}")
 
     # Apply rubro override if set
     if _prospector_rubro_override is not None:
