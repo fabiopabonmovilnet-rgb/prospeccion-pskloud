@@ -11,6 +11,7 @@ CONVERSACIONES_DB = "/app/data/conversaciones.db"
 PROSPECTOS_LOCALES = "/app/data/prospectos_locales.json"
 RESUMEN_DIARIO = "/app/data/resumen_diario.json"
 SENT_MESSAGES = "/app/data/sent_messages.json"
+DISTRIBUIDORES_DB = "/app/data/prospeccion.db"
 
 _MEMO = {}
 
@@ -103,6 +104,41 @@ def _db_conversations():
     except Exception:
         pass
     return out
+
+
+def _db_distribuidores_envios():
+    """Lee de distribuidores_actividad (EMAIL_ENVIADO) cruzando con distribuidores.
+    Devuelve: {total, daily:{fecha:count}, by_country:{pais:count}, by_rubro:{rubro:count},
+               pais_diario:{fecha:{pais:count}}, rubro_diario:{fecha:{rubro:count}}}"""
+    total = 0
+    daily = defaultdict(int)
+    by_country = defaultdict(int)
+    by_rubro = defaultdict(int)
+    pais_diario = lambda: defaultdict(int)
+    try:
+        con = sqlite3.connect(DISTRIBUIDORES_DB)
+        con.row_factory = sqlite3.Row
+        cur = con.cursor()
+        rows = cur.execute("""
+            SELECT a.fecha, d.pais_target, d.rubro
+            FROM distribuidores_actividad a
+            JOIN distribuidores d ON d.id = a.distribuidor_id
+            WHERE a.accion IN ('EMAIL_ENVIADO', 'EMAIL_SMTP')
+        """).fetchall()
+        con.close()
+        for r in rows:
+            f = r["fecha"] or ""
+            if not f:
+                continue
+            daily[f] += 1
+            total += 1
+            p = (r["pais_target"] or "Sin país").replace("_", " ")
+            rub = r["rubro"] or "Sin rubro"
+            by_country[p] += 1
+            by_rubro[rub] += 1
+    except Exception:
+        pass
+    return {"total": total, "daily": daily, "by_country": by_country, "by_rubro": by_rubro}
 
 
 def _parse_country_from_msg(msg: str):
@@ -207,6 +243,23 @@ def build_analytics():
     totals["respondieron"] = len(responded)
     totals["tasa_respuesta"] = round(len(responded) * 100.0 / total_conv, 1) if total_conv else 0
 
+    # KPIs de distribuidores
+    dist_data = _db_distribuidores_envios()
+    totals["dist_emails_enviados"] = dist_data["total"]
+
+    # ─── Canales separados ───
+    # WhatsApp: conversations reales (conversaciones.db)
+    totals["wsp_enviados"] = sum(r["out"] for r in convs["rows"])
+    totals["wsp_conversaciones"] = total_conv
+    totals["wsp_respondieron"] = len(responded)
+    totals["wsp_tasa_respuesta"] = round(len(responded) * 100.0 / total_conv, 1) if total_conv else 0
+    # Email (distribuidores)
+    totals["email_enviados"] = dist_data["total"]
+    totals["email_tasa_respuesta"] = 0  # no hay tracking de respuesta de email aún
+    # Instagram (eventos sent_instagram)
+    ig_events = [e for e in events if (e.get("kind") or "") == "sent_instagram"]
+    totals["ig_enviados"] = len(ig_events)
+
     # Por país (conversaciones reales)
     by_country_conv = defaultdict(lambda: {"conversaciones": 0, "respondieron": 0})
     for r in convs["rows"]:
@@ -238,6 +291,17 @@ def build_analytics():
     for r in convs["rows"]:
         sent_by_country[r["pais"] or "Sin país"] += r["out"]
         sent_by_rubro[r["rubro"] or "Sin rubro"] += r["out"]
+
+    # ─── Distribuidores: envíos SMTP por país/rubro/día ───
+    dist_data = _db_distribuidores_envios()
+    for p, n in dist_data["by_country"].items():
+        sent_by_country[p] += n
+    for r, n in dist_data["by_rubro"].items():
+        sent_by_rubro[r] += n
+    # Inyectar envíos de distribuidores en daily_series
+    for d in daily_series:
+        d["sent_dist"] = dist_data["daily"].get(d["date"], 0)
+        d["sent"] = d.get("sent", 0) + d["sent_dist"]
 
     # Correcciones detalladas (últimas 50)
     correcciones = []

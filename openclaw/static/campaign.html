@@ -52,6 +52,16 @@
   .stat { display:flex; gap:18px; margin:6px 0; flex-wrap:wrap; }
   .stat b { font-size:18px; }
   .small { font-size:12px; }
+  .card.active-camp { border-color:var(--acc); box-shadow:0 0 0 1px var(--acc), 0 4px 18px rgba(76,141,255,.18); }
+  .bubble { background:#0c101d; border:1px solid var(--border); border-radius:10px 10px 10px 2px; padding:9px 12px; margin:6px 0; white-space:pre-wrap; line-height:1.5; font-size:12.5px; color:var(--txt); }
+  .bubble img { max-width:150px; max-height:110px; border-radius:8px; display:block; margin-top:6px; }
+  .bubble .bstep { color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.3px; text-transform:uppercase; display:block; margin-bottom:4px; }
+  .bubble.disabled { opacity:.45; }
+  .preview-col { flex:1; min-width:260px; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:900px){ .form-grid { grid-template-columns:1fr; } }
+  .switch-btn { background:transparent; border:1px solid var(--acc); color:var(--acc); }
+  .switch-btn:hover { background:rgba(76,141,255,.15); }
 </style>
 </head>
 <body>
@@ -74,18 +84,27 @@
     </div>
     <div class="card hidden" id="newCampaignForm">
       <h2>Crear campaña nueva</h2>
-      <div class="grid2">
+      <p class="muted small">Queda guardada ("armada") para volver a ella cuando quieras. Cada campaña tiene sus propios rubros, países, los 3 mensajes e imagen.</p>
+      <div class="form-grid">
         <div>
           <label>Cliente <select id="nc_client"></select></label>
-          <label>Rubro <input type="text" id="nc_rubro" placeholder="ej: contadores colombia"></label>
-          <label>Países objetivo (separados por coma) <input type="text" id="nc_paises" placeholder="ej: Colombia, Panamá"></label>
+          <label>Nombre / Rubro principal <input type="text" id="nc_rubro" placeholder="ej: clínicas dentales, restaurantes"></label>
+          <label>Rubros de búsqueda (separados por coma) <input type="text" id="nc_rubros" placeholder="ej: clinicas dentales, odontologia, dentista"></label>
+          <label>Países objetivo (separados por coma) <input type="text" id="nc_paises" placeholder="ej: Panamá, Honduras"></label>
           <label>Meta diaria total <input type="number" id="nc_meta" value="25" min="1"></label>
+          <label>Imagen del mensaje 3
+            <input type="file" id="nc_image" accept="image/*" style="border:1px dashed var(--border); background:transparent">
+          </label>
+          <div id="ncImagePreview"></div>
         </div>
         <div>
-          <h3>Mensajes (pasos 1 / 2 / 3)</h3>
+          <h3>Mensajes (pasos 1 / 2 / 3) — con vista previa en vivo</h3>
           <textarea id="nc_msg1" placeholder="Paso 1 — saludo / presentación"></textarea>
+          <div class="bubble" id="pv1"><span class="bstep">Paso 1</span>…</div>
           <textarea id="nc_msg2" placeholder="Paso 2 — pregunta de calificación"></textarea>
+          <div class="bubble" id="pv2"><span class="bstep">Paso 2</span>…</div>
           <textarea id="nc_msg3" placeholder="Paso 3 — presentación + llamada a la acción"></textarea>
+          <div class="bubble" id="pv3"><span class="bstep">Paso 3</span>…</div>
         </div>
       </div>
       <div class="row" style="margin-top:10px">
@@ -217,13 +236,50 @@ document.getElementById("btnNewCampaign").onclick = () => {
 document.getElementById("btnCancelCampaign").onclick = () => {
   document.getElementById("newCampaignForm").classList.add("hidden");
 };
+
+// ─── Vista previa en vivo de los 3 mensajes ───
+function livePreview() {
+  const v = (id) => document.getElementById(id).value;
+  const show = (pv, msgId, step) => {
+    const el = document.getElementById(pv);
+    const t = v(msgId).trim();
+    el.innerHTML = "<span class=\"bstep\">Paso " + step + "</span>" + (t ? esc(t) : "…");
+  };
+  show("pv1", "nc_msg1", 1);
+  show("pv2", "nc_msg2", 2);
+  show("pv3", "nc_msg3", 3);
+}
+[["nc_msg1", "pv1"], ["nc_msg2", "pv2"], ["nc_msg3", "pv3"]].forEach(([id]) => {
+  document.getElementById(id).addEventListener("input", livePreview);
+});
+document.getElementById("nc_image").onchange = (e) => {
+  const box = document.getElementById("ncImagePreview");
+  box.innerHTML = "";
+  const f = e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = (ev) => {
+    const img = document.createElement("img");
+    img.className = "media";
+    img.src = ev.target.result;
+    const p = document.createElement("p");
+    p.className = "muted small";
+    p.textContent = "Se adjuntará al mensaje 3 al crear (" + (f.size/1024).toFixed(0) + " KB)";
+    box.appendChild(img); box.appendChild(p);
+  };
+  r.readAsDataURL(f);
+};
+
 document.getElementById("btnCreateCampaign").onclick = async () => {
   const rubro = document.getElementById("nc_rubro").value.trim();
   const paises = document.getElementById("nc_paises").value.split(",").map(s => s.trim()).filter(Boolean);
   const meta = parseInt(document.getElementById("nc_meta").value) || 25;
   const msg = document.getElementById("newCampaignMsg");
+  const imagenInput = document.getElementById("nc_image");
+  const imagenF = imagenInput.files[0];
   if (!rubro) { alert("Indica el rubro de la campaña"); return; }
   if (!paises.length) { alert("Indica al menos un país objetivo"); return; }
+  const rubros = document.getElementById("nc_rubros").value.split(",").map(s => s.trim()).filter(Boolean);
   const mensajes = [
     { step: 1, text: document.getElementById("nc_msg1").value },
     { step: 2, text: document.getElementById("nc_msg2").value },
@@ -233,33 +289,50 @@ document.getElementById("btnCreateCampaign").onclick = async () => {
   try {
     const r = await api("/api/campaigns", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({
       client_id: document.getElementById("nc_client").value,
-      rubro, paises_objetivo: paises, mensajes, meta_diaria_total: meta,
+      rubro, rubros: rubros.length ? rubros : null, paises_objetivo: paises, mensajes, meta_diaria_total: meta,
     }) });
-    msg.textContent = "Campaña «" + r.campaign.key + "» creada."; msg.className = "ok small";
+    const key = r.campaign.key;
+    // Activa por defecto (switch) y si hay imagen la sube
+    await api("/api/campaigns/" + encodeURIComponent(key) + "/activate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({}) });
+    if (imagenF) {
+      const fd = new FormData(); fd.append("file", imagenF);
+      const up = await fetch("/api/campaigns/" + encodeURIComponent(key) + "/media", { method: "POST", body: fd });
+      if (!up.ok) alert("Campaña creada, pero no pude subir la imagen: " + up.status);
+    }
+    msg.textContent = "Campaña «" + key + "» creada y activada. La prospección NO se detuvo; los nuevos objetivos aplican al próximo ciclo."; msg.className = "ok small";
     document.getElementById("newCampaignForm").classList.add("hidden");
     document.getElementById("nc_rubro").value = "";
+    document.getElementById("nc_rubros").value = "";
     document.getElementById("nc_paises").value = "";
     document.getElementById("nc_msg1").value = "";
     document.getElementById("nc_msg2").value = "";
     document.getElementById("nc_msg3").value = "";
+    imagenInput.value = "";
+    livePreview();
     await loadCampaigns();
   } catch (e) { msg.textContent = "Error: " + e.message; msg.className = "err small"; }
 };
 
 function campaignCard(c) {
   const d = document.createElement("div");
-  d.className = "card";
+  d.className = "card" + (c.active ? " active-camp" : "");
   d.innerHTML = `
     <div class="row">
       <div class="grow">
-        <h2>${esc(c.key)} <span class="pill ${c.active ? "on" : "off"}">${c.active ? "ACTIVA" : "EN PAUSA"}</span>
+        <h2>${esc(c.key)} <span class="pill ${c.active ? "on" : "off"}">${c.active ? "ACTIVA (en uso)" : "GUARDADA"}</span>
+          ${c.enviando ? "" : '<span class="pill off" style="margin-left:4px">SIN ENVÍO (solo recolecta)</span>'}
           <span class="muted small">${esc(c.rubro)} · cliente ${esc(c.client_id)}</span></h2>
+        <p class="muted small" style="margin:2px 0">Rubros de búsqueda: ${esc(c.rubros.join(", "))}</p>
       </div>
-      <button id="toggle_${escId(c.key)}" class="ghost">${c.active ? "Pausar campaña" : "Activar campaña"}</button>
-      <button id="reload_${escId(c.key)}" class="ghost">↻</button>
-      <button id="reset_${escId(c.key)}" class="ghost danger">↻ Reiniciar campaña</button>
+      <div class="row" style="align-items:center">
+        <button id="switch_${escId(c.key)}" class="switch-btn">${c.active ? "✓ Campaña activa" : "Activar esta campaña"}</button>
+        <button id="collect_${escId(c.key)}" class="ghost">🔍 Recolectar leads</button>
+        <button id="toggle_${escId(c.key)}" class="ghost">${c.active ? "Pausar campaña" : "Reanudar campaña"}</button>
+        <button id="reload_${escId(c.key)}" class="ghost">↻</button>
+        <button id="reset_${escId(c.key)}" class="ghost danger">↻ Reiniciar campaña</button>
+      </div>
     </div>
-
+    ${c.active ? '<p class="muted small">🟢 <b>Campaña conmutada sobre el prospector</b> (países + rubros + metas). Aplica al próximo ciclo; la prospección no se detiene.</p>' : ""}
     <div class="grid2">
       <div>
         <div class="stat">
@@ -280,6 +353,10 @@ function campaignCard(c) {
         <button id="saveCfg_${escId(c.key)}" style="margin-top:10px">Guardar configuración</button>
       </div>
       <div>
+        <h3>Rubros de búsqueda (prospector)</h3>
+        <label class="small">separados por coma
+          <input type="text" id="rubros_${escId(c.key)}" value="${esc(c.rubros.join(", "))}" style="width:100%">
+        </label>
         <h3>Mensajes base (pasos 1 / 2 / 3)</h3>
         <p class="muted small">Usa variaciones <b>{{opción A|opción B}}</b> y placeholders <b>{nombre_empresa}</b>, <b>{saludo}</b>.</p>
         <div id="msgs_${escId(c.key)}"></div>
@@ -300,9 +377,20 @@ function campaignCard(c) {
     <div id="act_${escId(c.key)}" class="chips muted small">…</div>
   `;
 
+  document.getElementById("switch_" + escId(c.key)).onclick = async () => {
+    if (c.active) return;
+    if (!confirm("¿Activar la campaña «" + c.key + "»? Se conmuta el prospector (países + rubros + metas) al próximo ciclo. La prospección NO se detiene.")) return;
+    await api("/api/campaigns/" + encodeURIComponent(c.key) + "/activate", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({}) });
+    refreshWaPill(); await Promise.all([loadCampaigns(), reloadOne(c.key)]);
+  };
   document.getElementById("toggle_" + escId(c.key)).onclick = async () => {
     await api("/api/campaigns/" + encodeURIComponent(c.key), { method:"PUT", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ active: !c.active }) });
     refreshWaPill(); await Promise.all([loadCampaigns(), reloadOne(c.key)]);
+  };
+  document.getElementById("collect_" + escId(c.key)).onclick = async () => {
+    if (!confirm("¿Recolectar leads de «" + c.key + "» AHORA? Se buscarán sus rubros en sus países y se encolarán listos (sin enviar si la campaña está en modo solo-recolecta).")) return;
+    const r = await api("/api/campaigns/" + encodeURIComponent(c.key) + "/collect", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({}) });
+    alert("Recolección de «" + c.key + "» iniciada. Revisa Actividad reciente en unos minutos.");
   };
   document.getElementById("reload_" + escId(c.key)).onclick = () => reloadOne(c.key);
   document.getElementById("reset_" + escId(c.key)).onclick = async () => {
@@ -396,6 +484,15 @@ function renderMsgs(c) {
     stepBox.appendChild(lbl);
     const ta = document.createElement("textarea"); ta.value = m.text; ta.dataset.step = m.step;
     stepBox.appendChild(ta);
+    const pv = document.createElement("div");
+    pv.className = "bubble" + (m.enabled ? "" : " disabled");
+    pv.innerHTML = "<span class=\"bstep\">Paso " + m.step + (m.media_url ? " (con imagen)" : "") + "</span>" + (m.text.trim() ? esc(m.text) : "…");
+    if (m.media_url) pv.innerHTML += "<img src=\"" + esc(m.media_url) + "?ts=" + Date.now() + "\" alt=\"imagen paso\">";
+    ta.addEventListener("input", () => {
+      pv.innerHTML = "<span class=\"bstep\">Paso " + m.step + (m.media_url ? " (con imagen)" : "") + "</span>" + (ta.value.trim() ? esc(ta.value) : "…");
+      if (m.media_url) pv.innerHTML += "<img src=\"" + esc(m.media_url) + "?ts=" + Date.now() + "\" alt=\"imagen paso\">";
+    });
+    stepBox.appendChild(pv);
     box.appendChild(stepBox);
   }
   const hint = document.createElement("p");
@@ -451,7 +548,11 @@ function saveConfig(c) {
   const paises = checkboxes.filter(x => x.checked).map(x => x.value);
   const metas = {};
   document.querySelectorAll("#metas_" + escId(c.key) + " input").forEach(n => { metas[n.dataset.country] = parseInt(n.value) || 0; });
-  fetch("/api/campaigns/" + encodeURIComponent(c.key), { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ paises_objetivo: paises, meta_diaria_por_pais: metas }) })
+  const rubrosField = document.getElementById("rubros_" + escId(c.key));
+  const rubros = rubrosField ? rubrosField.value.split(",").map(s => s.trim()).filter(Boolean) : null;
+  const body = { paises_objetivo: paises, meta_diaria_por_pais: metas };
+  if (rubros && rubros.length) body.rubros = rubros;
+  fetch("/api/campaigns/" + encodeURIComponent(c.key), { method: "PUT", headers: {"Content-Type":"application/json"}, body: JSON.stringify(body) })
     .then(r => r.json()).then(() => { refreshWaPill(); return Promise.all([loadCampaigns(), reloadOne(c.key)]); })
     .then(() => alert("Configuración guardada. El prospector solo trabajará sobre los países activos a partir del próximo ciclo."))
     .catch(e => alert("Error: " + e.message));

@@ -26,7 +26,7 @@ logger = logging.getLogger("openclaw.ig")
 DATA_DIR = "/app/data"
 COOKIES_DIR = os.path.join(DATA_DIR, "ig_cookies")
 STATE_FILE = os.path.join(DATA_DIR, "ig_state.json")
-DAILY_LIMIT = 5  # max DMs per day (global, not per country)
+DAILY_LIMIT = int(os.getenv("IG_DAILY_LIMIT", "6"))  # max DMs per day (global, not per country)
 IG_USER_AGENTS = [
     "Mozilla/5.0 (Linux; Android 13; SM-S908B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
     "Mozilla/5.0 (Linux; Android 12; Pixel 6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Mobile Safari/537.36",
@@ -392,9 +392,10 @@ async def text_area_enable(page):
     for _ in range(5):
         try:
             text_area = page.locator('div[role="textbox"]')
-            if text_area.count() > 0:
+            cnt = text_area.count()
+            if cnt > 0:
                 try:
-                    await text_area.first.click(timeout=1500)
+                    await text_area.first.click(timeout=2000)
                 except Exception:
                     pass
                 return True
@@ -404,21 +405,40 @@ async def text_area_enable(page):
     return False
 
 
+async def _dismiss_popups(page):
+    """Try to dismiss common Instagram popups that block interaction."""
+    dismiss_texts = [
+        "Ahora no", "Not Now", "No, gracias", "Cancel", "Cancelar",
+        "Close", "Cerrar", "OK", "Entendido", "Got it",
+    ]
+    for txt in dismiss_texts:
+        try:
+            btn = page.locator(f'div[role="button"]:text-is("{txt}")').first
+            if await btn.is_visible(timeout=800):
+                await btn.click()
+                await asyncio.sleep(random.uniform(0.5, 1))
+        except Exception:
+            continue
+
+
 async def _send_dm(context, username: str, message_text: str, image_path: str = "") -> bool:
     """Send a DM to an Instagram user, optionally attaching an image. Returns True if sent."""
     page = await context.new_page()
 
     try:
-        # Go to user's profile
         await page.goto(f"https://www.instagram.com/{username}/", timeout=30000, wait_until="domcontentloaded")
         await asyncio.sleep(random.uniform(2, 3))
+
+        # Dismiss any pre-existing popups
+        await _dismiss_popups(page)
+        await asyncio.sleep(random.uniform(0.5, 1))
 
         # Click "Message" button (multi-language)
         msg_clicked = False
         for txt in ("Enviar mensaje", "Message", "Mensaje"):
             try:
                 el = page.locator(f'div[role="button"]:text-is("{txt}")').first
-                if await el.is_visible(timeout=2000):
+                if await el.is_visible(timeout=2500):
                     await el.click()
                     msg_clicked = True
                     break
@@ -427,9 +447,14 @@ async def _send_dm(context, username: str, message_text: str, image_path: str = 
         if not msg_clicked:
             logger.info(f"Cannot message {username}: no Message button (private or restricted)")
             return False
-        await asyncio.sleep(random.uniform(1.5, 2.5))
 
-        # Attach image if provided (photos/videos gallery icon -> file input)
+        # Wait for chat to load, dismiss any popups that appear
+        await asyncio.sleep(random.uniform(2, 3.5))
+        await _dismiss_popups(page)
+        await asyncio.sleep(random.uniform(1, 1.5))
+
+        # Attach image if provided (photos/videos gallery icon -> file input).
+        # Después de confirmar la imagen, seguimos para también escribir el mensaje.
         if image_path and os.path.exists(image_path):
             attached = False
             try:
@@ -460,8 +485,9 @@ async def _send_dm(context, username: str, message_text: str, image_path: str = 
             except Exception as e:
                 logger.warning(f"Could not attach image for {username}: {e}")
             if attached:
-                logger.info(f"Image attached and sent to {username}")
-                return True
+                logger.info(f"Image attached to {username}, sending text too")
+                await asyncio.sleep(random.uniform(2, 3))
+                await _dismiss_popups(page)
         elif image_path:
             logger.warning(f"Image path does not exist: {image_path}")
 
@@ -547,6 +573,49 @@ class InstagramSender:
                     all_leads.append(l)
             await asyncio.sleep(random.uniform(3, 6))
         return all_leads
+
+    async def profile_country(self, username: str) -> str:
+        """Visita el perfil y devuelve el país inferido desde la bio/ubicación ('', 'Colombia', ...)."""
+        try:
+            page = await self._context.new_page()
+            await page.goto(f"https://www.instagram.com/{username}/", timeout=30000, wait_until="domcontentloaded")
+            await asyncio.sleep(random.uniform(2, 3))
+            bio = ""
+            try:
+                bio = await page.locator("header section span, div._aa_c").first.inner_text(timeout=5000)
+            except Exception:
+                pass
+            if not bio:
+                try:
+                    body = await page.locator("body").inner_text(timeout=5000)
+                    bio = body[:800]
+                except Exception:
+                    pass
+            await page.close()
+
+            # Mapa de países <- subcadenas típicas en bios de clínicas
+            mapas = {
+                "Colombia": ["colombia", "bogotá", "medellín", "cali", "barranquilla", "cartagena", "cúcuta", "pereira", "manizales", "bucaramanga", "col. ", "colombiano"],
+                "Panamá": ["panamá", "panama", "panam"],
+                "Costa Rica": ["costa rica", "san josé", "san jose", "heredia", "alajuela", "cartago", "cr. "],
+                "Nicaragua": ["nicaragua", "managua", "león", "granada", "masaya"],
+                "Honduras": ["honduras", "tegucigalpa", "san pedro sula", "la ceiba"],
+                "El Salvador": ["el salvador", "san salvador", "santa ana", "soyapango"],
+                "Venezuela": ["venezuela", "caracas", "maracaibo"],
+                "Ecuador": ["ecuador", "quito", "guayaquil"],
+                "Perú": ["perú", "peru", "lima", "arequipa"],
+                "México": ["méxico", "mexico", "cdmx", "guadalajara", "monterrey"],
+                "Guatemala": ["guatemala", "guatemala city"],
+            }
+            tb = bio.lower()
+            for pais, claves in mapas.items():
+                for k in claves:
+                    if k in tb:
+                        return pais
+            return ""
+        except Exception as e:
+            logger.error(f"profile_country error for {username}: {e}")
+            return ""
 
     async def send_dm(self, username: str, message_text: str, country: str = "", follow: bool = True, image_path: str = "") -> bool:
         """Send a DM respecting daily limits (5/day global). Optionally attaches image and follows first."""

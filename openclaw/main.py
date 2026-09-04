@@ -156,7 +156,7 @@ async def ig_search_enqueue(data: dict):
 
     from client_store import get_client
     from models import Lead
-    from queue_manager import enqueue_leads
+    from queue_manager import enqueue_leads, save_queue
     from ig_sender import InstagramSender
 
     client = get_client(client_id)
@@ -185,6 +185,7 @@ async def ig_search_enqueue(data: dict):
         ))
 
     count = enqueue_leads(leads)
+    save_queue(force=True)
     await sender.close()
 
     return {"found": len(ig_leads), "enqueued": count}
@@ -196,6 +197,37 @@ def _ig_senders_cache():
         return list(_ig_senders.values())
     except Exception:
         return []
+
+
+@app.post("/api/ig/send-dms")
+async def ig_send_dms(data: dict):
+    """Envía DMs de Instagram (mensaje dental + imagen + wa.me) a una lista de
+    usernames, sin depender del estado de WhatsApp. Respeta el límite diario de IG."""
+    from queue_manager import _send_instagram_message
+    client_id = data.get("client_id", "")
+    users = data.get("users", [])
+    if not client_id or not users:
+        return {"error": "client_id and users required", "sent": 0, "failed": 0}
+    sent = 0
+    failed = 0
+    resultados = []
+    for u in users:
+        uname = (u.get("username") or u if isinstance(u, str) else u.get("username", "")).strip()
+        if not uname:
+            continue
+        entry = {
+            "nombre": uname,
+            "empresa": u.get("empresa", "") if isinstance(u, dict) else "",
+            "pais": u.get("pais", "") if isinstance(u, dict) else "",
+            "rubro": u.get("rubro", "clinicas dentales") if isinstance(u, dict) else "clinicas dentales",
+        }
+        ok = await _send_instagram_message(entry, "", client_id)
+        resultados.append({"username": uname, "ok": ok})
+        if ok:
+            sent += 1
+        else:
+            failed += 1
+    return {"sent": sent, "failed": failed, "resultados": resultados}
 
 
 # ─── Dashboard API ───
@@ -252,8 +284,9 @@ async def api_campaign_create(data: dict):
         return JSONResponse(status_code=400, content={"error": "paises_objetivo debe ser una lista no vacía"})
     mensajes = data.get("mensajes") or []
     meta = int(data.get("meta_diaria_total", 25) or 25)
+    rubros = data.get("rubros")
     try:
-        c = campaign_store.create_campaign(client_id, rubro, paises, mensajes, meta, data.get("image_media"))
+        c = campaign_store.create_campaign(client_id, rubro, paises, mensajes, meta, data.get("image_media"), rubros)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": f"no pude crear la campaña: {e}"})
     return {"status": "ok", "campaign": c}
@@ -273,6 +306,18 @@ async def api_campaign_save(key: str, data: dict):
     import campaign_store
     st = campaign_store.save_state(key, data)
     return {"status": "ok", "campaign": campaign_store.get_campaign(key)}
+
+
+@app.post("/api/campaigns/{key}/activate")
+async def api_campaign_activate(key: str):
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    result = campaign_store.activate_campaign(key)
+    if isinstance(result, dict) and result.get("error"):
+        return JSONResponse(status_code=400, content=result)
+    return result
 
 
 @app.post("/api/campaigns/{key}/reset")
@@ -342,6 +387,27 @@ async def api_campaign_activity(key: str, limit: int = 40):
     if not c:
         return JSONResponse(status_code=404, content={"error": "campaign not found"})
     return {"activity": campaign_store.recent_activity(limit)}
+
+
+@app.post("/api/campaigns/{key}/collect")
+async def api_campaign_collect(key: str, data: dict = None):
+    """Recolección dedicada para una campaña (background): capta leads de sus
+    países/rubros y los encola listos, sin tocar las demás campañas ni el envío."""
+    import campaign_store
+    c = campaign_store.get_campaign(key)
+    if not c:
+        return JSONResponse(status_code=404, content={"error": "campaign not found"})
+    max_por_pais = int((data or {}).get("max_por_pais", 25) or 25)
+    import asyncio, threading
+
+    def runner():
+        try:
+            asyncio.run(campaign_store.collect_campaign(key, max_por_pais=max_por_pais))
+        except Exception as e:
+            campaign_store._log_activity("collect", f"Campaña {key}: error {e}")
+
+    threading.Thread(target=runner, daemon=True).start()
+    return {"status": "started", "campaign": key, "max_por_pais": max_por_pais}
 
 
 # ─── UNIFIED DATA (Prospectos + Distribuidores) ───
@@ -618,7 +684,7 @@ async def api_historical(days: int = 7):
 @app.get("/api/queue/detail")
 async def api_queue_detail():
     """Return detailed queue info for dashboard."""
-    from queue_manager import get_queue_status, load_queue
+    from queue_manager import get_queue_status, load_queue, get_prospectados_summary
     qs = get_queue_status()
     daily = {}
     try:
@@ -629,7 +695,18 @@ async def api_queue_detail():
     return {
         "queue": qs,
         "daily": daily,
+        "prospectados": get_prospectados_summary(),
     }
+
+
+@app.post("/api/queue/refill-saved")
+async def api_queue_refill_saved(data: dict = None):
+    """Reenqueue dental prospects already saved in prospectos_locales.json."""
+    from queue_manager import enqueue_saved_dental_prospects, get_queue_status
+    paises = (data or {}).get("paises") or None
+    res = enqueue_saved_dental_prospects(paises=paises)
+    res["queue_status"] = get_queue_status()
+    return res
 
 
 @app.post("/api/contacto/excluir")

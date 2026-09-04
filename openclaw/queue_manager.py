@@ -8,6 +8,7 @@ import os
 import random
 import re
 import time
+import hashlib
 from collections import defaultdict
 from datetime import datetime, date
 from zoneinfo import ZoneInfo
@@ -529,6 +530,51 @@ _DENTAL_POSITIVE_TERMS = (
     "dientes", "caries", "bucal", "muela", "sonrisa", "smile", "dental",
 )
 
+# Señal POSITIVA para restaurantes/gastronomía (campaña restaurantes).
+_RESTAURANT_POSITIVE_TERMS = (
+    "restaurante", "restaurant", "resto", "gastronom", "comida", "cocina",
+    "cafeteria", "cafetería", "comedor", "gourmet", "food", "bistro", "parrilla",
+    "asado", "pizzeria", "pizzería", "taqueria", "taquería", "marisquer",
+    "sushi", "grill", "bar -", "bar y", "buffet", "bufet", "helader", "café",
+    "delicias", "sabores", "sabor", "chef", "cevicher", "churrasquer",
+    "entremés", "cantina", "fusion", "tradicional",
+)
+
+# Negativo para la campaña restaurantes: negocios NO gastronómicos.
+# (NO hereda _NO_DENTAL_TERMS: esa lista anti-dental incluye palabras de
+# restaurantes como "restaurante"/"cafetería"/"comedor" y auto-rechazaría todo.)
+_RESTAURANT_NEGATIVE_TERMS = (
+    "dent", "odontolog", "clinica", "clínica", "consultorio", "hospital", "farma",
+    "gimnasio", "belleza", "peluquer", "salon de", "salón de", "unisex", "barber",
+    "spa", "tienda", "supermercado", "abarrote", "ferreter", "auto", "llanta",
+    "taller", "banco", "seguro", "abogado", "arquitect", "ingenier", "notaria",
+    "zapater", "librer", "muebler", "joyer", "opt", "florister", "hotel",
+    "inmobiliaria", "agencia", "escuela", "colegio", "iglesia", "funeraria",
+    "transporte", "flete", "taxi", "mecanic", "electricist", "carpinter",
+    "lavander", "reciclaj", "construccio",
+)
+
+_FASTFOOD_CHAINS_EXCL = (
+    "mcdonald", "burger king", "kfc", "domino", "domino's", "pizza hut",
+    "wendy", "taco bell", "starbucks", "subway", "pollo campero", "church",
+    "hardee", "little caesars", "dunkin", "denny", "ihop", "applebee",
+    "outback", "chili", "popeyes", "carl's", "friday", "bembos", "presto",
+)
+
+
+def es_rubro_restaurante_lead(nombre: str = "", rubro: str = "", keywords: str = "") -> bool:
+    """Filtro para la campaña restaurantes: acepta si el nombre O el rubro trae
+    señal gastronómica (nombre propio sin marca puede no incluirla) y rechaza
+    negocios ajenos o cadenas globales de fast food."""
+    texto = f"{nombre} {rubro} {keywords}".lower().strip()
+    nombre_txt = f"{nombre}".lower().strip()
+    if any(t in texto for t in _RESTAURANT_NEGATIVE_TERMS):
+        return False
+    if any(t in texto for t in _FASTFOOD_CHAINS_EXCL):
+        return False
+    return any(t in nombre_txt for t in _RESTAURANT_POSITIVE_TERMS) or \
+        any(t in rubro.lower() for t in ("restaurant", "gastronom", "comida", "cocina", "comedor", "cafeter", "parrilla", "pizza", "bistro", "buffet", "bar"))
+
 
 def es_rubro_dental_lead(nombre: str = "", rubro: str = "", keywords: str = "",
                          requerir_nombre_dental: bool = True) -> bool:
@@ -551,6 +597,56 @@ def es_rubro_dental_lead(nombre: str = "", rubro: str = "", keywords: str = "",
     return True
 
 
+def _campaign_rubro_words(campaign_key: str) -> str:
+    """Concatena los rubros de una campaña (para inferir filtro correcto)."""
+    try:
+        from campaign_store import get_campaign
+        c = get_campaign(campaign_key)
+        if c:
+            return " ".join(c.get("rubros") or [c.get("rubro") or ""]).lower()
+    except Exception:
+        pass
+    return ""
+
+
+def _rubro_ok_for_campaign(campaign_key: str, nombre: str = "", rubro: str = "",
+                           keywords: str = "") -> bool:
+    """Valida un lead contra el filtro de rubro de SU campaña (multicampaña).
+
+    Sin campaña (legacy) -> filtro dental estricto. Campaña restaurantes ->
+    filtro gastronómico. Otras campañas con rubros propios -> se aceptan los
+    leads que lleguen con ese campaign_key (ya fueron filtrados al encolar).
+    Si la campaña existe pero no encaja con ningún filtro conocido, se acepta
+    por defecto para no bloquear campañas personalizadas.
+    """
+    words = _campaign_rubro_words(campaign_key)
+    if any(t in words for t in ("dent", "odontolog")) or not campaign_key:
+        return es_rubro_dental_lead(nombre, rubro, keywords)
+    if any(t in words for t in ("restaurant", "gastronom", "comida", "cocina")):
+        return es_rubro_restaurante_lead(nombre, rubro, keywords)
+    return True
+
+
+def _infer_campaign_key(lead: Lead) -> str:
+    """Si el lead no trae campaign_key, lo deduce por sus rubros vs campañas."""
+    if getattr(lead, "campaign_key", ""):
+        return lead.campaign_key
+    try:
+        from campaign_store import list_campaigns
+        r = f"{lead.rubro or ''} {lead.keywords or ''}".lower().strip()
+        if not r:
+            return ""
+        for c in list_campaigns():
+            ck_rubros = c.get("rubros") or [c.get("rubro") or ""]
+            for cr in ck_rubros:
+                crl = str(cr).lower().strip()
+                if crl and crl in r:
+                    return c["key"]
+    except Exception:
+        return ""
+    return ""
+
+
 def enqueue_leads(leads: list[Lead]) -> int:
     count = 0
     contacted = _get_contacted_phones()
@@ -564,10 +660,11 @@ def enqueue_leads(leads: list[Lead]) -> int:
         if not lead.telefono and not lead.email and not is_ig:
             continue
         channel = _pick_channel(lead)
-        if channel in ("whatsapp", "instagram") and not es_rubro_dental_lead(
-            f"{lead.nombre or ''} {lead.empresa or ''}", lead.rubro or "", lead.keywords or ""
+        campaign_key = _infer_campaign_key(lead)
+        if channel in ("whatsapp", "instagram") and not _rubro_ok_for_campaign(
+            campaign_key, f"{lead.nombre or ''} {lead.empresa or ''}", lead.rubro or "", lead.keywords or ""
         ):
-            _log_activity("skip", f"Omitido (rubro fuera de clínicas dentales): {lead.nombre or '?'} ({lead.pais or '?'})")
+            _log_activity("skip", f"Omitido (rubro fuera de campaña {campaign_key or 'default'}): {lead.nombre or '?'} ({lead.pais or '?'})")
             continue
         entry = {
             "nombre": _clean_business_name(lead.nombre),
@@ -581,8 +678,9 @@ def enqueue_leads(leads: list[Lead]) -> int:
             "fuente": lead.fuente,
             "client_id": lead.client_id or _default_client_id(),
             "channel": channel,
-            "campaign_key": getattr(lead, "campaign_key", "") or "",
+            "campaign_key": campaign_key or getattr(lead, "campaign_key", "") or "",
             "queued_at": datetime.now().isoformat(),
+            "instagram_username": lead.nombre if is_ig else "",
         }
         biz_key = _business_key(entry)
         if channel == "whatsapp" and biz_key and (biz_key in contacted_business or biz_key in queued_business):
@@ -590,11 +688,14 @@ def enqueue_leads(leads: list[Lead]) -> int:
             continue
         phone = entry.get("telefono", "")
         if phone:
+            if not _phone_total_len_ok(phone, entry.get("pais", "")):
+                _log_activity("skip", f"Omitido (formato de teléfono inválido para {entry.get('pais','?')}): {lead.nombre} ({entry.get('pais','?')}) - {phone}")
+                continue
             if phone in contacted or phone in historic:
-                _log_activity("skip", f"Omitido (ya contactado): {lead.nombre} ({lead.pais or '?'}) - {phone}")
+                _log_activity("skip", f"Omitido (ya contactado): {lead.nombre} ({entry.get('pais','?')}) - {phone}")
                 continue
             if phone in queued_phones:
-                _log_activity("skip", f"Omitido (duplicado en cola): {lead.nombre} ({lead.pais or '?'}) - {phone}")
+                _log_activity("skip", f"Omitido (duplicado en cola): {lead.nombre} ({entry.get('pais','?')}) - {phone}")
                 continue
             queued_phones.add(phone)
         elif entry.get("email") and entry["email"] in queued_emails:
@@ -608,6 +709,74 @@ def enqueue_leads(leads: list[Lead]) -> int:
     logger.info(f"Enqueued {count} leads (total queue: {len(_queue)})")
     _log_activity("enqueue", f"{count} leads encolados (cola: {len(_queue)})", {"count": count})
     return count
+
+
+def get_prospectados_summary() -> dict:
+    """Total de prospectos ya conseguidos por prospección (local).
+    Refleja lo logrado aunque la prospección esté pausada o la cola vacía."""
+    try:
+        from local_search import cargar_prospectos_locales
+        pros = cargar_prospectos_locales()
+    except Exception:
+        pros = []
+    total = len(pros)
+    con_tel = 0
+    por_pais: dict = {}
+    for p in pros:
+        if not (p.get("telefono") or p.get("telefono_formateado")):
+            continue
+        con_tel += 1
+        pais = (p.get("pais") or "").strip() or "Desconocido"
+        por_pais[pais] = por_pais.get(pais, 0) + 1
+    return {"total": total, "con_telefono": con_tel, "por_pais": por_pais}
+
+
+def enqueue_saved_dental_prospects(paises: list = None,
+                                   max_por_pais: int = 25,
+                                   client_id: str = "") -> dict:
+    """Reenqueue leads ya guardados en prospectos_locales.json que aún no
+    se han contactado ni están en cola. El dedup de enqueue_leads evita
+    duplicar contactados/históricos. Respeta un tope por país."""
+    from models import Lead
+    from local_search import cargar_prospectos_locales
+    paises_activos = paises or []
+    if not paises_activos:
+        try:
+            from prospector import load_config
+            paises_activos = load_config().get("paises_activos") or []
+        except Exception:
+            paises_activos = []
+    pros = cargar_prospectos_locales()
+    por_pais: dict = {}
+    leads = []
+    for p in pros:
+        phone = (p.get("telefono_formateado") or p.get("telefono") or "").strip()
+        if not phone:
+            continue
+        if (p.get("estado_contacto") or "").strip().lower() in ("contactado", "no_interesado"):
+            continue
+        if paises_activos and (p.get("pais") or "").strip() not in paises_activos:
+            continue
+        if not es_rubro_dental_lead(p.get("nombre", ""), p.get("rubro", "")):
+            continue
+        pais = (p.get("pais") or "").strip()
+        por_pais[pais] = por_pais.get(pais, 0) + 1
+        if por_pais[pais] > max_por_pais:
+            continue
+        leads.append(Lead(
+            nombre=p.get("nombre", ""),
+            telefono=phone,
+            rubro=p.get("rubro", ""),
+            pais=pais,
+            ciudad=p.get("ciudad", ""),
+            website=p.get("website", ""),
+            fuente="saved",
+            client_id=client_id or _default_client_id(),
+        ))
+    if not leads:
+        return {"reenqueued": 0, "disponibles": 0, "por_pais": {}}
+    count = enqueue_leads(leads)
+    return {"reenqueued": count, "disponibles": len(leads), "por_pais": por_pais}
 
 
 def _default_client_id() -> str:
@@ -790,9 +959,49 @@ _COUNTRY_CODES = {
     "espana": "34",
 }
 
+# Dígitos totales esperados (indicativo + número local) por país.
+# Panamá/Honduras: 8 locales -> 11. Colombia: 10 locales -> 12.
+_COUNTRY_TOTAL_LEN = {
+    "panam": 11,
+    "hondur": 11,
+    "colombi": 12,
+}
+
+
+def _phone_total_len_ok(phone: str, country: str = "") -> bool:
+    """True solo si la longitud del número tiene sentido para el país.
+    Evita encolar números fijos/mal capturados que jamás existirán en WhatsApp."""
+    digits = phone.lstrip("+")
+    if not digits.isdigit():
+        return False
+    if len(digits) < 7:
+        return False
+    if not country:
+        return True
+    c = country.lower()
+    expected = None
+    for key, exp in _COUNTRY_TOTAL_LEN.items():
+        if key in c:
+            expected = exp
+            break
+    if expected is None:
+        return True
+    return len(digits) == expected
+
 
 def _get_messages_for_lead(entry: dict) -> list[dict]:
-    """Get the appropriate template messages for a lead."""
+    """Get the appropriate template messages for a lead (campaign-aware)."""
+    campaign_key = entry.get("campaign_key", "")
+    if campaign_key:
+        try:
+            from campaign_store import get_campaign
+            camp = get_campaign(campaign_key)
+            if camp and camp.get("messages"):
+                camp_msgs = [m for m in camp["messages"] if m.get("enabled", True)]
+                if camp_msgs:
+                    return camp_msgs
+        except Exception:
+            pass
     client_id = entry.get("client_id", _default_client_id())
     channel = entry.get("channel", "whatsapp")
     template_set = get_template(client_id, channel)
@@ -815,6 +1024,10 @@ def _get_messages_for_lead(entry: dict) -> list[dict]:
                 media = item.get("media") or {}
                 item["media_url"] = media.get("url", "")
                 item["media_type"] = media.get("type", "")
+                # "interchange" permite intercalar varias imágenes en el mismo
+                # paso: cada lead escoge una al azar. ¡El código resuelve la URL
+                # en _resolve_media_interchange, este campo solo se propaga!
+                item["media_interchange"] = media.get("interchange") or []
             result.append(item)
         else:
             result.append({
@@ -827,6 +1040,40 @@ def _get_messages_for_lead(entry: dict) -> list[dict]:
 
 
 _SPINTX_RE = re.compile(r"\{\{(.*?)\}\}")
+
+
+def _resolve_media_interchange(entry: dict, base_url: str, interchange) -> str:
+    """Fallback síncrono: primera imagen disponible si Gemini no responde."""
+    pool = [u for u in (interchange or []) if isinstance(u, str) and u]
+    if not pool:
+        return base_url
+    if not base_url:
+        return pool[0]
+    return base_url  # fallback sync: la base
+
+
+async def _resolve_media_interchange_async(entry: dict, base_url: str, interchange) -> str:
+    """Gemini decide cuál imagen usar según el contexto del lead."""
+    import logging
+    _logger = logging.getLogger("openclaw.queue")
+    pool = [u for u in (interchange or []) if isinstance(u, str) and u]
+    if not pool:
+        return base_url
+    options = ([base_url] + pool) if base_url else pool
+    if len(options) == 1:
+        return options[0]
+    try:
+        from gemini_brain import gemini
+        return await gemini.pick_image({
+            "nombre": entry.get("nombre", ""),
+            "empresa": entry.get("empresa") or entry.get("nombre", ""),
+            "pais": entry.get("pais", ""),
+            "ciudad": entry.get("ciudad", ""),
+            "rubro": entry.get("rubro", ""),
+        }, options)
+    except Exception as e:
+        _logger.warning(f"interchange async fallback: {e}")
+        return options[0]
 
 
 def _spintax(text: str) -> str:
@@ -1240,6 +1487,7 @@ async def _send_messages(lead: Lead) -> bool | None:
         "ciudad": lead.ciudad,
         "client_id": lead.client_id or _default_client_id(),
         "channel": _pick_channel(lead),
+        "campaign_key": getattr(lead, "campaign_key", "") or "",
     }
     channel = entry["channel"]
     client_id = entry["client_id"]
@@ -1305,6 +1553,8 @@ async def _send_messages(lead: Lead) -> bool | None:
         text = _render_template(tmpl["text"] if isinstance(tmpl, dict) else tmpl.text, entry)
         media_url = tmpl.get("media_url", "") if isinstance(tmpl, dict) else getattr(tmpl, "media_url", "")
         media_type = tmpl.get("media_type", "") if isinstance(tmpl, dict) else getattr(tmpl, "media_type", "")
+        if isinstance(tmpl, dict) and tmpl.get("media_interchange"):
+            media_url = await _resolve_media_interchange_async(entry, media_url, tmpl["media_interchange"])
 
         if channel == "whatsapp":
             result = await _send_whatsapp(entry, text, client_id, media_url=media_url, media_type=media_type)
@@ -1402,8 +1652,7 @@ async def _maybe_send_followup():
             "pais": conv.lead.pais,
             "client_id": client_id,
         }
-        media_url = getattr(client.whatsapp, "media_url", "") or ""
-        media_type = getattr(client.whatsapp, "media_type", "") or ""
+        media_url, media_type = _reply_media_for_lead(conv, client)
         _last_followup_ts = time.time()
         result = await _send_whatsapp(entry, _render_template(_FOLLOWUP_MSG, entry), client_id, media_url=media_url, media_type=media_type)
         if result is None:
@@ -1529,6 +1778,22 @@ def _reorder_queue_by_funnel():
         logger.error(f"funnel reorder error: {e}")
 
 
+def _campaign_sending_enabled(campaign_key: str) -> bool:
+    """True si la campaña está en modo envío (enviando). Las campañas con
+    «enviando» apagado quedan RECOLECTANDO leads sin dispararlos: sus entradas
+    de cola se mantienen listas pero el emisor las salta silenciosamente."""
+    if not campaign_key:
+        return True
+    try:
+        from campaign_store import get_campaign
+        c = get_campaign(campaign_key)
+        if c is None:
+            return True
+        return bool(c.get("enviando", c.get("active", True)))
+    except Exception:
+        return True
+
+
 async def process_auto():
     """Auto-loop: sends up to 5 leads per cycle, respects per-channel limits."""
     global _queue, _running, _running_since
@@ -1556,10 +1821,10 @@ async def process_auto():
 
             load_queue()
             _reorder_queue_by_funnel()
-            if not await _evolution_connection_ok(_default_client_id()):
-                if cycle % 10 == 1:
-                    logger.info(f"Queue paused (WhatsApp session no conectada, cycle {cycle})")
-                continue
+            # El estado de la sesión WhatsApp solo debe frenar a WhatsApp, no a IG/email.
+            wa_ok = await _evolution_connection_ok(_default_client_id())
+            if not wa_ok and cycle % 10 == 1:
+                logger.info(f"Queue: sesión WhatsApp no conectada — solo se procesarán IG/email (cycle {cycle})")
             await _maybe_send_followup()
             if not _queue:
                 if cycle % 10 == 1:
@@ -1568,6 +1833,8 @@ async def process_auto():
 
             groups = _group_queue_by_client()
             available = [k for k in groups if _can_send_group(k)]
+            if not wa_ok:
+                available = [k for k in available if not k.rsplit("|", 1)[-1] == "whatsapp"]
             if not available:
                 continue
 
@@ -1632,15 +1899,18 @@ async def process_auto():
                             _log_activity("skip", f"Omitido (excluido): {entry.get('nombre','')} ({entry.get('pais','?')})")
                             continue
 
-                        if channel == "whatsapp" and not es_rubro_dental_lead(
-                            f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
+                        if channel == "whatsapp" and not _campaign_sending_enabled(entry.get("campaign_key", "")):
+                            continue
+
+                        if channel == "whatsapp" and not _rubro_ok_for_campaign(
+                            entry.get("campaign_key", ""), f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
                         ):
                             skip_keys.add(phone_clean or entry.get("email", ""))
-                            _log_activity("skip", f"Omitido (no es clínica dental - verificación envío): {entry.get('nombre','')} ({entry.get('pais','?')})")
+                            _log_activity("skip", f"Omitido (rubro fuera de campaña - verificación envío): {entry.get('nombre','')} ({entry.get('pais','?')})")
                             if phone_clean and not is_phone_excluded(phone_clean):
                                 try:
                                     from store import exclude_phone
-                                    exclude_phone(phone_clean, "Descartado en envío: no es clínica dental")
+                                    exclude_phone(phone_clean, "Descartado en envío: rubro no coincide con campaña")
                                 except Exception:
                                     pass
                             continue
@@ -1793,14 +2063,17 @@ async def process_next_batch(count: int = 5) -> dict:
             pais = entry.get("pais", "")
             phone_clean = _format_phone(entry.get("telefono", ""), pais)
 
-            if channel == "whatsapp" and not es_rubro_dental_lead(
-                f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
+            if channel == "whatsapp" and not _campaign_sending_enabled(entry.get("campaign_key", "")):
+                continue
+
+            if channel == "whatsapp" and not _rubro_ok_for_campaign(
+                entry.get("campaign_key", ""), f"{entry.get('nombre','')} {entry.get('empresa','')}", entry.get("rubro",""), entry.get("keywords","")
             ):
-                logger.info(f"process_next_batch: DROP no_dental: {entry.get('nombre','?')} ({pais})")
+                logger.info(f"process_next_batch: DROP no match campaign: {entry.get('nombre','?')} ({pais})")
                 if phone_clean and not is_phone_excluded(phone_clean):
                     try:
                         from store import exclude_phone
-                        exclude_phone(phone_clean, "Descartado en envío: no es clínica dental")
+                        exclude_phone(phone_clean, "Descartado en envío: rubro no coincide con campaña")
                     except Exception:
                         pass
                 continue
@@ -2074,6 +2347,25 @@ def _fallback_classify(message_text: str) -> tuple[Classification, str, dict]:
     )
 
 
+def _reply_media_for_lead(conv, client) -> tuple:
+    """Media para la auto-respuesta: la de la campaña del lead (si la hay) o
+    la media genérica del cliente como respaldo. Nunca mezcla campañas."""
+    try:
+        campaign_key = getattr(conv.lead, "campaign_key", "") or ""
+        if campaign_key:
+            from campaign_store import get_campaign
+            camp = get_campaign(campaign_key)
+            media = (camp or {}).get("media") or {}
+            url = media.get("url") or ""
+            mtype = media.get("type") or "image"
+            if url:
+                return url, mtype
+    except Exception:
+        pass
+    return (getattr(client.whatsapp, "media_url", "") or "",
+            getattr(client.whatsapp, "media_type", "") or "")
+
+
 async def handle_incoming(phone: str, sender_name: str, message_text: str):
     # Dedup: skip if same phone+text already processed in last 60s
     dedup_key = f"{phone}:{message_text[:50]}"
@@ -2168,8 +2460,7 @@ async def handle_incoming(phone: str, sender_name: str, message_text: str):
         client = get_client(client_id) if client_id else None
         if client and client.whatsapp.enabled:
             send_image = bool(actions.get("enviar_imagen"))
-            media_url = getattr(client.whatsapp, "media_url", "") or ""
-            media_type = getattr(client.whatsapp, "media_type", "") or ""
+            media_url, media_type = _reply_media_for_lead(conv, client)
             entry = {
                 "nombre": conv.lead.nombre,
                 "empresa": conv.lead.empresa,

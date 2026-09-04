@@ -33,6 +33,15 @@ def _write_json(path: str, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
+def _log_activity(kind: str, message: str):
+    try:
+        entry = {"ts": datetime.now().isoformat(), "kind": kind, "msg": message}
+        with open(ACTIVITY_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
 def _slugify(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_") or "campana"
 
@@ -90,6 +99,8 @@ def _normalize_messages(entry: dict) -> list:
             "media_enabled": bool(media.get("enabled", True)),
             "caption": media.get("caption", ""),
         }
+        if media.get("interchange"):
+            item["media_interchange"] = [u for u in media["interchange"] if u]
         out.append(item)
     return sorted(out, key=lambda x: x["step"])
 
@@ -98,13 +109,53 @@ def _media_of(entry: dict) -> dict:
     for m in entry.get("messages", []):
         media = m.get("media")
         if media and media.get("url"):
-            return {"enabled": bool(media.get("enabled", True)), "type": media.get("type", "image"),
-                    "url": media.get("url", ""), "caption": media.get("caption", "")}
+            out = {"enabled": bool(media.get("enabled", True)), "type": media.get("type", "image"),
+                   "url": media.get("url", ""), "caption": media.get("caption", "")}
+            if media.get("interchange"):
+                out["interchange"] = [u for u in media["interchange"] if u]
+            return out
     return {}
 
 
 def _state() -> dict:
     return _read_json(STATE_FILE, {})
+
+
+def _entry_rubros(entry: dict) -> Optional[list]:
+    rubros = entry.get("rubros")
+    if isinstance(rubros, list) and rubros:
+        return [str(r).strip() for r in rubros if str(r).strip()]
+    rubro = entry.get("rubro")
+    if rubro:
+        return [str(rubro).strip()]
+    return None
+
+
+def _patch_entry(key: str, patch: dict):
+    """Apply a patch to a campaign entry in plantillas.json (no-op if absent)."""
+    plantillas = _read_json(PLANTILLAS_FILE, [])
+    changed = False
+    for e in _campaign_entries(plantillas):
+        if e["campaign"] == key:
+            e.update({k: v for k, v in patch.items() if v is not None})
+            changed = True
+            break
+    if changed:
+        _write_json(PLANTILLAS_FILE, plantillas)
+
+
+def _effective_rubros(entry: dict) -> list:
+    explicit = _entry_rubros(entry)
+    if explicit:
+        return explicit
+    for cl in _read_json(CLIENTS_FILE, []):
+        if cl.get("id") == entry.get("client_id"):
+            rubros = cl.get("rubros")
+            if isinstance(rubros, list) and rubros:
+                return [str(r) for r in rubros if str(r)]
+            break
+    rubro = entry.get("rubro")
+    return [rubro] if rubro else []
 
 
 def list_campaigns() -> list:
@@ -126,8 +177,10 @@ def list_campaigns() -> list:
             "key": key,
             "client_id": entry.get("client_id", ""),
             "rubro": entry.get("rubro", "") or "",
+            "rubros": _effective_rubros(entry),
             "channel": "whatsapp",
             "active": bool(st.get("active", True)),
+            "enviando": bool(st.get("enviando", st.get("active", True))),
             "paises_objetivo": paises,
             "meta_diaria_por_pais": metas,
             "cities_per_country": int(st.get("cities_per_country", 5)),
@@ -152,15 +205,74 @@ def save_state(key: str, data: dict) -> dict:
     st = state.get(str(key), {})
     if "active" in data:
         st["active"] = bool(data["active"])
+    if "enviando" in data:
+        st["enviando"] = bool(data["enviando"])
     if "paises_objetivo" in data and isinstance(data["paises_objetivo"], list):
         st["paises_objetivo"] = [str(p) for p in data["paises_objetivo"]]
     if "meta_diaria_por_pais" in data and isinstance(data["meta_diaria_por_pais"], dict):
         st["meta_diaria_por_pais"] = {str(k): int(v) for k, v in data["meta_diaria_por_pais"].items()}
     if "cities_per_country" in data:
         st["cities_per_country"] = max(1, int(data["cities_per_country"]))
+    if "rubros" in data and isinstance(data["rubros"], list):
+        rubros = [str(r).strip() for r in data["rubros"] if str(r).strip()]
+        if rubros:
+            _patch_entry(str(key), {"rubros": rubros})
     state[str(key)] = st
     _write_json(STATE_FILE, state)
+    if "active" in data or "paises_objetivo" in data:
+        _sync_prospector_targets()
     return st
+
+
+def _sync_prospector_targets() -> None:
+    """Recalcula el objetivo del prospector a partir de TODAS las campañas
+    activas: paises_activos = unión de países, límites = unión de metas."""
+    try:
+        from prospector import save_config, load_config
+        campaigns = [c for c in list_campaigns() if c.get("channel") == "whatsapp" and c.get("active", True)]
+        cfg = load_config()
+        paises: list = []
+        limites: dict = {}
+        for camp in campaigns:
+            for p in (camp.get("paises_objetivo") or []):
+                if p and p not in paises:
+                    paises.append(p)
+            for p, v in (camp.get("meta_diaria_por_pais") or {}).items():
+                limites[str(p)] = max(int(limites.get(str(p), 0)), int(v))
+        if paises:
+            cfg["paises_activos"] = paises
+        if limites:
+            cfg["limites_por_pais"] = limites
+            cfg["max_por_pais_diario"] = max(limites.values())
+        save_config(cfg)
+    except Exception as e:
+        _log_activity("campaign_activate", f"no pude sincronizar prospector ({e})")
+
+
+def activate_campaign(key: str) -> dict:
+    """Activa la campaña SIN apagar el resto.
+
+    No pausa/resume el prospector ni vacía la cola: solo marca esta campaña
+    como activa + enviando, y sincroniza el objetivo del prospector con la
+    UNIÓN de países/rubros/metas de todas las campañas activas para que el
+    PRÓXIMO ciclo de prospección capture para todas a la vez.
+    """
+    key = str(key)
+    camp = get_campaign(key)
+    if not camp:
+        return {"error": "campaign not found"}
+    state = _state()
+    # No apaga las demás: SOLO enciende esta.
+    st = dict(state.get(key, {}))
+    st["active"] = True
+    st["enviando"] = True
+    state[key] = st
+    _write_json(STATE_FILE, state)
+
+    _sync_prospector_targets()
+
+    _log_activity("campaign_activate", f"Campaña «{key}» activada (no detiene las demás)")
+    return {"status": "ok", "campaign": get_campaign(key)}
 
 
 def save_messages(key: str, messages: list) -> dict:
@@ -183,12 +295,17 @@ def save_messages(key: str, messages: list) -> dict:
         media_enabled = media.get("enabled", True) if "url" in media or (prev or {}).get("media_url") else True
         caption = media.get("caption") or (prev or {}).get("caption") or ""
         msg = {"step": step, "text": text, "enabled": enabled}
+        interchange = media.get("interchange") or (prev or {}).get("media_interchange") or []
         if media_url:
             msg["media"] = {"enabled": media_enabled, "type": media_type or "image",
                             "url": media_url, "caption": caption}
+            if interchange:
+                msg["media"]["interchange"] = [u for u in interchange if u]
         elif prev and prev.get("media_url"):
             msg["media"] = {"enabled": media_enabled, "type": prev["media_type"] or "image",
                             "url": prev["media_url"], "caption": prev.get("caption", "")}
+            if interchange:
+                msg["media"]["interchange"] = [u for u in interchange if u]
         new_messages.append(msg)
     target["messages"] = sorted(new_messages, key=lambda m: m["step"])
     _write_json(PLANTILLAS_FILE, plantillas)
@@ -213,11 +330,12 @@ def _unique_key(rubro: str, plantillas: list = None) -> str:
 
 def create_campaign(client_id: str, rubro: str, paises_objetivo: list,
                     mensajes: list, meta_diaria_total: int = 25,
-                    image_media: dict = None) -> dict:
+                    image_media: dict = None, rubros: list = None) -> dict:
     """Crea una campaña WhatsApp nueva en plantillas.json y la activa."""
     plantillas = _read_json(PLANTILLAS_FILE, [])
     key = _unique_key(rubro, plantillas)
     image_media = image_media or {}
+    rubros = [str(r).strip() for r in (rubros or []) if str(r).strip()] or [str(rubro).strip()]
 
     steps = sorted([(int(m.get("step", 0)), str(m.get("text", ""))) for m in (mensajes or []) if m.get("text")])
     steps = steps[:3]
@@ -243,6 +361,7 @@ def create_campaign(client_id: str, rubro: str, paises_objetivo: list,
         "meta_diaria_total": int(meta_diaria_total),
         "meta_diaria_por_pais": {p: per for p in paises},
         "rubro": str(rubro).strip(),
+        "rubros": rubros,
         "channel": "whatsapp",
         "messages": messages,
     }
@@ -251,6 +370,7 @@ def create_campaign(client_id: str, rubro: str, paises_objetivo: list,
 
     save_state(key, {"active": True, "cities_per_country": 5, "paises_objetivo": paises,
                      "meta_diaria_por_pais": {p: per for p in paises}})
+    _log_activity("campaign_create", f"Campaña «{key}» creada (rubro: {rubros})")
     return get_campaign(key)
 
 
@@ -387,8 +507,9 @@ def remove_media(key: str) -> dict:
 
 
 def apply_campaign_targets(clients: list) -> list:
-    """Filter each client's ubicaciones to active campaigns: only objetivo countries
-    and the top-N main cities per country. Falls back to the full list when no campaign."""
+    """Filter each client's ubicaciones to ALL active campaigns: union of the
+    objetivo countries, top-N main cities per country and client rubros across
+    every active campaign of the client. Falls back to the full list when none."""
     campaigns = list_campaigns()
     geo = client_country_cities()
     for client in clients:
@@ -396,31 +517,48 @@ def apply_campaign_targets(clients: list) -> list:
         active = [c for c in my if c.get("active", True)]
         if not active:
             continue
-        campaign = active[0]
-        paises = campaign.get("paises_objetivo") or []
-        n = max(1, int(campaign.get("cities_per_country", 5)))
+
+        # Unión de rubros del cliente para captación multi-campaña
+        merged_rubros: list = []
+        for campaign in active:
+            for r in (campaign.get("rubros") or []):
+                r = str(r).strip()
+                if r and r not in merged_rubros:
+                    merged_rubros.append(r)
+        if merged_rubros:
+            client.rubros = merged_rubros
+
+        # Unión de países objetivo + top-N ciudades por país de cada campaña
         selected: list = []
-        for pais in paises:
-            cities = geo.get(pais)
-            if cities is None and pais in client.ubicaciones:
-                cities = [client.ubicaciones[client.ubicaciones.index(pais)]]
-            for ciudad in (cities or [])[:n]:
-                entry = f"{ciudad}, {pais}"
-                if entry in client.ubicaciones and entry not in selected:
-                    selected.append(entry)
+        max_daily = client.whatsapp.max_daily
+        for campaign in active:
+            paises = campaign.get("paises_objetivo") or []
+            n = max(1, int(campaign.get("cities_per_country", 5)))
+            for pais in paises:
+                cities = geo.get(pais)
+                if cities is None and pais in client.ubicaciones:
+                    cities = [client.ubicaciones[client.ubicaciones.index(pais)]]
+                for ciudad in (cities or [])[:n]:
+                    entry = f"{ciudad}, {pais}"
+                    if entry in client.ubicaciones and entry not in selected:
+                        selected.append(entry)
+            n_msgs = max(1, sum(1 for m in (campaign.get("messages") or []) if m.get("enabled", True)))
+            max_daily = max(max_daily, sum(campaign.get("meta_diaria_por_pais", {}).values()) * n_msgs)
         if not selected:
             # All-objective countries unknown in geography; keep original order
+            all_paises = set()
+            for campaign in active:
+                all_paises.update(campaign.get("paises_objetivo") or [])
             with_country = []
             for ub in client.ubicaciones:
                 u = ub.split(",")
                 p = u[-1].strip() if len(u) > 1 else ub.strip()
-                if p in paises:
+                if p in all_paises:
                     with_country.append(ub)
             selected = with_country
         if selected:
             client.ubicaciones = selected
-            n_msgs = max(1, sum(1 for m in (campaign.get("messages") or []) if m.get("enabled", True)))
-            client.whatsapp.max_daily = sum(campaign.get("meta_diaria_por_pais", {}).values()) * n_msgs or client.whatsapp.max_daily
+            client.whatsapp.max_daily = max_daily
     return clients
 
 
@@ -490,3 +628,64 @@ def recent_activity(limit: int = 40) -> list:
         except Exception:
             pass
     return entries[-limit:]
+
+
+def collect_campaign(key: str, max_por_pais: int = 25) -> dict:
+    """Recolección dedicada para UNA campaña sin afectar otras ni el envío.
+
+    Busca los rubros de la campaña en sus países/ciudades objetivo, guarda en
+    prospectos_locales y ENCOLA con campaign_key, para alimentar una cola lista
+    que solo se enviará cuando la campaña esté con «enviando» activo.
+    """
+    from prospector import scrape_local, enqueue_to_openclaw, load_config
+    from local_search import agregar_prospectos_locales
+    camp = get_campaign(key)
+    if not camp:
+        return {"error": "campaign not found"}
+    geo = client_country_cities()
+    cfg = load_config()
+    max_results = int(cfg.get("max_leads_per_search", 50))
+    openclaw_url = cfg.get("openclaw_url", "http://openclaw:9000")
+    client_id = camp.get("client_id", "")
+    n_cities = max(1, int(camp.get("cities_per_country", 5)))
+    rubros = camp.get("rubros") or [camp.get("rubro") or ""]
+    paises = camp.get("paises_objetivo") or []
+
+    total_found = 0
+    total_enqueued = 0
+    por_pais: dict = {}
+    ciclos = []
+    for pais in paises:
+        cities = (geo.get(pais) or [])[:n_cities]
+        if not cities:
+            cities = [pais]
+        for rubro in rubros:
+            por_pais[pais] = por_pais.get(pais, 0)
+            for ciudad in cities:
+                ubicacion = f"{ciudad}, {pais}"
+                try:
+                    resultados = scrape_local(rubro, ubicacion, max_results=max_results)
+                    if resultados:
+                        agregar_prospectos_locales(resultados)
+                    con_telefono = [r for r in resultados if r.get("telefono")][:max_por_pais]
+                    total_found += len(con_telefono)
+                    if con_telefono:
+                        cues = enqueue_to_openclaw(
+                            con_telefono, openclaw_url, client_id=client_id, campaign_key=key
+                        )
+                        total_enqueued += cues
+                        por_pais[pais] += cues
+                        ciclos.append({"rubro": rubro, "ubicacion": ubicacion,
+                                       "con_telefono": len(con_telefono), "encolados": cues})
+                    _log_activity("collect", f"Campaña {key}: {len(con_telefono)} {rubro} en {ubicacion}")
+                except Exception:
+                    continue
+
+    _log_activity("collect", f"Campaña {key}: {total_enqueued} encolados de {total_found} con teléfono")
+    return {
+        "campaign": key,
+        "found": total_found,
+        "enqueued": total_enqueued,
+        "por_pais": por_pais,
+        "ciclos": ciclos,
+    }

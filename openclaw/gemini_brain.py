@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import re
 
 from google import genai
 from google.genai import types
@@ -8,6 +10,8 @@ from google.genai import types
 from aprendizaje import obtener_lecciones
 from config import settings
 from models import Classification
+
+logger = logging.getLogger("openclaw.gemini")
 
 MODEL_NAME = "gemini-3.5-flash"
 _client = genai.Client(api_key=settings.gemini_api_key)
@@ -149,6 +153,53 @@ class GeminiBrain:
         }
         classification = classification_map.get(cat_str, Classification.DUDA)
         return classification, reply, actions
+
+    async def pick_image(self, lead_info: dict, image_options: list[str]) -> str:
+        """Elige la mejor imagen para un lead de outbound según contexto.
+        Recibe info del lead (nombre, empresa, pais, ciudad, rubro) y las URLs
+        de las imágenes disponibles. Devuelve la URL elegida o la primera como
+        fallback ante cualquier error."""
+        if not image_options:
+            return ""
+        if len(image_options) == 1:
+            return image_options[0]
+        try:
+            prompt = (
+                "Sos un asistente de marketing de PSKloud / Premium Soft, software "
+                "administrativo y contable para negocios en Latinoamérica. "
+                "Tenemos 2 o más imágenes promocionales y necesitás elegir cuál "
+                "es más adecuada para enviar a un lead específico.\n\n"
+                f"LEAD:\n- Nombre: {lead_info.get('nombre', '')}\n"
+                f"- Empresa: {lead_info.get('empresa', '')}\n"
+                f"- País: {lead_info.get('pais', '')}\n"
+                f"- Ciudad: {lead_info.get('ciudad', '')}\n"
+                f"- Rubro: {lead_info.get('rubro', '')}\n\n"
+                f"IMÁGENES DISPONIBLES:\n"
+            )
+            for i, url in enumerate(image_options):
+                name = url.rsplit("/", 1)[-1] if "/" in url else url
+                prompt += f"  {i+1}. {url}  (archivo: {name})\n"
+            prompt += (
+                "\nRespondé EXCLUSIVAMENTE con el NÚMERO de la imagen que "
+                "elegirías para este lead (1, 2 o 3). Sin texto adicional."
+            )
+            response = await _client.aio.models.generate_content(
+                model=MODEL_NAME,
+                contents=[types.Content(role="user", parts=[types.Part(text=prompt)])],
+                config=types.GenerateContentConfig(
+                    temperature=0.3,
+                    max_output_tokens=5,
+                ),
+            )
+            raw = (response.text or "").strip()
+            m = re.search(r"(\d{1,2})", raw)
+            idx = int(m.group(1)) - 1 if m else -1
+            if 0 <= idx < len(image_options):
+                logger.info(f"Gemini eligió imagen {idx+1}/{len(image_options)} ({image_options[idx].rsplit('/',1)[-1]}) para {lead_info.get('nombre','')}")
+                return image_options[idx]
+        except Exception as e:
+            logger.warning(f"Gemini pick_image fallback: {e}")
+        return image_options[0]
 
 
 gemini = GeminiBrain()

@@ -45,6 +45,7 @@ class EngineState:
         self.last_cycle_at: Optional[str] = None
         self.api_keys_used: list[str] = []
         self.fuentes_activas: list[str] = []
+        self.total_emails_enviados: int = 0
 
     def to_dict(self) -> dict:
         saved = self.load_state()
@@ -239,9 +240,10 @@ def _nombre_coincide_rubro(nombre_lower: str, rubro_lower: str) -> bool:
 
 # ─── Envío real de correos a distribuidores ───
 
-def enviar_correos_distribuidores(ids: list, plantilla_key: str = "") -> dict:
+def enviar_correos_distribuidores(ids: list, plantilla_key: str = "", force: bool = False) -> dict:
     """Envía correos SMTP a los distribuidores seleccionados usando su plantilla por rubro.
-    Marca CONTACTADO + canal EMAIL_SMTP solo si el envío fue exitoso."""
+    Marca CONTACTADO + canal EMAIL_SMTP solo si el envío fue exitoso.
+    Por defecto SOLO envía una vez por lead. Si force=True, re-envía aunque ya haya recibido correo."""
     cfg = email_campaign.get_config()
     if not (cfg.get("host") and (cfg.get("user") or cfg.get("smtp_email")) and cfg.get("password")):
         return {"status": "smtp_incompleto",
@@ -255,6 +257,7 @@ def enviar_correos_distribuidores(ids: list, plantilla_key: str = "") -> dict:
 
     enviados = 0
     fallidos = 0
+    omitidos = 0
     sin_email = []
     resultados = []
     errores = []
@@ -274,6 +277,17 @@ def enviar_correos_distribuidores(ids: list, plantilla_key: str = "") -> dict:
                 resultados.append({"id": dist_id, "empresa": row["empresa"] if row["empresa"] else None,
                                    "ok": False, "mensaje": "Sin dirección de correo"})
                 continue
+
+            if not force:
+                ya_enviado = conn.execute(
+                    "SELECT COUNT(*) FROM distribuidores_actividad WHERE distribuidor_id = ? AND accion IN ('EMAIL_ENVIADO','EMAIL_SMTP')",
+                    (dist_id,)
+                ).fetchone()[0]
+                if ya_enviado > 0:
+                    omitidos += 1
+                    resultados.append({"id": dist_id, "empresa": (row["empresa"] or "")[:40],
+                                       "ok": False, "mensaje": f"Ya enviado antes ({ya_enviado}x) — omitido (usa force=True para re-enviar)"})
+                    continue
 
             nombre = (row["contacto_nombre"] or row["empresa"] or "").strip()
             empresa = (row["empresa"] or "").strip()
@@ -310,6 +324,7 @@ def enviar_correos_distribuidores(ids: list, plantilla_key: str = "") -> dict:
         "status": "ok",
         "enviados": enviados,
         "fallidos": fallidos,
+        "omitidos": omitidos,
         "sin_email": sin_email,
         "resultados": resultados,
         "errores": errores[:10],
@@ -385,7 +400,9 @@ def _scrape_local(pais: str, rubros: list[str], ciudades: list[str], max_leads: 
                 _engine.status_text = f"Scraping: {query} en {ciudad}"
 
                 try:
-                    # Use only DDG batch (reliable from Docker), skip OSM
+                    # DDG batch es confiable y rápido desde Docker (Overpass/OSM suele
+                    # colgarse o dar 403). El bucle siguiente enriquece con el sitio
+                    # corporativo (emails publicados) y teléfono cuando hay dominio real.
                     leads = local_search._buscar_ddg_batch(query, ubicacion, max_results=20)
                     found += len(leads)
                     _engine.add_log(f"[DDG] {ciudad}/{rubro}: {len(leads)} encontrados")
@@ -507,13 +524,26 @@ def _scrape_local(pais: str, rubros: list[str], ciudades: list[str], max_leads: 
 # ─── Source 2: API search (Hunter/Lusha/RocketReach) — supplement ───
 
 def _search_apis(pais: str, rubros: list[str], ciudades: list[str], max_leads: int = None) -> dict:
-    """Use APIs when keys are available. Supplements scraping."""
+    """Use APIs when keys are available. Supplements scraping.
+
+    CAPTACIÓN INICIAL = Apollo DIRECTO por País + Rubro (con cargos target),
+    sin depender de DuckDuckGo para buscar empresas. Search no gasta créditos;
+    el enrich (Hunter) solo corre cuando el lead pasa los filtros de calidad
+    (dominio real). Apollo devuelve empresa + dominio + ciudad (+ contacto/cargo
+    si el plan permite people search).
+    """
     keys = api_search.get_keys()
     _engine.api_keys_used = [k for k, v in keys.items() if v]
 
     if not _engine.api_keys_used:
         _engine.add_log("APIs no disponibles (sin keys). Solo scraping activo.", "warning")
         return {"found": 0, "ingested": 0, "discarded": 0, "errors": []}
+
+    apollo_key = keys.get("apollo") or ""
+    # Cargos target para people search (CEO, founder, director, gerente, comercial)
+    CARGOS_TARGET = ["CEO", "Founder", "Director", "Gerente General",
+                     "Gerente de Ventas", "Director Comercial"]
+    use_ciudades = ciudades or [pais.replace("_", " ")]
 
     found = 0
     ingested = 0
@@ -522,118 +552,114 @@ def _search_apis(pais: str, rubros: list[str], ciudades: list[str], max_leads: i
 
     for rubro in rubros:
         config = store.RUBROS_CONFIG.get(rubro, {})
-        cargo = config.get("cargo", rubro)
-        queries = config.get("queries") or [rubro.lower()]
+        cargo_config = config.get("cargo", "")
 
-        for ciudad in ciudades[:2]:
+        for ciudad in use_ciudades[:2]:
             if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
                 break
 
-            # Usa los términos de nicho estructurados (RUBROS_CONFIG) para extraer más leads
-            for query in queries[:2]:
-                if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
-                    break
+            _engine.status_text = f"Apollo: {rubro} en {pais.replace('_',' ')}/{ciudad}"
 
-                _engine.status_text = f"APIs: {query} en {ciudad}"
-                ubicacion = f"{ciudad}, {pais.replace('_', ' ')}"
+            try:
+                leads = []
+                info = {}
+                # 1) People-first: contactos con cargo y email (si el plan lo permite)
+                if apollo_key:
+                    _engine.add_log(f"[APOLLO] people search {rubro} en {ciudad} ({pais})")
+                    try:
+                        leads, info = api_search.buscar_contactos_apollo(
+                            apollo_key, empresa="", pais=pais, cargo=cargo_config or CARGOS_TARGET[0],
+                            limite=min(max_leads or 10, 25), solo_orgs=False)
+                    except Exception as e:
+                        errors.append(f"[APOLLO-people] {ciudad}/{rubro}: {e}")
 
-                try:
-                    import local_search
-                    leads = local_search._buscar_ddg_batch(query, ubicacion, max_results=15)
-                    errs = []
+                    # 2) Si people no trae leads (plan free / 403 → fallback orgs), usar Org Search directo por país+rubro
+                    if not leads:
+                        _engine.add_log(f"[APOLLO] org search fallback {rubro} en {ciudad} ({pais})")
+                        try:
+                            leads, info = api_search.buscar_organizaciones_apollo(
+                                apollo_key, rubro=rubro, pais=pais, ciudad=ciudad,
+                                limite=min(max_leads or 10, 25))
+                        except Exception as e:
+                            errors.append(f"[APOLLO-orgs] {ciudad}/{rubro}: {e}")
 
-                    found += len(leads)
-                    _engine.add_log(f"[API-DDG] {ciudad}/{rubro}: {len(leads)} firmas")
+                found += len(leads)
+                _engine.add_log(f"[APOLLO] {ciudad}/{rubro}: {len(leads)} leads directos (info={info})")
 
-                    for lead in leads:
-                        if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
-                            break
+                for lead in leads:
+                    if _engine.stop_event.is_set() or (max_leads and ingested >= max_leads):
+                        break
 
-                        empresa_name = (lead.get("nombre") or "").strip()
-                        if not empresa_name or len(empresa_name) < 3:
+                    # Normalizar claves de Apollo: Empresa / empresa, Correo / email, website, Telefono
+                    empresa_name = (lead.get("Empresa") or lead.get("empresa") or
+                                    lead.get("name") or lead.get("nombre") or "").strip()
+                    if not empresa_name or len(empresa_name) < 3:
+                        discarded += 1
+                        continue
+
+                    if _es_basura_prospecto(empresa_name, rubro):
+                        discarded += 1
+                        _engine.add_log(f"[FILTRO-API] Descartado (no es {rubro}): {empresa_name[:60]}", "warning")
+                        continue
+
+                    semaforo = classify_semaphore(lead, nombre_negocio=empresa_name, rubro_real=rubro)
+
+                    telefono = (lead.get("Telefono") or lead.get("telefono") or "").strip()
+                    website = (lead.get("website") or lead.get("website_url") or "").strip()
+                    dominio_hunter = site_tiene_dominio(website) or site_tiene_dominio(lead.get("dominio_firma") or "")
+                    email = (lead.get("Correo") or lead.get("email") or "").strip()
+                    contacto_nombre = (lead.get("Contacto Clabe") or lead.get("contacto_nombre") or "").strip()
+                    cargo_c = (lead.get("Cargo") or lead.get("cargo") or "").strip()
+                    ciudad_lead = (lead.get("Ciudad") or lead.get("city") or ciudad or "").strip()
+
+                    # FILTRO DE CALIDAD: sin dominio real y sin teléfono => no gastar enrich
+                    if not dominio_hunter and not telefono:
+                        discarded += 1
+                        continue
+
+                    # ENRICH solo si pasó el filtro (gasta crédito Hunter) para email verificado
+                    if dominio_hunter and not email:
+                        try:
+                            enr = api_search.enriquecer_email_por_dominio(dominio_hunter, limite=5)
+                            if enr.get("email"):
+                                email = enr["email"]
+                                if not contacto_nombre:
+                                    contacto_nombre = enr.get("contacto", "")
+                                if not cargo_c:
+                                    cargo_c = enr.get("cargo", "")
+                        except Exception:
+                            pass
+
+                    dist_data = {
+                        "empresa": empresa_name,
+                        "contacto_nombre": contacto_nombre or empresa_name,
+                        "contacto_email": email,
+                        "contacto_telefono": telefono,
+                        "pais_target": pais,
+                        "ciudad": ciudad_lead,
+                        "rubro": rubro,
+                        "clasificacion_semaforo": semaforo,
+                        "canal_contacto": "EMAIL_SMTP" if email else ("WHATSAPP_DIRECTO" if telefono else ""),
+                        "website": ("https://" + dominio_hunter) if dominio_hunter else website,
+                        "fuente": "apollo_directo" + ("+Hunter" if email and dominio_hunter and not lead.get("email") and not lead.get("Correo") else ""),
+                        "notas": f"Auto-prospeccion Apollo ciclo {_engine.ciclos_completados + 1}",
+                    }
+
+                    with store._get_conn() as conn:
+                        if _is_duplicate(conn, empresa_name, pais):
                             discarded += 1
                             continue
 
-                        # FILTRO RÍGIDO: descartar basura (títulos/ferrys/blog, etc.)
-                        if _es_basura_prospecto(empresa_name, rubro):
-                            discarded += 1
-                            _engine.add_log(f"[FILTRO-API] Descartado (no es {rubro}): {empresa_name[:60]}", "warning")
-                            continue
+                    result_ins = store.crear_distribuidor(dist_data)
+                    if result_ins.get("status") == "created":
+                        ingested += 1
+                    else:
+                        discarded += 1
 
-                        semaforo = classify_semaphore(lead, nombre_negocio=empresa_name, rubro_real=rubro)
+            except Exception as e:
+                errors.append(f"[APOLLO] {ciudad}/{rubro}: {str(e)}")
 
-                        telefono = (lead.get("telefono") or "").strip()
-                        website = (lead.get("website") or "").strip()
-                        dominio_hunter = site_tiene_dominio(lead.get("dominio_firma") or website) or site_tiene_dominio(website)
-                        email = (lead.get("email") or lead.get("web_email") or "").strip()
-
-                        # OPTIMIZACIÓN CRÉDITOS: sin dominio real => no gastar Hunter. Descartar si además no hay teléfono.
-                        if not dominio_hunter and not telefono:
-                            discarded += 1
-                            continue
-
-                        # Site scrape (gratis) para email publicado + teléfono
-                        if dominio_hunter:
-                            try:
-                                import enrichment as _enr
-                                web = _enr.scrape_website("https://" + dominio_hunter)
-                                web_emails = [e for e in web.get("emails", [])
-                                              if not any(x in e.lower() for x in
-                                                         ("noreply", "example", "@domain", "hello@kerr",
-                                                          "support@", "admin@", "sentry")) and "." in e.split("@")[-1]]
-                                if not email and web_emails:
-                                    email = web_emails[0]
-                                if not telefono:
-                                    tels = [t for t in web.get("telefonos", []) if len("".join(c for c in t if c.isdigit())) >= 8]
-                                    if tels:
-                                        telefono = tels[0]
-                            except Exception:
-                                pass
-
-                        # Hunter solo como refuerzo de contacto (respetando presupuesto)
-                        if not email and dominio_hunter:
-                            try:
-                                enr = api_search.enriquecer_email_por_dominio(dominio_hunter, limite=5)
-                                if enr.get("email"):
-                                    email = enr["email"]
-                                    lead["contacto_enri"] = enr.get("contacto", "")
-                                    lead["cargo_enri"] = enr.get("cargo", "")
-                            except Exception:
-                                pass
-
-                        contacto_nombre = (lead.get("contacto_enri") or "").strip()
-                        cargo_c = (lead.get("cargo_enri") or "").strip()
-
-                        dist_data = {
-                            "empresa": empresa_name,
-                            "contacto_nombre": contacto_nombre or empresa_name,
-                            "contacto_email": email,
-                            "contacto_telefono": telefono,
-                            "pais_target": pais,
-                            "ciudad": ciudad,
-                            "rubro": rubro,
-                            "clasificacion_semaforo": semaforo,
-                            "canal_contacto": "EMAIL_SMTP" if email else ("WHATSAPP_DIRECTO" if telefono else ""),
-                            "website": ("https://" + dominio_hunter) if dominio_hunter else website,
-                            "fuente": "api_ddg" + ("+Hunter" if email and lead.get("contacto_enri") else ""),
-                            "notas": f"Auto-prospeccion API ciclo {_engine.ciclos_completados + 1}",
-                        }
-
-                        with store._get_conn() as conn:
-                            if _is_duplicate(conn, empresa_name, pais):
-                                discarded += 1
-                                continue
-
-                        result_ins = store.crear_distribuidor(dist_data)
-                        if result_ins.get("status") == "created":
-                            ingested += 1
-                        else:
-                            discarded += 1
-
-                except Exception as e:
-                    errors.append(f"[API] {ciudad}/{rubro}: {str(e)}")
-
-                time.sleep(2)
+            time.sleep(2)
 
     return {"found": found, "ingested": ingested, "discarded": discarded, "errors": errors}
 
@@ -641,37 +667,39 @@ def _search_apis(pais: str, rubros: list[str], ciudades: list[str], max_leads: i
 # ─── Single search cycle (multi-source) ───
 
 def _run_search_cycle(pais: str, rubros: list[str], ciudades: list[str], max_leads: int = None) -> dict:
-    """Execute one cycle: scraping (always) + APIs (if available)."""
+    """Execute one cycle: APIs (Apollo directo por país+rubro) PRIMERO,
+    scraping local (DDG/OSM) como complemento.
+    Apollo Search no gasta créditos; el enrich (Hunter) corre solo cuando hay
+    dominio real. Así la captación inicial es directa y geolocalizada."""
     total_found = 0
     total_ingested = 0
     total_discarded = 0
     total_errors = []
 
-    # PHASE 1: Scraping (OSM + DDG) — always runs, ~50-70% of leads
-    _engine.add_log("=== FASE 1: Scraping (OSM + DuckDuckGo) ===")
-    scrape = _scrape_local(pais, rubros, ciudades, max_leads)
-    total_found += scrape["found"]
-    total_ingested += scrape["ingested"]
-    total_discarded += scrape["discarded"]
-    total_errors.extend(scrape["errors"])
-
-    # PHASE 2: APIs (if keys available) — llenan lo que falte hasta la meta
-    restante = (max_leads - scrape["ingested"]) if max_leads else None
+    # PHASE 1 (ahora): APIs / Apollo DIRECTO por país + rubro
     keys = api_search.get_keys()
     has_keys = any(v for v in keys.values() if v)
-    if has_keys and restante is not None and restante <= 0:
-        has_keys = False
     if has_keys:
-        _engine.add_log("=== FASE 2: APIs (Hunter/Lusha/RocketReach/Apollo) ===")
-        api_res = _search_apis(pais, rubros, ciudades, restante)
+        _engine.add_log("=== FASE 1: APIs (Apollo directo por país+rubro) ===")
+        api_res = _search_apis(pais, rubros, ciudades, max_leads)
         total_found += api_res["found"]
         total_ingested += api_res["ingested"]
         total_discarded += api_res["discarded"]
         total_errors.extend(api_res["errors"])
     else:
-        _engine.add_log("APIs sin credits — solo scraping activo")
+        _engine.add_log("APIs sin keys — solo scraping activo")
 
-    _engine.fuentes_activas = ["scraping_osm_ddg"] + (["api_hunter_lusha"] if has_keys else [])
+    # PHASE 2 (ahora): Scraping local complementario si aún falta hacia la meta
+    restante = (max_leads - total_ingested) if max_leads else None
+    if restante is None or restante > 0:
+        _engine.add_log("=== FASE 2: Scraping local (DDG) complementario ===")
+        scrape = _scrape_local(pais, rubros, ciudades, restante)
+        total_found += scrape["found"]
+        total_ingested += scrape["ingested"]
+        total_discarded += scrape["discarded"]
+        total_errors.extend(scrape["errors"])
+
+    _engine.fuentes_activas = (["api_hunter_lusha"] if has_keys else []) + ["scraping_osm_ddg"]
 
     return {
         "found": total_found,
@@ -754,6 +782,21 @@ def _engine_loop(paises: list[str], rubros: list[str], ciudades_global: list[str
 
         # 4. Save state after every cycle
         _engine.save_state()
+
+        # 4b. Auto-email newly found distributors that already have an email
+        try:
+            pendientes = [r for r in store.listar_distribuidores(limit=500)
+                          if (r.get("estado_conversion") or "INVESTIGADO") != "CONTACTADO"
+                          and (r.get("contacto_email") or "").strip()]
+            if pendientes:
+                tope = int(os.getenv("AUTO_MAIL_PER_CYCLE", "8"))
+                ids = [r["id"] for r in pendientes[:tope]]
+                _engine.add_log(f"[MAIL] Auto-correo: {len(ids)} pendiente(s) con email ({tope} tope por ciclo)")
+                resp = enviar_correos_distribuidores(ids)
+                _engine.add_log(f"[MAIL] Enviados {resp.get('enviados', 0)} corrido(s), {resp.get('fallidos', 0)} fallido(s)")
+                _engine.total_emails_enviados += resp.get("enviados", 0)
+        except Exception as e:
+            _engine.add_log(f"[MAIL] Error auto-envío: {e}", "error")
 
         # 5. Brief pause between cycles (20s, interruptible)
         _engine.status_text = f"Ciclo {_engine.ciclos_completados} OK. Pausa 20s..."

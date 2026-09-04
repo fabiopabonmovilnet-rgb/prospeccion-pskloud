@@ -487,9 +487,16 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
         <span class="icon">🏢</span> Distribuidores
         <span class="badge" id="badge-dist">0</span>
       </button>
+      <button class="nav-item" data-tab="pool">
+        <span class="icon">🧹</span> Pool Limpio
+        <span class="badge" id="badge-pool">0</span>
+      </button>
     </div>
     <div class="nav-group-label open" onclick="toggleNavGroup(this)">Campañas</div>
     <div class="nav-group-items open">
+      <button class="nav-item" data-tab="campaigns">
+        <span class="icon">🗂</span> Gestión de Campañas
+      </button>
       <a class="nav-item" href="/campaign" style="display:flex; align-items:center; padding:10px">
         <span class="icon">🗂</span> Panel de Campañas
       </a>
@@ -903,6 +910,30 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
 
       <div class="stat-row" id="an-kpis"></div>
 
+      <!-- KPIs por canal -->
+      <div class="card" style="margin-bottom:14px" id="an-channel-card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📊 Rendimiento por Canal</div>
+            <div class="card-subtitle">Comparativa WhatsApp vs Email vs Instagram</div>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tbl-channels">
+            <thead>
+              <tr>
+                <th>Canal</th>
+                <th>Enviados</th>
+                <th>Conversaciones</th>
+                <th>Respondieron</th>
+                <th>Tasa respuesta</th>
+              </tr>
+            </thead>
+            <tbody id="an-channel-body"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="an-visual" data-v="hourly">
       <div class="grid-2">
         <div class="card">
@@ -1036,6 +1067,10 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
           <div class="value" id="wa-remaining">10</div>
           <div class="label">Restantes Hoy</div>
         </div>
+        <div class="stat-block">
+          <div class="value" id="wa-saved">0</div>
+          <div class="label">Guardados (<span id="wa-saved-total">0</span>)</div>
+        </div>
       </div>
 
       <!-- Status indicator -->
@@ -1057,15 +1092,48 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
           <button class="btn btn-success" id="btn-wa-play" onclick="queuePlay()" style="flex:1;display:none;">▶ Play / Reanudar</button>
           <button class="btn btn-danger" id="btn-wa-stop" onclick="queueStop()" style="flex:1;">⏹ Detener / Pausar</button>
           <button class="btn btn-outline" id="btn-wa-replay" onclick="queueReplay()" style="flex:1;">↻ Replay</button>
+        <button class="btn btn-outline" id="btn-wa-refill" onclick="refillSaved()" style="flex:1;">♻ Reencolar guardados</button>
         </div>
 
         <p style="color:var(--text-secondary);font-size:13px;margin-bottom:12px;">
           <strong>Play:</strong> Reanuda envío de mensajes en segundo plano.<br>
           <strong>Stop:</strong> Detiene inmediatamente todos los envíos.<br>
-          <strong>Replay:</strong> Recarga la cola desde disco y reanuda.
+          <strong>Replay:</strong> Recarga la cola desde disco y reanuda.<br>
+          <strong>Reencolar guardados:</strong> Lleva a la cola los leads ya prospectados y no contactados (dedupe automático).
         </p>
         <div class="btn-group">
           <button class="btn btn-outline" onclick="loadQueue()">↻ Actualizar Cola</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== CAMPAÑAS PANEL ==================== -->
+    <div class="panel" id="panel-campaigns">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="camp-active-name">--</div>
+          <div class="label">Campaña Activa</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="camp-count">0</div>
+          <div class="label">Campañas guardadas</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="camp-paises">--</div>
+          <div class="label">Países objetivo</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Campañas de prospección (armadas y conmutables)</div>
+            <div class="card-subtitle">Cada campaña guarda sus rubros, países, los 3 mensajes e imagen. Conmutar NO detiene la prospección (aplica al próximo ciclo).</div>
+          </div>
+          <button class="btn btn-primary" onclick="location.href='/campaign'">Ir al Panel de Campañas →</button>
+        </div>
+        <div id="campaigns-list" style="margin-top:12px;">
+          <p class="muted">Cargando campañas…</p>
         </div>
       </div>
     </div>
@@ -1408,6 +1476,79 @@ table.col-hidden th, table.col-hidden td { display: table-cell; }
 
     </div><!-- /panel-distribuidores -->
 
+    <!-- ==================== POOL LIMPIO PANEL ==================== -->
+    <div class="panel" id="panel-pool">
+      <div class="stat-row">
+        <div class="stat-block">
+          <div class="value" id="pool-total">0</div>
+          <div class="label">Total Pool</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="pool-pendientes">0</div>
+          <div class="label">Pendientes</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="pool-emails-enviados">0</div>
+          <div class="label">Emails Enviados</div>
+        </div>
+        <div class="stat-block">
+          <div class="value" id="pool-encolados-wa">0</div>
+          <div class="label">Cola WhatsApp</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🧹 Pool de Prospectos Clasificado</div>
+            <div class="card-subtitle">Leads limpios, clasificados por tipo y listos para contactar</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="poolClean()">🔄 Limpiar y Clasificar</button>
+            <button class="btn btn-success" onclick="poolEnviarEmails()">📧 Enviar Emails Pendientes</button>
+            <button class="btn btn-warning" onclick="poolEncolarWA()">📱 Cola WhatsApp</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+          <select id="pool-filter-pais" onchange="loadPool()">
+            <option value="">Todos los países</option>
+          </select>
+          <select id="pool-filter-rubro" onchange="loadPool()">
+            <option value="">Todos los rubros</option>
+          </select>
+          <select id="pool-filter-tipo" onchange="loadPool()">
+            <option value="">Todos los tipos</option>
+            <option value="DISTRIBUIDOR">Distribuidores</option>
+            <option value="CLIENTE_FINAL">Cliente Final</option>
+          </select>
+          <select id="pool-filter-estado" onchange="loadPool()">
+            <option value="">Todos los estados</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="EMAIL_ENVIADO">Email Enviado</option>
+            <option value="ENCOLADO_WA">Cola WA</option>
+          </select>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table" id="tbl-pool">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>País</th>
+                <th>Rubro</th>
+                <th>Tipo</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Canal</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="pool-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /panel-pool -->
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -1446,6 +1587,71 @@ function formatTime(ts) {
   return d.toLocaleString('es-PA', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
 }
 
+// ─── CAMPAÑAS PANEL (dashboard) ───
+async function loadCampaignsPanel() {
+  const box = $('campaigns-list');
+  box.innerHTML = '<p class="muted">Cargando campañas…</p>';
+  try {
+    const camps = await api('/api/campaigns');
+    const activas = camps.filter(c => c.active);
+    $('camp-count').textContent = camps.length;
+    $('camp-active-name').textContent = activas.length ? activas[0].key : 'Ninguna';
+    $('camp-paises').textContent = activas.length ? (activas[0].paises_objetivo || []).join(', ') : '--';
+    box.innerHTML = '';
+    if (!camps.length) { box.innerHTML = '<p class="muted">Aún no hay campañas. Crea una desde el Panel de Campañas.</p>'; return; }
+    for (const c of camps) box.appendChild(campaignCardDashboard(c));
+  } catch (e) { box.innerHTML = '<p class="err">Error: ' + e.message + '</p>'; }
+}
+
+function campaignCardDashboard(c) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.cssText = 'border-color:' + (c.active ? 'var(--accent,#4c8dff)' : 'var(--border)') + ';';
+  const msgs = (c.messages || []).map(m =>
+    '<div style="margin:4px 0;padding:7px 10px;background:#0c101d;border:1px solid var(--border);border-radius:8px;font-size:12px;white-space:pre-wrap">' +
+    '<b style="color:#93a0c0">Paso ' + m.step + (m.media_url ? ' (imagen 🖼)' : '') + '</b><br>' +
+    escH(m.text.slice(0, 220)) + (m.text.length > 220 ? '…' : '') +
+    '</div>'
+  ).join('');
+  const rubros = escH((c.rubros || []).join(', '));
+  const paises = escH((c.paises_objetivo || []).join(', '));
+  const meta = Object.entries(c.meta_diaria_por_pais || {}).map(([p, v]) => escH(p) + ': ' + v).join(' · ');
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <span style="font-weight:700;font-size:15px">${escH(c.key)}</span>
+      <span class="badge" style="${c.active ? 'background:#34d399;color:#04140d' : 'background:#334155;color:#cbd5e1'}">${c.active ? 'ACTIVA' : 'GUARDADA'}</span>
+      <span style="color:var(--text-secondary);font-size:12px">${escH(c.rubro || '')} · ${escH(c.client_id || '')}</span>
+      <button class="btn ${c.active ? 'btn-outline' : 'btn-primary'} btn-sm" onclick="activateCampaign('${c.key.replace(/'/g, '')}')" ${c.active ? 'disabled' : ''}>${c.active ? '✓ Activa' : 'Activar esta campaña'}</button>
+      <button class="btn btn-outline btn-sm" onclick="location.href='/campaign'">Editar mensajes/imagen →</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px">
+      <div>
+        <div class="card-subtitle">Rubros de búsqueda</div>
+        <div class="chips">${rubros}</div>
+        <div class="card-subtitle" style="margin-top:8px">Países objetivo</div>
+        <div class="chips">${paises}</div>
+        <div class="card-subtitle" style="margin-top:8px">Meta diaria por país</div>
+        <div class="chips">${meta || '—'}</div>
+      </div>
+      <div>
+        <div class="card-subtitle">Mensajes base (1 / 2 / 3)</div>
+        ${msgs || '<p class="muted">Sin mensajes.</p>'}
+      </div>
+    </div>`;
+  return card;
+}
+
+async function activateCampaign(key) {
+  if (!confirm('¿Activar la campaña «' + key + '»? Se conmuta el prospector (países + rubros + metas) al próximo ciclo. La prospección NO se detiene.')) return;
+  try {
+    await api('/api/campaigns/' + encodeURIComponent(key) + '/activate', 'POST', {});
+    toast('Campaña «' + key + '» activada', 'success');
+    loadCampaignsPanel();
+  } catch (e) { toast('Error: ' + e.message, 'warning'); }
+}
+
+function escH(s) { return String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])); }
+
 // ─── NAVIGATION ───
 document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1454,7 +1660,7 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
     btn.classList.add('active');
     const tab = btn.dataset.tab;
     $(`panel-${tab}`).classList.add('active');
-    const titles = { local: '🏪 Prospección Local', instagram: '📸 Instagram', distribuidores: '🏢 Distribuidores', email: '📧 Email', search: '🔍 Búsqueda API', whatsapp: '💬 WhatsApp', historical: '📊 Histórico', assistant: '🤖 Asistente', analytics: '📈 Analíticas 365', settings: '⚙️ Configuración' };
+    const titles = { local: '🏪 Prospección Local', instagram: '📸 Instagram', distribuidores: '🏢 Distribuidores', email: '📧 Email', search: '🔍 Búsqueda API', whatsapp: '💬 WhatsApp', historical: '📊 Histórico', assistant: '🤖 Asistente', analytics: '📈 Analíticas 365', settings: '⚙️ Configuración', campaigns: '🗂 Gestión de Campañas' };
     $('page-title').textContent = titles[tab] || tab;
     if (tab === 'historical') loadHistorical();
     if (tab === 'analytics') loadAnalytics();
@@ -1464,6 +1670,8 @@ document.querySelectorAll('.nav-item[data-tab]').forEach(btn => {
     if (tab === 'email') { loadEmailConfig(); loadEmailEnvios(); }
     if (tab === 'search') loadApiKeys();
     if (tab === 'distribuidores') { loadDistribuidores(); loadDistActividad(); distCheckEngine(); }
+    if (tab === 'pool') loadPool();
+    if (tab === 'campaigns') loadCampaignsPanel();
   });
 });
 
@@ -1739,13 +1947,23 @@ async function loadQueue() {
   $('wa-sent-today').textContent = sentToday;
   $('wa-remaining').textContent = Math.max(0, maxDaily - sentToday);
 
+  // Saved prospects (already prospected, even if paused / queue empty)
+  const saved = q.prospectados || {};
+  const savedTel = saved.con_telefono || 0;
+  $('wa-saved').textContent = savedTel;
+  $('wa-saved-total').textContent = saved.total || 0;
+
   // Queue pause state
   STATE.queue_paused = queuePaused;
+  STATE.pending = pending;
+  STATE.saved = savedTel;
   updateQueueUI();
 }
 
 function updateQueueUI() {
   const paused = STATE.queue_paused;
+  const pending = STATE.pending || 0;
+  const saved = STATE.saved || 0;
   const banner = $('wa-status-banner');
   const playBtn = $('btn-wa-play');
   const stopBtn = $('btn-wa-stop');
@@ -1759,14 +1977,30 @@ function updateQueueUI() {
     stopBtn.style.display = 'none';
     waStatus.textContent = '⏹ Detenido';
     waStatus.className = 'channel-status paused';
-  } else {
-    banner.innerHTML = '<span style="color:#22c55e;font-weight:600;">▶ ENVIANDO</span> — Cola en proceso activo';
+  } else if (pending > 0) {
+    banner.innerHTML = `<span style="color:#22c55e;font-weight:600;">▶ ENVIANDO</span> — ${pending} en cola, enviando`;
     banner.style.borderColor = '#22c55e';
     banner.style.background = 'rgba(34,197,94,.12)';
     playBtn.style.display = 'none';
     stopBtn.style.display = '';
     waStatus.textContent = '● Enviando';
     waStatus.className = 'channel-status running';
+  } else if (saved > 0) {
+    banner.innerHTML = `<span style="color:#f59e0b;font-weight:600;">⏳ EN COLA VACÍA</span> — ${saved} leads ya prospectados listos. Usa «Reencolar guardados» para volverlos a la cola de envío`;
+    banner.style.borderColor = '#f59e0b';
+    banner.style.background = 'rgba(245,158,11,.12)';
+    playBtn.style.display = 'none';
+    stopBtn.style.display = '';
+    waStatus.textContent = '● En cola vacía';
+    waStatus.className = 'channel-status idle';
+  } else {
+    banner.innerHTML = '<span style="color:#64748b;font-weight:600;">⏸ ESPERANDO</span> — Sin leads en cola ni guardados';
+    banner.style.borderColor = '#94a3b8';
+    banner.style.background = 'rgba(148,163,184,.12)';
+    playBtn.style.display = 'none';
+    stopBtn.style.display = '';
+    waStatus.textContent = '● Esperando';
+    waStatus.className = 'channel-status idle';
   }
 }
 
@@ -1796,6 +2030,19 @@ async function queueReplay() {
     updateQueueUI();
     loadQueue();
     toast(`Cola recargada: ${r.leads_loaded || 0} leads`, 'success');
+  }
+}
+
+async function refillSaved() {
+  const r = await api('/api/queue/refill-saved', 'POST', {});
+  if (r) {
+    STATE.queue_paused = false;
+    updateQueueUI();
+    loadQueue();
+    const msg = r.reenqueued > 0
+      ? `${r.reenqueued} leads reencolados de guardados`
+      : 'Nada nuevo para reencolar (todo contactado o ya en cola)';
+    toast(msg, r.reenqueued > 0 ? 'success' : 'info');
   }
 }
 
@@ -1943,15 +2190,25 @@ async function loadAnalytics() {
     { v: t.encontrados || 0, l: 'Encontrados' },
     { v: t.encolados || 0, l: 'Encolados' },
     { v: t.enviados || 0, l: 'Enviados' },
-    { v: t.conversaciones || 0, l: 'Conversaciones' },
-    { v: t.respondieron || 0, l: 'Respondieron' },
-    { v: (t.tasa_respuesta ?? 0) + '%', l: 'Tasa respuesta' },
-    { v: t.followups || 0, l: 'Followups' },
     { v: t.dias_activos || 0, l: 'Días activos' },
     { v: t.pool_prospectos || 0, l: 'Pool prospectos' },
   ];
   $('an-kpis').innerHTML = kpis.map(k => `
     <div class="stat-block"><div class="value">${k.v}</div><div class="label">${k.l}</div></div>`).join('');
+
+  // Tabla comparativa de canales
+  const channels = [
+    { name: '📱 WhatsApp', sent: t.wsp_enviados || 0, conv: t.wsp_conversaciones || 0, resp: t.wsp_respondieron || 0, rate: t.wsp_tasa_respuesta || 0 },
+    { name: '📧 Email (Distribuidores)', sent: t.email_enviados || 0, conv: 0, resp: 0, rate: t.email_tasa_respuesta || 0 },
+    { name: '📸 Instagram', sent: t.ig_enviados || 0, conv: 0, resp: 0, rate: 0 },
+  ];
+  $('an-channel-body').innerHTML = channels.map(c => `<tr>
+    <td><strong>${c.name}</strong></td>
+    <td>${c.sent}</td>
+    <td>${c.conv}</td>
+    <td>${c.resp}</td>
+    <td>${c.rate ? c.rate + '%' : '--'}</td>
+  </tr>`).join('');
 
   // Hourly bars
   const hourly = data.hourly || [];
@@ -2896,6 +3153,111 @@ async function savePaisesLocal() {
   if (res && res.status === 'ok') {
     updateDistribucionLocal();
     toast(`Países activos: ${res.activos.join(', ')}`, 'success');
+  }
+}
+
+// ─── POOL LIMPIO ───
+
+async function loadPool() {
+  const pais = $('pool-filter-pais')?.value || '';
+  const rubro = $('pool-filter-rubro')?.value || '';
+  const tipo = $('pool-filter-tipo')?.value || '';
+  const estado = $('pool-filter-estado')?.value || '';
+  const params = new URLSearchParams();
+  if (pais) params.set('pais', pais);
+  if (rubro) params.set('rubro', rubro);
+  if (tipo) params.set('tipo', tipo);
+  if (estado) params.set('estado', estado);
+  const data = await api(`/api/dist/pool?${params}`);
+  if (!data) return;
+  const leads = data.leads || [];
+  renderPoolTable(leads);
+  $('badge-pool').textContent = leads.length;
+  // Load stats
+  const stats = await api('/api/dist/pool/stats');
+  if (stats) {
+    $('pool-total').textContent = stats.total || 0;
+    const pend = (stats.by_estado || []).find(e => e.estado === 'PENDIENTE');
+    const enviados = (stats.by_estado || []).find(e => e.estado === 'EMAIL_ENVIADO');
+    const encolados = (stats.by_estado || []).find(e => e.estado === 'ENCOLADO_WA');
+    $('pool-pendientes').textContent = pend?.n || 0;
+    $('pool-emails-enviados').textContent = enviados?.n || 0;
+    $('pool-encolados-wa').textContent = encolados?.n || 0;
+    // Populate filters
+    populatePoolFilters(stats);
+  }
+}
+
+function renderPoolTable(leads) {
+  if (!leads.length) {
+    $('pool-body').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted);">Sin leads en el pool. Ejecuta "Limpiar y Clasificar" primero.</td></tr>';
+    return;
+  }
+  const estadoColors = { PENDIENTE: 'var(--text-muted)', EMAIL_ENVIADO: 'var(--success)', ENCOLADO_WA: 'var(--accent)', EMAIL_FALLIDO: 'var(--danger)' };
+  const tipoIcons = { DISTRIBUIDOR: '🏢', CLIENTE_FINAL: '🏪' };
+  const canalIcons = { WHATSAPP: '📱', EMAIL: '📧', AMBOS: '📧📱', SIN_DATOS: '❌' };
+
+  $('pool-body').innerHTML = leads.map(l => `<tr>
+    <td>${l.id}</td>
+    <td><strong>${l.nombre || '--'}</strong>${l.ciudad ? '<br><span style="font-size:11px;color:var(--text-muted);">' + l.ciudad + '</span>' : ''}</td>
+    <td>${l.pais || '--'}</td>
+    <td>${l.rubro || '--'}</td>
+    <td>${tipoIcons[l.tipo] || ''} ${l.tipo || '--'}</td>
+    <td>${l.email || '<span style="color:var(--danger);">✗</span>'}</td>
+    <td>${l.telefono || '<span style="color:var(--danger);">✗</span>'}</td>
+    <td>${canalIcons[l.canal_contacto] || '--'}</td>
+    <td><span style="color:${estadoColors[l.estado] || 'var(--text-secondary)'};font-weight:600;">${l.estado || '--'}</span></td>
+  </tr>`).join('');
+}
+
+function populatePoolFilters(stats) {
+  const paisSelect = $('pool-filter-pais');
+  const rubroSelect = $('pool-filter-rubro');
+  const currentPais = paisSelect?.value || '';
+  const currentRubro = rubroSelect?.value || '';
+  if (paisSelect) {
+    paisSelect.innerHTML = '<option value="">Todos los países</option>';
+    (stats.by_pais || []).forEach(p => {
+      paisSelect.innerHTML += `<option value="${p.pais}" ${p.pais === currentPais ? 'selected' : ''}>${p.pais} (${p.n})</option>`;
+    });
+  }
+  if (rubroSelect) {
+    rubroSelect.innerHTML = '<option value="">Todos los rubros</option>';
+    (stats.by_rubro || []).forEach(r => {
+      rubroSelect.innerHTML += `<option value="${r.rubro}" ${r.rubro === currentRubro ? 'selected' : ''}>${r.rubro} (${r.n})</option>`;
+    });
+  }
+}
+
+async function poolClean() {
+  if (!confirm('Esto limpiará y reclasificará todo el pool desde prospectos_locales.json. ¿Continuar?')) return;
+  toast('Limpiando y clasificando pool...', 'info');
+  const res = await api('/api/dist/pool/clean', 'POST');
+  if (res && res.status === 'ok') {
+    toast('Pool limpiado y clasificado', 'success');
+    loadPool();
+  } else {
+    toast('Error al limpiar pool', 'error');
+  }
+}
+
+async function poolEnviarEmails() {
+  if (!confirm('¿Enviar emails a todos los leads pendientes del pool?')) return;
+  toast('Enviando emails...', 'info');
+  const res = await api('/api/dist/pool/enviar-emails', 'POST');
+  if (res) {
+    toast(`Enviados: ${res.enviados || 0}, Fallidos: ${res.fallidos || 0}`, res.fallidos > 0 ? 'warning' : 'success');
+    loadPool();
+  }
+}
+
+async function poolEncolarWA() {
+  if (!confirm('¿Encolar leads con email enviado + teléfono para WhatsApp?')) return;
+  toast('Encolando para WhatsApp...', 'info');
+  const res = await api('/api/dist/pool/encolar-wa', 'POST');
+  if (res) {
+    toast(`Encolados: ${res.encolados || 0}`, 'success');
+    loadPool();
   }
 }
 

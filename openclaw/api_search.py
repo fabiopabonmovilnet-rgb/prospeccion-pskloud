@@ -191,10 +191,15 @@ def buscar_organizaciones_apollo(api_key: str, rubro: str = "", pais: str = "", 
     ultimo_error = ""
     while len(resultados) < espacios and page <= 3:
         payload: dict = {"page": page, "per_page": per_page, "q_keywords": rubro or "software"}
+        # Ubicación geolocalizada correcta de Apollo: organization_locations
+        # (el param plano 'country' se ignora en la API). Incluye país y ciudad.
+        locs = []
         if pais:
-            payload["country"] = pais
-        if ciudad:
-            payload["city"] = ciudad
+            locs.append({"location_type": "country", "location": pais})
+        if ciudad and ciudad != pais:
+            locs.append({"location_type": "city", "location": ciudad})
+        if locs:
+            payload["organization_locations"] = locs
         try:
             resp = httpx.post(url, headers=headers, json=payload, timeout=25)
             if resp.status_code == 401:

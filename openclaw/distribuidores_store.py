@@ -158,6 +158,52 @@ Equipo PSKloud — Ventas Internacionales""",
     },
 }
 
+# ─── Plantillas CLIENTE FINAL ───
+PLANTILLAS_CLIENTE_FINAL = {
+    "CTX_CLIENTE_Restaurante": {
+        "rubro": "Restaurantes",
+        "asunto": "Solución PSKloud para la gestión de tu restaurante en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Vi que en {{empresa}} tienen un restaurante en {{pais}} y me encantaría compartirles una solución que está ayudando a negocios como el suyo.
+
+PSKloud es una plataforma de gestión administrativa que incluye:
+- Facturación electrónica que cumple con la normativa local
+- Control de inventario y costos de platillos
+- Reportes financieros en tiempo real
+- Punto de venta intuitivo
+
+Sabemos que manejar inventario, costos y facturación en un restaurante es un reto. Nuestra herramienta les permite enfocarse en lo que mejor hacen: cocinar y atender a sus clientes.
+
+¿Les gustaría una demo gratuita de 15 minutos para ver cómo les puede ayudar?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales
+📞 WhatsApp: https://wa.me/50764267262""",
+    },
+    "CTX_CLIENTE_Ferreteria": {
+        "rubro": "Ferreterías",
+        "asunto": "Solución PSKloud para la gestión de tu ferretería en {{pais}}",
+        "cuerpo": """Hola {{nombre}},
+
+Vi que en {{empresa}} tienen una ferretería en {{pais}} y me encantaría compartirles una solución que está transformando la gestión de negocios como el suyo.
+
+PSKloud es una plataforma de gestión administrativa que incluye:
+- Facturación electrónica cumpliendo normativa local
+- Control de inventario con código de barras
+- Reportes de ventas y márgenes en tiempo real
+- Gestión de proveedores y compras
+
+Sabemos que manejar miles de productos, proveedores y facturación en una ferretería es complejo. Nuestra herramienta les da visibilidad total del negocio para tomar mejores decisiones.
+
+¿Les gustaría una demo gratuita de 15 minutos para ver cómo les puede ayudar?
+
+Saludos cordiales,
+Equipo PSKloud — Ventas Internacionales
+📞 WhatsApp: https://wa.me/50764267262""",
+    },
+}
+
 PAISES_ACTIVOS_FILE = os.path.join(os.path.dirname(__file__), "data", "dist_paises_activos.json")
 
 
@@ -283,6 +329,29 @@ def ensure_db():
                 UNIQUE(pais_target, semana_iso)
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS pool_clasificado (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                pais TEXT,
+                rubro TEXT,
+                ciudad TEXT,
+                tipo TEXT NOT NULL DEFAULT 'CLIENTE_FINAL',
+                email TEXT,
+                telefono TEXT,
+                website TEXT,
+                canal_contacto TEXT DEFAULT 'SIN_DATOS',
+                estado TEXT DEFAULT 'PENDIENTE',
+                fecha_clasificacion TEXT NOT NULL,
+                fecha_envio_email TEXT,
+                fecha_envio_wa TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_pool_pais ON pool_clasificado(pais)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_pool_rubro ON pool_clasificado(rubro)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_pool_estado ON pool_clasificado(estado)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_pool_tipo ON pool_clasificado(tipo)")
 
 
 # ─── CRUD Distribuidores ───
@@ -635,6 +704,117 @@ def analytics_distribuidores() -> dict:
             "cuotas": obtener_cuota_con_progreso(),
             "metas": METAS_SEMANALES,
         }
+
+
+# ─── Pool Clasificado CRUD ───
+
+def insertar_pool_batch(leads: list) -> int:
+    """Inserta leads en pool_clasificado. Retorna cantidad insertada."""
+    now = _now()
+    count = 0
+    with _get_conn() as conn:
+        for l in leads:
+            try:
+                conn.execute("""
+                    INSERT INTO pool_clasificado
+                    (nombre, pais, rubro, ciudad, tipo, email, telefono, website,
+                     canal_contacto, estado, fecha_clasificacion, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDIENTE', ?, ?)
+                """, (
+                    l.get("nombre", ""),
+                    l.get("pais", ""),
+                    l.get("rubro", ""),
+                    l.get("ciudad", ""),
+                    l.get("tipo", "CLIENTE_FINAL"),
+                    l.get("email", ""),
+                    l.get("telefono", ""),
+                    l.get("website", ""),
+                    l.get("canal_contacto", "SIN_DATOS"),
+                    date.today().isoformat(),
+                    now,
+                ))
+                count += 1
+            except Exception:
+                pass
+    return count
+
+
+def listar_pool(pais=None, rubro=None, tipo=None, estado=None, limit=200) -> list:
+    with _get_conn() as conn:
+        query = "SELECT * FROM pool_clasificado WHERE 1=1"
+        params = []
+        if pais:
+            query += " AND pais = ?"
+            params.append(pais)
+        if rubro:
+            query += " AND rubro = ?"
+            params.append(rubro)
+        if tipo:
+            query += " AND tipo = ?"
+            params.append(tipo)
+        if estado:
+            query += " AND estado = ?"
+            params.append(estado)
+        query += " ORDER BY id DESC LIMIT ?"
+        params.append(limit)
+        return [dict(r) for r in conn.execute(query, params).fetchall()]
+
+
+def estadisticas_pool() -> dict:
+    with _get_conn() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM pool_clasificado").fetchone()[0]
+        by_tipo = conn.execute("SELECT tipo, COUNT(*) as n FROM pool_clasificado GROUP BY tipo").fetchall()
+        by_estado = conn.execute("SELECT estado, COUNT(*) as n FROM pool_clasificado GROUP BY estado").fetchall()
+        by_pais = conn.execute("SELECT pais, COUNT(*) as n FROM pool_clasificado GROUP BY pais ORDER BY n DESC").fetchall()
+        by_rubro = conn.execute("SELECT rubro, COUNT(*) as n FROM pool_clasificado GROUP BY rubro ORDER BY n DESC").fetchall()
+        by_canal = conn.execute("SELECT canal_contacto, COUNT(*) as n FROM pool_clasificado GROUP BY canal_contacto").fetchall()
+        return {
+            "total": total,
+            "by_tipo": [dict(r) for r in by_tipo],
+            "by_estado": [dict(r) for r in by_estado],
+            "by_pais": [dict(r) for r in by_pais],
+            "by_rubro": [dict(r) for r in by_rubro],
+            "by_canal": [dict(r) for r in by_canal],
+        }
+
+
+def actualizar_estado_pool(pool_id: int, estado: str, campo_fecha: str = None):
+    with _get_conn() as conn:
+        if campo_fecha in ("fecha_envio_email", "fecha_envio_wa"):
+            conn.execute(f"UPDATE pool_clasificado SET estado = ?, {campo_fecha} = ? WHERE id = ?",
+                         (estado, _now(), pool_id))
+        else:
+            conn.execute("UPDATE pool_clasificado SET estado = ? WHERE id = ?", (estado, pool_id))
+
+
+def pendientes_email_pool() -> list:
+    """Leads pendientes de email (tienen email y estado PENDIENTE)."""
+    with _get_conn() as conn:
+        rows = conn.execute("""
+            SELECT * FROM pool_clasificado
+            WHERE email != '' AND email IS NOT NULL AND estado = 'PENDIENTE'
+            ORDER BY id
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def pendientes_wa_pool() -> list:
+    """Leads con email enviado + teléfono → candidatos WhatsApp."""
+    with _get_conn() as conn:
+        rows = conn.execute("""
+            SELECT * FROM pool_clasificado
+            WHERE estado = 'EMAIL_ENVIADO'
+            AND telefono != '' AND telefono IS NOT NULL
+            AND (fecha_envio_wa IS NULL OR fecha_envio_wa = '')
+            ORDER BY id
+        """).fetchall()
+        return [dict(r) for r in rows]
+
+
+def limpiar_pool():
+    """Elimina todos los registros del pool."""
+    with _get_conn() as conn:
+        conn.execute("DELETE FROM pool_clasificado")
 
 
 # Initialize on import

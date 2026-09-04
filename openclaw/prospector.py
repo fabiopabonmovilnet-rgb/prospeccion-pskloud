@@ -103,7 +103,8 @@ def _distribuir_cupo(paises: list, total: int = 25) -> dict:
     return cupos
 
 
-def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "") -> int:
+def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "",
+                        campaign_key: str = "") -> int:
     if not leads:
         return 0
     try:
@@ -113,6 +114,8 @@ def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "") -> int
         for l in leads:
             l["fuente"] = l.get("fuente_telefono", l.get("fuente", ""))
             l["client_id"] = client_id
+            if campaign_key:
+                l["campaign_key"] = campaign_key
             lead_objs.append(Lead(**{k: v for k, v in l.items() if k in Lead.model_fields}))
         count = local_enqueue(lead_objs)
         logger.info(f"Direct-enqueued {count} leads to OpenClaw queue")
@@ -121,6 +124,8 @@ def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "") -> int
         pass
     # Fallback: HTTP POST
     payload = {"leads": leads}
+    if campaign_key:
+        payload["campaign_key"] = campaign_key
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         f"{url}/enqueue",
@@ -139,6 +144,34 @@ def enqueue_to_openclaw(leads: List[Dict], url: str, client_id: str = "") -> int
         return 0
 
 
+def _campaign_search_tasks(client) -> list:
+    """Devuelve las tareas de prospección (rubro, ubicacion, campaign_key) para
+    UN cliente: cada campaña activa aporta SOLO sus propios rubros en SOLO sus
+    propios países/ciudades objetivo. Evita mezclar rubros entre campañas."""
+    try:
+        from campaign_store import list_campaigns, client_country_cities
+    except Exception:
+        return []
+    tareas: list = []
+    geo = client_country_cities()
+    for camp in list_campaigns():
+        if camp.get("channel") != "whatsapp":
+            continue
+        if camp.get("client_id") != client.id:
+            continue
+        if not camp.get("active", True):
+            continue
+        key = camp.get("key", "")
+        paises = camp.get("paises_objetivo") or []
+        n = max(1, int(camp.get("cities_per_country", 5)))
+        for rubro in (camp.get("rubros") or [camp.get("rubro") or ""]):
+            for pais in paises:
+                cities = geo.get(pais) or []
+                for ciudad in (cities or [pais])[:n]:
+                    tareas.append((rubro, f"{ciudad}, {pais}", key))
+    return tareas
+
+
 def run_prospecting_cycle(config: dict, report: dict):
     max_results = config.get("max_leads_per_search", 50)
     openclaw_url = config.get("openclaw_url", "http://openclaw:9000")
@@ -149,96 +182,88 @@ def run_prospecting_cycle(config: dict, report: dict):
         logger.warning("No clients configured. Create a client in the dashboard first.")
         return {"timestamp": datetime.now().isoformat(), "total_enqueued": 0, "total_found": 0, "ciclo": [], "completados": []}
 
-    # Campaign targets: only active countries + top-N cities per campaign
-    try:
-        from campaign_store import apply_campaign_targets
-        before = sum(len(c.ubicaciones) for c in clients)
-        clients = apply_campaign_targets(clients)
-        after = sum(len(c.ubicaciones) for c in clients)
-        if after != before:
-            logger.info(f"Campaign targets applied: {before} -> {after} ubicaciones activas")
-    except Exception as e:
-        logger.warning(f"apply_campaign_targets skipped: {e}")
-
-    # Filtro de países activos (selector del tab Local)
+    # Cada campaña prospecta SOLO sus propios rubros en SOLO sus propios
+    # países/ciudades. Nunca mezclamos rubros dentales con países de otra campaña.
     paises_activos = config.get("paises_activos") or []
+    activos_set = set(paises_activos) if paises_activos else None
+    limites_por_pais = config.get("limites_por_pais", {})
     if paises_activos:
-        activos_set = set(paises_activos)
-        for c in clients:
-            c.ubicaciones = [ub for ub in c.ubicaciones if _pais_de_ubicacion(ub) in activos_set]
-        logger.info(f"Países activos: {', '.join(paises_activos)}")
         # Reparto equitativo del tope diario entre países activos
         cupos_pais = _distribuir_cupo(paises_activos, config.get("max_por_pais_diario", 25))
         limites_por_pais = cupos_pais
+        logger.info(f"Países activos: {', '.join(paises_activos)}")
         logger.info(f"Cupo diario por país: {cupos_pais}")
 
-    # Apply rubro override if set
-    if _prospector_rubro_override is not None:
-        for c in clients:
-            c.rubros = _prospector_rubro_override
-        logger.info(f"Rubro override active: {_prospector_rubro_override}")
-
-    total_rubros = sum(len(c.rubros) for c in clients)
-    total_ubicaciones = sum(len(c.ubicaciones) for c in clients)
-    logger.info(f"=== Prospecting cycle: {len(clients)} clientes, {total_rubros} rubros x {total_ubicaciones} ubicaciones ===")
     total_enqueued = 0
     total_found = 0
     ciclo = []
     completados_ok = []
+    total_tareas = 0
 
     for client in clients:
-        for rubro in client.rubros:
-            for ubicacion in client.ubicaciones:
-                key = f"{client.id}|{rubro}|{ubicacion}"
-                if cycle_was_done(report, key):
-                    continue
-                pais = _pais_de_ubicacion(ubicacion)
-                limite_pais = limites_por_pais.get(pais)
-                try:
-                    logger.info(f"Buscando {rubro} en {ubicacion}")
-                    _log_activity("search", f"Buscando {rubro} en {ubicacion} (cliente: {client.name})",
-                                  {"rubro": rubro, "ubicacion": ubicacion, "cliente": client.name})
-                    resultados = scrape_local(rubro, ubicacion, max_results=max_results)
-                    con_telefono = [r for r in resultados if r.get("telefono")]
-                    if limite_pais:
-                        con_telefono = con_telefono[:limite_pais]
-                        logger.info(f"  Límite país {pais}: {limite_pais}/rubro -> {len(con_telefono)} leads")
-                    total_found += len(con_telefono)
-                    _log_activity("found", f"{len(con_telefono)} teléfonos en {len(resultados)} {rubro} de {ubicacion}",
-                                  {"encontrados": len(con_telefono), "rubro": rubro, "ubicacion": ubicacion})
+        tareas = _campaign_search_tasks(client)
+        if not tareas:
+            # Sin campañas definidas: fallback al cliente heredado
+            tareas = [(r, u, "") for r in client.rubros for u in client.ubicaciones]
+        if activos_set:
+            tareas = [t for t in tareas if _pais_de_ubicacion(t[1]) in activos_set]
+        if _prospector_rubro_override is not None:
+            tareas = [t for t in tareas if t[0] in _prospector_rubro_override]
+        total_tareas += len(tareas)
 
-                    if resultados:
-                        guardados = agregar_prospectos_locales(resultados)
-                        logger.info(f"  -> {guardados} nuevos en prospectos_locales.json")
+        for rubro, ubicacion, campaign_key in tareas:
+            key = f"{client.id}|{campaign_key}|{rubro}|{ubicacion}"
+            if cycle_was_done(report, key):
+                continue
+            pais = _pais_de_ubicacion(ubicacion)
+            limite_pais = limites_por_pais.get(pais)
+            resultados = []
+            try:
+                logger.info(f"Buscando {rubro} en {ubicacion}")
+                _log_activity("search", f"Buscando {rubro} en {ubicacion} (cliente: {client.name})",
+                              {"rubro": rubro, "ubicacion": ubicacion, "cliente": client.name})
+                resultados = scrape_local(rubro, ubicacion, max_results=max_results)
+                con_telefono = [r for r in resultados if r.get("telefono")]
+                if limite_pais:
+                    con_telefono = con_telefono[:limite_pais]
+                    logger.info(f"  Límite país {pais}: {limite_pais}/rubro -> {len(con_telefono)} leads")
+                total_found += len(con_telefono)
+                _log_activity("found", f"{len(con_telefono)} teléfonos en {len(resultados)} {rubro} de {ubicacion}",
+                              {"encontrados": len(con_telefono), "rubro": rubro, "ubicacion": ubicacion})
 
-                    fuentes = {}
-                    for r in con_telefono:
-                        f = r.get("fuente_telefono", "unknown")
-                        fuentes[f] = fuentes.get(f, 0) + 1
-                    src_detail = ", ".join(f"{k}={v}" for k, v in fuentes.items())
-                    logger.info(f"  {rubro} / {ubicacion}: {len(con_telefono)} con teléfono de {len(resultados)} [{src_detail}]")
-
-                    for i in range(0, len(con_telefono), config.get("leads_por_tanda", 20)):
-                        tanda = con_telefono[i:i + config.get("leads_por_tanda", 20)]
-                        cues = enqueue_to_openclaw(tanda, openclaw_url, client_id=client.id)
-                        total_enqueued += cues
-                        logger.info(f"  -> Enqueued batch {cues}")
-
-                    ciclo.append({
-                        "cliente": client.name,
-                        "rubro": rubro,
-                        "ubicacion": ubicacion,
-                        "encontrados": len(resultados),
-                        "con_telefono": len(con_telefono),
-                        "encolados": len([r for r in con_telefono if r.get("telefono")]),
-                        "timestamp": datetime.now().isoformat(),
-                    })
-                except Exception as e:
-                    logger.error(f"Error en {rubro}/{ubicacion}: {e}\n{traceback.format_exc()}")
-                # Solo marcar como completado si realmente hubo un intento válido
-                # con resultados (evita que un fallo de red/DNS bloquee el rubro 24h).
                 if resultados:
-                    completados_ok.append(key)
+                    guardados = agregar_prospectos_locales(resultados)
+                    logger.info(f"  -> {guardados} nuevos en prospectos_locales.json")
+
+                fuentes = {}
+                for r in con_telefono:
+                    f = r.get("fuente_telefono", "unknown")
+                    fuentes[f] = fuentes.get(f, 0) + 1
+                src_detail = ", ".join(f"{k}={v}" for k, v in fuentes.items())
+                logger.info(f"  {rubro} / {ubicacion}: {len(con_telefono)} con teléfono de {len(resultados)} [{src_detail}]")
+
+                for i in range(0, len(con_telefono), config.get("leads_por_tanda", 20)):
+                    tanda = con_telefono[i:i + config.get("leads_por_tanda", 20)]
+                    cues = enqueue_to_openclaw(tanda, openclaw_url, client_id=client.id, campaign_key=campaign_key)
+                    total_enqueued += cues
+                    logger.info(f"  -> Enqueued batch {cues}")
+
+                ciclo.append({
+                    "cliente": client.name,
+                    "rubro": rubro,
+                    "ubicacion": ubicacion,
+                    "campaign_key": campaign_key,
+                    "encontrados": len(resultados),
+                    "con_telefono": len(con_telefono),
+                    "encolados": len([r for r in con_telefono if r.get("telefono")]),
+                    "timestamp": datetime.now().isoformat(),
+                })
+            except Exception as e:
+                logger.error(f"Error en {rubro}/{ubicacion}: {e}\n{traceback.format_exc()}")
+            # Solo marcar como completado si realmente hubo un intento válido
+            # con resultados (evita que un fallo de red/DNS bloquee el rubro 24h).
+            if resultados:
+                completados_ok.append(key)
 
     logger.info(f"=== Cycle complete: {total_enqueued} enqueued, {total_found} with phones ===")
     ciclo_data = {
@@ -270,20 +295,23 @@ def _normalize_hashtag(value: str) -> str:
 
 
 def _run_ig_prospecting(client, config: dict, report: dict) -> int:
-    """Search Instagram for ONE hashtag per day (rotates). Enqueue up to 3 leads total."""
+    """Busca clínicas dentales reales en Instagram, verifica su país visitando el perfil
+    y encola 1 lead por país (hasta IG_DAILY_LIMIT DMs/día). El queue manager envía el DM
+    (mensaje + imagen + wa.me) a cada lead encolado."""
     import asyncio
     from queue_manager import enqueue_leads
     from ig_sender import InstagramSender
     from models import Lead
 
-    hashtags = client.instagram.ig_hashtags
-    if not hashtags:
+    if not client.instagram.ig_hashtags:
         return 0
 
-    # Rotate hashtag: track index in report
-    ig_idx = report.get("ig_hashtag_index", {}).get(client.id, 0)
-    hashtag = hashtags[ig_idx % len(hashtags)]
-    report.setdefault("ig_hashtag_index", {})[client.id] = (ig_idx + 1) % len(hashtags)
+    # Consultas de búsqueda que devuelven clínicas dentales reales
+    consultas = ["clinicas dentales", "clinica dental", "odontologia", "consultorio dental",
+                 "dentista", "ortodoncia"]
+    max_dm = int(os.getenv("IG_DAILY_LIMIT", "6"))
+    orden_paises = ["Colombia", "Nicaragua", "Costa Rica", "Honduras", "Panamá", "El Salvador",
+                    "Venezuela", "Ecuador", "Perú", "Guatemala", "México"]
 
     total = 0
     try:
@@ -298,48 +326,63 @@ def _run_ig_prospecting(client, config: dict, report: dict) -> int:
             logger.warning(f"IG login failed for {client.name}, skipping IG prospecting")
             return 0
 
-        logger.info(f"IG prospecting: #{hashtag} (dia {ig_idx % len(hashtags) + 1}/{len(hashtags)})")
-        _log_activity("ig_day", f"IG hashtag del dia: #{hashtag}")
-
-        for ubicacion in client.ubicaciones:
-            if total >= 3:
+        elegidos = {}  # pais -> lead elegido
+        for consulta in consultas:
+            if len(elegidos) >= max_dm:
                 break
-            city_country = ubicacion.strip()
-            country = city_country.split(",")[-1].strip() if "," in city_country else city_country
-            ig_query = _normalize_hashtag(f"{hashtag}{country}")
-            logger.info(f"IG search: #{ig_query} ({city_country})")
-            _log_activity("ig_search", f"Buscando #{ig_query}")
-
+            logger.info(f"IG search: '{consulta}'")
+            _log_activity("ig_search", f"Buscando '{consulta}'")
             try:
                 leads = loop.run_until_complete(
-                    sender.search_leads([ig_query], max_per_tag=3)
+                    sender.search_leads([consulta], max_per_tag=6)
                 )
             except Exception as e:
-                logger.error(f"IG search error for #{ig_query}: {e}")
+                logger.error(f"IG search error for '{consulta}': {e}")
                 continue
 
-            if leads:
-                lead_objs = []
-                for l in leads:
-                    if total >= 3:
-                        break
-                    lead_objs.append(Lead(
-                        nombre=l["username"],
-                        empresa="",
-                        rubro=hashtag,
-                        pais=country,
-                        ciudad=city_country.split(",")[0].strip(),
-                        fuente=f"instagram_{ig_query}",
-                        client_id=client.id,
-                    ))
-                    total += 1
-                if lead_objs:
-                    enc = enqueue_leads(lead_objs)
-                    logger.info(f"  IG #{ig_query}: {enc} leads enqueued (total: {total}/3)")
-                    _log_activity("ig_found", f"{enc} leads de #{ig_query}")
+            for l in leads:
+                if len(elegidos) >= max_dm:
+                    break
+                username = l.get("username", "")
+                if not username:
+                    continue
+                if any(username == e.get("nombre") for e in elegidos.values()):
+                    continue
+                # Verificar país visitando el perfil
+                pais = loop.run_until_complete(sender.profile_country(username))
+                if not pais or pais in elegidos:
+                    continue
+                if pais not in orden_paises:
+                    continue
+                elegidos[pais] = {
+                    "username": username,
+                    "full_name": l.get("full_name", ""),
+                    "pais": pais,
+                }
+                logger.info(f"  IG: {username} → {pais}")
+                _log_activity("ig_found", f"Clínica {username} ({pais})")
+
+        # Encolar 1 por país
+        lead_objs = []
+        for pais in orden_paises:
+            if pais in elegidos:
+                e = elegidos[pais]
+                lead_objs.append(Lead(
+                    nombre=e["username"],
+                    empresa=e.get("full_name", ""),
+                    rubro=client.instagram.ig_hashtags[0],
+                    pais=pais,
+                    ciudad=pais,
+                    fuente="instagram_clinicas_dentales",
+                    client_id=client.id,
+                ))
+        if lead_objs:
+            enc = enqueue_leads(lead_objs)
+            total = len(lead_objs)
+            logger.info(f"IG prospecting: {enc} leads enqueued (1 por país): {[e['username'] for e in elegidos.values()]}")
 
         loop.run_until_complete(sender.close())
-        logger.info(f"IG prospecting done: {total} leads enqueued for #{hashtag}")
+        logger.info(f"IG prospecting done: {total} lead(s) enqueued (1 por país)")
     except Exception as e:
         logger.error(f"IG prospecting error for {client.name}: {e}")
 
